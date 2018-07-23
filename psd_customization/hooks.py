@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from . import __version__ as app_version
+from . import __version__
 
 app_name = "psd_customization"
+app_version = __version__
 app_title = "PSD SELF Customization"
 app_publisher = "Libermatic"
 app_description = "Customizations for PSD SELF"
@@ -39,7 +40,7 @@ app_license = "MIT"
 
 # website user home page (by Role)
 # role_home_page = {
-#	"Role": "home_page"
+#   "Role": "home_page"
 # }
 
 # Website user home page (by function)
@@ -61,7 +62,8 @@ app_license = "MIT"
 # ------------------
 # See frappe.core.notifications.get_notification_config
 
-# notification_config = "psd_customization.notifications.get_notification_config"
+# notification_config = \
+#   "psd_customization.notifications.get_notification_config"
 
 # Permissions
 # -----------
@@ -79,13 +81,12 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+    'Batch': {
+        'autoname': 'psd_customization.doc_events.batch.autoname',
+        'before_save': 'psd_customization.doc_events.batch.before_save',
+    }
+}
 
 # Scheduled Tasks
 # ---------------
@@ -117,6 +118,6 @@ app_license = "MIT"
 # ------------------------------
 #
 # override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "psd_customization.event.get_events"
+# 	"frappe.desk.doctype.event.event.get_events":
+# 	 "psd_customization.event.get_events"
 # }
-
