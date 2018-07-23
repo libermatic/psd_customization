@@ -12,6 +12,17 @@ app_color = "#9C27B0"
 app_email = "info@libermatic.com"
 app_license = "MIT"
 
+fixtures = [
+    {
+        'doctype': 'Property Setter',
+        'filters': [['name', 'in', [
+            'Batch-batch_id-reqd',
+            'Batch-batch_id-default',
+            'Batch-expiry_date-bold',
+        ]]],
+    }
+]
+
 # Includes in <head>
 # ------------------
 
@@ -83,8 +94,8 @@ app_license = "MIT"
 
 doc_events = {
     'Batch': {
-        'autoname': 'psd_customization.doc_events.batch.autoname',
         'before_save': 'psd_customization.doc_events.batch.before_save',
+        'autoname': 'psd_customization.doc_events.batch.autoname',
     }
 }
 

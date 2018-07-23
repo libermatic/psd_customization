@@ -15,8 +15,9 @@ def autoname(doc, method):
     if doc.expiry_date:
         name_args.append(doc.expiry_date)
     name_args.append(doc.item)
-    if doc.batch_id:
+    # '0' because fixtures set default to this value
+    if doc.batch_id != '0':
         name_args.append(doc.batch_id)
     doc.name = '/'.join(name_args)
-    if not doc.batch_id:
+    if doc.batch_id == '0':
         doc.batch_id = doc.name
