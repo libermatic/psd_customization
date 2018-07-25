@@ -20,6 +20,8 @@ async function set_naming_series(frm, dt) {
   const naming_series = frm.get_docfield('naming_series').options;
   if (naming_series.indexOf(renaming_doctypes[dt]) > -1) {
     frm.set_value('naming_series', renaming_doctypes[dt]);
+  } else {
+    frm.set_value('naming_series', naming_series.split('\n')[0]);
   }
 }
 
