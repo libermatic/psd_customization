@@ -20,7 +20,7 @@ fixtures = [
             'Batch-batch_id-default',
             'Batch-expiry_date-bold',
         ]]],
-    }
+    },
 ]
 
 # Includes in <head>
@@ -28,7 +28,7 @@ fixtures = [
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/psd_customization/css/psd_customization.css"
-# app_include_js = "/assets/psd_customization/js/psd_customization.js"
+app_include_js = "/assets/js/psd_customization.min.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/psd_customization/css/psd_customization.css"
