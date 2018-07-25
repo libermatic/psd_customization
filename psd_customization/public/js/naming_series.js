@@ -14,8 +14,8 @@ async function set_naming_series(frm, dt) {
     'abbr'
   );
   const renaming_doctypes = {
-    'Sales Invoice': `SI-${company['abbr']}/.YY.-.#####`,
-    'Payment Entry': `PE-${company['abbr']}/.YY.-.#####`,
+    'Sales Invoice': `SI-${company['abbr']}/.YY.-`,
+    'Payment Entry': `PE-${company['abbr']}/.YY.-`,
   };
   const naming_series = frm.get_docfield('naming_series').options;
   if (naming_series.indexOf(renaming_doctypes[dt]) > -1) {
