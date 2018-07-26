@@ -13,7 +13,8 @@ def before_save(doc, method):
 def autoname(doc, method):
     name_args = []
     if doc.expiry_date:
-        name_args.append(doc.expiry_date)
+        expiry_date = frappe.utils.getdate(doc.expiry_date)
+        name_args.append('{:%m%y}'.format(expiry_date))
     name_args.append(doc.item)
     # '0' because fixtures set default to this value
     if doc.batch_id != '0':
