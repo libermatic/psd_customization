@@ -33,5 +33,12 @@ frappe.query_reports['Batch Item Expiry Valuation'] = {
       width: '80',
       default: 'Standard Selling',
     },
+    {
+      fieldname: 'days_to_expiry',
+      label: 'Days to Expiry',
+      fieldtype: 'Select',
+      options: '\n30\n60\n90\n120\n150',
+      width: '80',
+    },
   ],
 };

@@ -4,11 +4,16 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from frappe.utils import cint
+from functools import partial
+from psd_customization.utils.fp import compose
 
 
 def execute(filters={}):
     data = query_stock_entry_ledger(filters)
-    return get_columns(), map(make_row, data)
+    filter_post_query = filter_data(filters)
+    post_proced = map(inject_cols, data)
+    return get_columns(), map(make_row, filter_post_query(post_proced))
 
 
 def get_columns():
@@ -90,17 +95,34 @@ def make_conditions(filters):
     return conds
 
 
-def make_row(row):
+def filter_data(filters):
+    def filter_by_days(x):
+        days_to_expiry = filters.get('days_to_expiry')
+        if days_to_expiry:
+            return x.get('expiry_status') <= cint(days_to_expiry)
+        return True
+
+    return compose(
+        partial(filter, filter_by_days),
+        partial(filter, lambda x: x.get('qty') > 0),
+    )
+
+
+def inject_cols(row):
     row_dict = frappe._dict(row)
-    keys = [
-        'item_code', 'item_name', 'warehouse',
-        'batch_no', 'expiry_date', 'expiry_status',
-        'qty', 'rate', 'valuation_rate'
-    ]
     if row_dict.expiry_date:
         row_dict.expiry_status = (
             row.expiry_date - frappe.utils.datetime.date.today()
         ).days
     row_dict.amount = row_dict.qty * row_dict.rate
     row_dict.valuation = row_dict.qty * row_dict.valuation_rate
+    return row_dict
+
+
+def make_row(row):
+    keys = [
+        'item_code', 'item_name', 'warehouse',
+        'batch_no', 'expiry_date', 'expiry_status',
+        'qty', 'rate', 'valuation_rate', 'amount', 'valuation',
+    ]
     return map(lambda x: row.get(x), keys)
