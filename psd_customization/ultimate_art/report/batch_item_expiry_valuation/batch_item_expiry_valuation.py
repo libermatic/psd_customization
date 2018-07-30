@@ -22,6 +22,8 @@ def get_columns():
         _('Quantity') + ':Float:90',
         _('Item Rate') + ':Currency/currency:90',
         _('Valuation Rate') + ':Currency/currency:90',
+        _('Amount') + ':Currency/currency:90',
+        _('Total Valuation') + ':Currency/currency:90',
     ]
     return columns
 
@@ -57,7 +59,7 @@ def query_stock_entry_ledger(filters):
                 AND sle.item_code = price.item_code
                 AND %s
             GROUP BY sle.batch_no, sle.warehouse
-            ORDER BY sle.item_code
+            ORDER BY batch.expiry_date, sle.item_code
         """ % (
             sub_query,
             ' AND '.join(make_conditions(filters)),
@@ -99,4 +101,6 @@ def make_row(row):
         row_dict.expiry_status = (
             row.expiry_date - frappe.utils.datetime.date.today()
         ).days
-    return map(lambda x: row_dict.get(x), keys)
+    row_dict.amount = row_dict.qty * row_dict.rate
+    row_dict.valuation = row_dict.qty * row_dict.valuation_rate
+    return map(lambda x: row.get(x), keys)
