@@ -1,0 +1,127 @@
+<style>
+  .print-format table, .print-format tr,
+  .print-format td, .print-format div, .print-format p {
+    font-family: Monospace;
+    line-height: 1.5;
+    font-size: 9pt;
+  }
+  @media screen {
+    .print-format {
+      height: 8.2in;
+      width: 5.8in;
+      padding: 0.25in;
+    }
+  }
+  .psd-print-pos {
+    display: flex;
+    flex-flow: column nowrap;
+    min-height: 7.4in;
+  }
+  .psd-print-pos h1 {
+    font-size: 1.5em;
+    margin: 0;
+  }
+  .psd-print-pos > main {
+    flex: 1 1 0;
+  }
+  .psd-print-pos .psd-totals tr:not(:first-of-type) > td {
+    border: none !important;
+  }
+</style>
+<div class="psd-print-pos">
+  <header>
+    <h1 class="text-center">{{ doc.company }}</h1>
+    <p>{{ _("Invoice No : ") }} {{ doc.name }}</p>
+    <p>{{ _("Customer") }}: <strong>{{ doc.customer_name }}</strong></p>
+    <p>{{ _("Date") }}: <strong>{{ doc.get_formatted("posting_date") }}</strong></p>
+    <hr />
+  </header>
+  <main>
+    <table class="table table-condensed cart">
+      <thead>
+        <tr>
+          <th width="40%">{{ _("Item") }}</b></th>
+          <th width="23%" class="text-right">{{ _("Qty") }}</th>
+          <th width="17%" class="text-right">{{ _("Discount") }}</th>
+          <th width="20%" class="text-right">{{ _("Amount") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in doc.items %}
+        <tr>
+          <td>
+            {{ item.item_name }}
+          </td>
+          <td class="text-right">
+            {{ "{:.2f}".format(item.qty) }} {{ item.stock_uom }}<br/>
+            @ {{ frappe.utils.fmt_money(item.price_list_rate, currency=doc.currency) }}
+          </td>
+          <td class="text-right">
+            {% if item.discount_percentage %}
+              {{ frappe.utils.fmt_money(item.qty * item.price_list_rate * item.discount_percentage / 100, currency=doc.currency) }}
+            {% else %} - {% endif %}
+          </td>
+          <td class="text-right">
+            {{ frappe.utils.fmt_money(item.amount, currency=doc.currency) }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <table class="table table-condensed psd-totals">
+      <tbody>
+        <tr>
+          <td class="text-right" width="80%">
+            {{ _("Net Total") }}
+          </td>
+          <td class="text-right" width="20%">
+            {{ doc.get_formatted("total") }}
+          </td>
+        </tr>
+        {% for row in doc.taxes %}
+        {% if not row.included_in_print_rate %}
+        <tr>
+          <td class="text-right">
+            {{ row.description }}
+          </td>
+          <td class="text-right">
+            {{ frappe.utils.fmt_money(row.tax_amount, currency=doc.currency) }}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        {% if doc.discount_amount %}
+        <tr>
+          <td class="text-right">
+            {{ _("Discount") }}
+          </td>
+          <td class="text-right">
+            {{ doc.get_formatted("discount_amount") }}
+          </td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class="text-right">
+            {{ _("Grand Total") }}
+          </td>
+          <td class="text-right">
+            {{ doc.get_formatted("grand_total") }}
+          </td>
+        </tr>
+        <tr>
+          <td class="text-right">
+            {{ _("Paid Amount") }}
+          </td>
+          <td class="text-right">
+            <strong>{{ doc.get_formatted("paid_amount") }}</strong>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>
+    <hr />
+    <p>{{ doc.terms }}</p>
+    <p class="text-center">{{ _("Thank you, please visit again.") }}</p>
+  </footer>
+</div>
