@@ -10,7 +10,7 @@
  "html": "{% include \"templates/includes/pf_pos_with_discount.html\" %}\n", 
  "idx": 0, 
  "line_breaks": 0, 
- "modified": "2018-07-31 23:16:14.436093", 
+ "modified": "2018-08-01 22:11:38.168057", 
  "modified_by": "Administrator", 
  "module": "Ultimate Art", 
  "name": "Point of Sale with Discount", 
