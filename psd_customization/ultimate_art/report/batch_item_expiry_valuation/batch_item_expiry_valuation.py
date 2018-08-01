@@ -26,8 +26,8 @@ def get_columns():
         _('Expiry (In Days)') + ':Int:90',
         _('Quantity') + ':Float:90',
         _('Item Rate') + ':Currency/currency:90',
-        _('Valuation Rate') + ':Currency/currency:90',
         _('Amount') + ':Currency/currency:90',
+        _('Valuation Rate') + ':Currency/currency:90',
         _('Total Valuation') + ':Currency/currency:90',
     ]
     return columns
@@ -123,6 +123,6 @@ def make_row(row):
     keys = [
         'item_code', 'item_name', 'warehouse',
         'batch_no', 'expiry_date', 'expiry_status',
-        'qty', 'rate', 'valuation_rate', 'amount', 'valuation',
+        'qty', 'rate', 'amount', 'valuation_rate', 'valuation',
     ]
     return map(lambda x: row.get(x), keys)

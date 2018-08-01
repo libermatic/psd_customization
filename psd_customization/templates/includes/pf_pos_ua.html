@@ -1,0 +1,197 @@
+<style>
+  @media screen {
+    .print-format {
+      height: 8.2in;
+      width: 5.8in;
+      padding: 0.25in;
+    }
+  }
+  .psd-pos {
+    font-family: Monospace;
+    line-height: 1.5;
+    font-size: 9pt;
+    display: flex;
+    flex-flow: column nowrap;
+  }
+  @media print {
+    .psd-pos {
+      min-height: 7.4in;
+    }
+  }
+  .psd-pos header {
+    padding-bottom: 1em;
+    margin-bottom: 1em;
+    border-bottom: 1px solid {{ style.border_color }};
+  }
+  .psd-pos footer {
+    padding-top: 1em;
+    margin-top: 1em;
+    border-top: 1px solid {{ style.border_color }};
+  }
+  .psd-pos header > h1 {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0;
+  }
+  .psd-pos > section:last-of-type {
+    flex: 1 1 auto;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-end;
+  }
+  .psd-pos table {
+    font-size: 0.9em;
+  }
+  .psd-pos tfoot > tr > td {
+    text-align: right;
+  }
+  .psd-pos tfoot > tr:not(:first-of-type) > td {
+    border: none;
+  }
+  .psd-pos tfoot > tr:last-of-type > td:last-of-type {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+  .psd-draft-indicator {
+    text-transform: uppercase;
+    line-height: 1em;
+    padding: 0.1em 0.3em;
+    font-size: 0.7em;
+    font-weight: normal;
+    background-color: {{ style.border_color }};
+  }
+  .psd-details dl {
+    margin: 0;
+    margin-bottom: 0.5em;
+  }
+  .psd-details dl > dt {
+    font-weight: normal;
+  }
+  .psd-details dl > dd {
+    font-weight: bold;
+  }
+  .psd-details dl > dd:not(:first-of-type) {
+    font-weight: normal;
+    font-size: 0.9em;
+  }
+  .psd-stamp-area {
+    padding-top: 3em;
+    font-size: 0.9em;
+    font-style: italic;
+  }
+</style>
+<div class="psd-pos">
+  <header>
+    {% block pos_header %}
+    <h1>{{ doc.company }}</h1>
+    {% endblock %}
+  </header>
+  <section class="row psd-details">
+    <div class="col-xs-6">
+      <dl>
+        <dt>{{ _("Customer") }}</dt>
+        <dd>{{ doc.customer_name }}</dd>
+        {% if doc.address_display %}
+        <dd>{{ doc.address_display|replace("<br>", " ") }}</dd>
+        {% endif %}
+        {% if doc.contact_mobile %}
+        <dd>{{ doc.contact_mobile }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+    <div class="col-xs-6">
+      <dl>
+        <dt>
+          {{ _("Invoice No") }}
+          {% if doc.docstatus == 0 %}
+          <span class="psd-draft-indicator">{{ _("Draft")}}</span>
+          {% endif %}
+        </dt>
+        <dd>{{ doc.name }}</dd>
+      </dl>
+      <dl>
+        <dt>{{ _("Date") }}</dt>
+        <dd>{{ doc.get_formatted("posting_date") }}</dd>
+      </dl>
+    </div>
+  </section>
+  <table class="table table-condensed">
+    <thead>
+      <tr>
+        <th width="40%">{{ _("Item") }}</b></th>
+        <th width="23%" class="text-right">{{ _("Qty") }}</th>
+        <th width="17%" class="text-right">{{ _("Discount") }}</th>
+        <th width="20%" class="text-right">{{ _("Amount") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in doc.items %}
+      <tr>
+        <td>{{ item.item_name }}</td>
+        <td class="text-right">
+          {{ "{:.0f}".format(item.qty) }} {{ item.stock_uom }}<br/>
+          @ {{ frappe.utils.fmt_money(
+            item.price_list_rate, currency=doc.currency
+          ) }}
+        </td>
+        <td class="text-right">
+          {% if item.discount_percentage %}
+          {{ frappe.utils.fmt_money(
+            item.qty * item.price_list_rate * item.discount_percentage / 100,
+            currency=doc.currency
+          ) }}
+          {% else %} - {% endif %}
+        </td>
+        <td class="text-right">{{ item.get_formatted("amount", doc) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      {% if doc.discount_amount or doc.taxes %}
+      <tr>
+        <td colspan="3">{{ _("Total") }}</td>
+        <td>{{ doc.get_formatted("total") }}</td>
+      </tr>
+      {% endif %}
+      {% for row in doc.taxes %}
+      {% if not row.included_in_print_rate %}
+      <tr>
+        <td colspan="3">{{ row.description }}</td>
+        <td>{{ row.get_formatted("tax_amount", doc) }}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% if doc.discount_amount %}
+      <tr>
+        <td colspan="3">{{ _("Discount") }}</td>
+        <td>{{ doc.get_formatted("discount_amount") }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td colspan="3">{{ _("Grand Total") }}</td>
+        <td>{{ doc.get_formatted("grand_total") }}</td>
+      </tr>
+      {% if doc.rounding_adjustment %}
+      <tr>
+        <td colspan="3">
+          {{ _("Round Off") }} ({{ doc.get_formatted("rounding_adjustment") }})
+        </td>
+        <td>{{ doc.get_formatted("rounded_total") }}</td>
+      </tr>
+      {% endif %}
+    </tfoot>
+  </table>
+  <section>
+    {% block pos_signature %}
+    <p class="text-right psd-stamp-area">{{ _("Authorized Signatory")}}</p>
+    {% endblock %}
+  </section>
+  <footer>
+    {% block pos_footer %}
+    <p>{{ doc.terms }}</p>
+    <p class="text-center">{{ _("Thank you, please visit again.") }}</p>
+    {% endblock %}
+  </footer>
+</div>
