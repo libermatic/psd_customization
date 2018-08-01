@@ -1,0 +1,195 @@
+<style>
+  @media screen {
+    .print-format {
+      height: 8.2in;
+      width: 5.8in;
+      padding: 0.25in;
+    }
+  }
+  .psd-pos {
+    font-family: Monospace;
+    line-height: 1.5;
+    font-size: 9pt;
+    display: flex;
+    flex-flow: column nowrap;
+  }
+  @media print {
+    .psd-pos {
+      min-height: 7.4in;
+    }
+  }
+  .psd-pos header {
+    padding-bottom: 1em;
+    margin-bottom: 1em;
+    border-bottom: 1px solid #d1d8dd;
+  }
+  .psd-pos footer {
+    padding-top: 1em;
+    margin-top: 1em;
+    border-top: 1px solid #d1d8dd;
+  }
+  .psd-pos header > h1 {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0;
+  }
+  .psd-pos > section:last-of-type {
+    flex: 1 1 auto;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-end;
+  }
+  .psd-pos table {
+    font-size: 0.9em;
+  }
+  .psd-pos tfoot > tr:not(:first-of-type) > td {
+    border: none;
+  }
+  .psd-pos tfoot > tr:last-of-type > td:last-of-type {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+  .psd-draft-indicator {
+    text-transform: uppercase;
+    line-height: 1em;
+    padding: 0.1em 0.3em;
+    font-size: 0.7em;
+    font-weight: normal;
+    background-color:  #d1d8dd;
+  }
+  .psd-details dl {
+    margin: 0;
+    margin-bottom: 0.5em;
+  }
+  .psd-details dl > dt {
+    font-weight: normal;
+  }
+  .psd-details dl > dd {
+    font-weight: bold;
+  }
+  .psd-details dl > dd:not(:first-of-type) {
+    font-weight: normal;
+    font-size: 0.9em;
+  }
+  .psd-stamp-area {
+    padding-top: 3em;
+    font-size: 0.9em;
+    font-style: italic;
+  }
+</style>
+<div class="psd-pos">
+  <header>
+    <h1>{{ company }}</h1>
+  </header>
+  <section>
+    <div class="col-xs-6">
+      <dl>
+        <dt>{{ __("Customer") }}</dt>
+        <dd>{{ customer_name }}</dd>
+      </dl>
+    </div>
+    <div class="col-xs-6">
+      <dl>
+        <dt>{{ __("POS No") }}</dt>
+        <dd>{{ offline_pos_name }}</dd>
+      </dl>
+      <dl>
+        <dt>{{ __("Date") }}</dt>
+        <dd>{{ dateutil.global_date_format(posting_date) }}</dd>
+      </dl>
+    </div>
+  </section>
+  <table class="table table-condensed">
+    <thead>
+      <tr>
+        <th width="40%">{{ __("Item") }}</b></th>
+        <th width="23%" class="text-right">{{ __("Qty") }}</th>
+        <th width="17%" class="text-right">{{ __("Discount") }}</th>
+        <th width="20%" class="text-right">{{ __("Amount") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>
+          {{ item.item_name }}
+        </td>
+        <td class="text-right">
+          {{ format_number(item.qty, null, precision("difference")) }}
+          {{ item.stock_uom }}<br/>
+          @ {{ format_currency(item.price_list_rate, currency) }}
+        </td>
+        <td class="text-right">
+          {% if item.discount_percentage %}
+          {{ format_currency(item.qty * item.price_list_rate * item.discount_percentage / 100, currency) }}
+          {% else %} - {% endif %}
+        </td>
+        <td class="text-right">
+          {{ format_currency(item.amount, currency) }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      {% if discount_amount %}
+      <tr>
+        <td class="text-right" colspan="3">
+          {{ __("Total") }}
+        </td>
+        <td class="text-right">
+          {{ format_currency(total, currency) }}
+        </td>
+      </tr>
+      {% endif %}
+      {% for row in taxes %}
+      {% if not row.included_in_print_rate %}
+      <tr>
+        <td class="text-right" colspan="3">
+          {{ row.description }}
+        </td>
+        <td class="text-right">
+          {{ format_currency(row.tax_amount, currency) }}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% if discount_amount %}
+      <tr>
+        <td class="text-right" colspan="3">
+          {{ __("Discount") }}
+        </td>
+        <td class="text-right">
+          {{ format_currency(discount_amount, currency) }}
+        </td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td class="text-right" colspan="3">
+          {{ __("Grand Total") }}
+        </td>
+        <td class="text-right">
+          {{ format_currency(grand_total, currency) }}
+        </td>
+      </tr>
+      {% if rounding_adjustment %}
+      <tr>
+        <td class="text-right" colspan="3">
+          {{ __("Round Off") }} ({{ format_currency(rounding_adjustment, currency) }})
+        </td>
+        <td class="text-right">
+          {{ format_currency(rounded_total, currency) }}
+        </td>
+      </tr>
+      {% endif %}
+    </tfoot>
+  </table>
+  <section>
+    <p class="text-right psd-stamp-area">{{ __("Authorized Signatory")}}</p>
+  </section>
+  <footer>
+    <p>{{ terms }}</p>
+    <p class="text-center">{{ __("Thank you, please visit again.") }}</p>
+  </footer>
+</div>
