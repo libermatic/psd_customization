@@ -69,6 +69,10 @@
   .psd-details dl > dd {
     font-weight: bold;
   }
+  .psd-details dl > dd:not(:first-of-type) {
+    font-weight: normal;
+    font-size: 0.9em;
+  }
   .psd-stamp-area {
     padding-top: 3em;
     font-size: 0.9em;
@@ -84,6 +88,18 @@
   <section class="row psd-details">
     <div class="col-xs-6">
       <dl>
+        <dt>{{ _("Customer") }}</dt>
+        <dd>{{ doc.customer_name }}</dd>
+        {% if doc.address_display %}
+        <dd>{{ doc.address_display|replace("<br>", " ") }}</dd>
+        {% endif %}
+        {% if doc.contact_mobile %}
+        <dd>{{ doc.contact_mobile }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+    <div class="col-xs-6">
+      <dl>
         <dt>
           {{ _("Invoice No") }}
           {% if doc.docstatus == 0 %}
@@ -92,15 +108,9 @@
         </dt>
         <dd>{{ doc.name }}</dd>
       </dl>
-        <dl>
-          <dt>{{ _("Date") }}</dt>
-          <dd>{{ doc.get_formatted("posting_date") }}</dd>
-        </dl>
-    </div>
-    <div class="col-xs-6">
       <dl>
-        <dt>{{ _("Customer") }}</dt>
-        <dd>{{ doc.customer_name }}</dd>
+        <dt>{{ _("Date") }}</dt>
+        <dd>{{ doc.get_formatted("posting_date") }}</dd>
       </dl>
     </div>
   </section>
@@ -140,15 +150,29 @@
       {% endfor %}
     </tbody>
     <tfoot>
-      {% if doc.discount_amount %}
+      {% if doc.discount_amount or doc.taxes %}
       <tr>
         <td class="text-right" colspan="3">
-          {{ _("Net Total") }}
+          {{ _("Total") }}
         </td>
         <td class="text-right">
           {{ doc.get_formatted("total") }}
         </td>
       </tr>
+      {% endif %}
+      {% for row in doc.taxes %}
+      {% if not row.included_in_print_rate %}
+      <tr>
+        <td class="text-right" colspan="3">
+          {{ row.description }}
+        </td>
+        <td class="text-right">
+          {{ row.get_formatted("tax_amount", doc) }}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% if doc.discount_amount %}
       <tr>
         <td class="text-right" colspan="3">
           {{ _("Discount") }}
@@ -158,18 +182,6 @@
         </td>
       </tr>
       {% endif %}
-      {% for row in doc.taxes %}
-      {% if not row.included_in_print_rate %}
-      <tr>
-        <td class="text-right">
-          {{ row.description }}
-        </td>
-        <td class="text-right">
-          {{ row.get_formatted("tax_amount", doc) }}
-        </td>
-      </tr>
-      {% endif %}
-      {% endfor %}
       <tr>
         <td class="text-right" colspan="3">
           {{ _("Grand Total") }}
