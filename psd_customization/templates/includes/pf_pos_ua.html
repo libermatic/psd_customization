@@ -44,6 +44,9 @@
   .psd-pos table {
     font-size: 0.9em;
   }
+  .psd-pos tfoot > tr > td {
+    text-align: right;
+  }
   .psd-pos tfoot > tr:not(:first-of-type) > td {
     border: none;
   }
@@ -126,9 +129,7 @@
     <tbody>
       {% for item in doc.items %}
       <tr>
-        <td>
-          {{ item.item_name }}
-        </td>
+        <td>{{ item.item_name }}</td>
         <td class="text-right">
           {{ "{:.0f}".format(item.qty) }} {{ item.stock_uom }}<br/>
           @ {{ frappe.utils.fmt_money(
@@ -143,61 +144,41 @@
           ) }}
           {% else %} - {% endif %}
         </td>
-        <td class="text-right">
-          {{ item.get_formatted("amount", doc) }}
-        </td>
+        <td class="text-right">{{ item.get_formatted("amount", doc) }}</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
       {% if doc.discount_amount or doc.taxes %}
       <tr>
-        <td class="text-right" colspan="3">
-          {{ _("Total") }}
-        </td>
-        <td class="text-right">
-          {{ doc.get_formatted("total") }}
-        </td>
+        <td colspan="3">{{ _("Total") }}</td>
+        <td>{{ doc.get_formatted("total") }}</td>
       </tr>
       {% endif %}
       {% for row in doc.taxes %}
       {% if not row.included_in_print_rate %}
       <tr>
-        <td class="text-right" colspan="3">
-          {{ row.description }}
-        </td>
-        <td class="text-right">
-          {{ row.get_formatted("tax_amount", doc) }}
-        </td>
+        <td colspan="3">{{ row.description }}</td>
+        <td>{{ row.get_formatted("tax_amount", doc) }}</td>
       </tr>
       {% endif %}
       {% endfor %}
       {% if doc.discount_amount %}
       <tr>
-        <td class="text-right" colspan="3">
-          {{ _("Discount") }}
-        </td>
-        <td class="text-right">
-          {{ doc.get_formatted("discount_amount") }}
-        </td>
+        <td colspan="3">{{ _("Discount") }}</td>
+        <td>{{ doc.get_formatted("discount_amount") }}</td>
       </tr>
       {% endif %}
       <tr>
-        <td class="text-right" colspan="3">
-          {{ _("Grand Total") }}
-        </td>
-        <td class="text-right">
-          {{ doc.get_formatted("grand_total") }}
-        </td>
+        <td colspan="3">{{ _("Grand Total") }}</td>
+        <td>{{ doc.get_formatted("grand_total") }}</td>
       </tr>
       {% if doc.rounding_adjustment %}
       <tr>
-        <td class="text-right" colspan="3">
+        <td colspan="3">
           {{ _("Round Off") }} ({{ doc.get_formatted("rounding_adjustment") }})
         </td>
-        <td class="text-right">
-          {{ doc.get_formatted("rounded_total") }}
-        </td>
+        <td>{{ doc.get_formatted("rounded_total") }}</td>
       </tr>
       {% endif %}
     </tfoot>
