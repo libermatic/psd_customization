@@ -54,7 +54,7 @@
     font-weight: bold;
     font-size: 1.1em;
   }
-  .psd-draft-indicator {
+  .psd-indicator {
     text-transform: uppercase;
     line-height: 1em;
     padding: 0.1em 0.3em;
@@ -95,7 +95,12 @@
     </div>
     <div class="col-xs-6">
       <dl>
-        <dt>{{ __("POS No") }}</dt>
+        <dt>
+          {{ __("POS No") }}
+          {% if status != "Paid" %}
+          <span class="psd-indicator">{{ _("Unpaid")}}</span>
+          {% endif %}
+        </dt>
         <dd>{{ offline_pos_name }}</dd>
       </dl>
       <dl>
