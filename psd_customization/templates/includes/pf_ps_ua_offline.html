@@ -164,6 +164,14 @@
         <td>{{ format_currency(rounded_total, currency) }}</td>
       </tr>
       {% endif %}
+      {% if write_off_amount %}
+      <tr>
+        <td colspan="3">
+          {{ _("Less") }} ({{ format_currency(write_off_amount, currency) }})
+        </td>
+        <td>{{ format_currency(rounded_total - write_off_amount, currency) }}</td>
+      </tr>
+      {% endif %}
     </tfoot>
   </table>
   <section>

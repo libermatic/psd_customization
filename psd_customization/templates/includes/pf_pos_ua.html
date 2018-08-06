@@ -181,6 +181,17 @@
         <td>{{ doc.get_formatted("rounded_total") }}</td>
       </tr>
       {% endif %}
+      {% if doc.write_off_amount %}
+      <tr>
+        <td colspan="3">
+          {{ _("Less") }} ({{ doc.get_formatted("write_off_amount") }})
+        </td>
+        <td>{{ frappe.utils.fmt_money(
+          doc.rounded_total - doc.write_off_amount,
+          currency=doc.currency
+        ) }}</td>
+      </tr>
+      {% endif %}
     </tfoot>
   </table>
   <section>
