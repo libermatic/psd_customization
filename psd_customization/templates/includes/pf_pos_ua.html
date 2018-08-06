@@ -54,7 +54,7 @@
     font-weight: bold;
     font-size: 1.1em;
   }
-  .psd-draft-indicator {
+  .psd-indicator {
     text-transform: uppercase;
     line-height: 1em;
     padding: 0.1em 0.3em;
@@ -106,7 +106,10 @@
         <dt>
           {{ _("Invoice No") }}
           {% if doc.docstatus == 0 %}
-          <span class="psd-draft-indicator">{{ _("Draft")}}</span>
+          <span class="psd-indicator">{{ _("Draft")}}</span>
+          {% endif %}
+          {% if doc.status != "Paid" %}
+          <span class="psd-indicator">{{ _("Unpaid")}}</span>
           {% endif %}
         </dt>
         <dd>{{ doc.name }}</dd>
@@ -179,6 +182,17 @@
           {{ _("Round Off") }} ({{ doc.get_formatted("rounding_adjustment") }})
         </td>
         <td>{{ doc.get_formatted("rounded_total") }}</td>
+      </tr>
+      {% endif %}
+      {% if doc.write_off_amount %}
+      <tr>
+        <td colspan="3">
+          {{ _("Less") }} ({{ doc.get_formatted("write_off_amount") }})
+        </td>
+        <td>{{ frappe.utils.fmt_money(
+          doc.rounded_total - doc.write_off_amount,
+          currency=doc.currency
+        ) }}</td>
       </tr>
       {% endif %}
     </tfoot>

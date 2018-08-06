@@ -7,17 +7,17 @@
  "doctype": "Report", 
  "idx": 0, 
  "is_standard": "Yes", 
- "modified": "2018-07-31 03:00:58.009060", 
+ "modified": "2018-08-06 22:33:35.081843", 
  "modified_by": "Administrator", 
  "module": "Ultimate Art", 
  "name": "Batch Item Expiry Valuation", 
  "owner": "Administrator", 
- "ref_doctype": "Batch", 
+ "ref_doctype": "Item", 
  "report_name": "Batch Item Expiry Valuation", 
  "report_type": "Script Report", 
  "roles": [
   {
-   "role": "Item Manager"
+   "role": "Stock User"
   }
  ]
 }
