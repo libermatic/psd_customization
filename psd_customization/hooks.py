@@ -19,6 +19,10 @@ fixtures = [
             'Batch-batch_id-reqd',
             'Batch-batch_id-default',
             'Batch-expiry_date-bold',
+            'Purchase Invoice Item-qty-columns',
+            'Purchase Invoice Item-rate-columns',
+            'Purchase Invoice Item-batch_no-in_list_view',
+            'Purchase Invoice Item-batch_no-columns',
         ]]],
     },
 ]
