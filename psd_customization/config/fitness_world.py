@@ -15,4 +15,14 @@ def get_data():
                 },
             ]
         },
+        {
+            "label": _("Setup"),
+            "items": [
+                {
+                    "type": "doctype",
+                    "name": "Gym Settings",
+                    "label": "Gym Settings",
+                },
+            ]
+        },
     ]
