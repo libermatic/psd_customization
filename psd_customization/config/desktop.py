@@ -14,14 +14,14 @@ def get_data():
         {
             'module_name': 'Ultimate Art',
             'color': '#9C27B0',
-            'icon': 'fa fa-store',
+            'icon': 'fa fa-cube',
             'type': 'module',
             'label': 'Ultimate Art',
         },
         {
             'module_name': 'Fitness World',
             'color': '#9C27B0',
-            'icon': 'fa fa-dumbbell',
+            'icon': 'fa fa-cube',
             'type': 'module',
             'label': 'Fitness World',
         }
