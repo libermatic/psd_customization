@@ -23,6 +23,9 @@ fixtures = [
             'Purchase Invoice Item-rate-columns',
             'Purchase Invoice Item-batch_no-in_list_view',
             'Purchase Invoice Item-batch_no-columns',
+            'Sales Invoice-update_stock-default',
+            'Purchase Invoice-is_paid-default',
+            'Purchase Invoice-update_stock-default',
         ]]],
     },
 ]
@@ -32,7 +35,10 @@ fixtures = [
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/psd_customization/css/psd_customization.css"
-app_include_js = "/assets/psd_customization/js/naming_series.js"
+app_include_js = [
+    '/assets/psd_customization/js/naming_series.js',
+    '/assets/psd_customization/js/gym_member_quick_entry.js',
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/psd_customization/css/psd_customization.css"

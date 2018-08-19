@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 from functools import reduce
 from copy import deepcopy
+from toolz import assoc, filter
 
 
 def compose(*funcs):
@@ -25,7 +26,13 @@ def join(sep):
     return fn
 
 
-def pick(key):
-    def fn(kv_dict):
-        return kv_dict.get(key)
-    return fn
+def pick(fields, from_dict):
+    def set_field(a, x):
+        if from_dict.get(x):
+            return assoc(a, x, from_dict.get(x))
+        return a
+    return reduce(set_field, fields, {})
+
+
+def compact(iter):
+    return filter(None, iter)

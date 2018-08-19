@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from frappe import _
 
 
 def get_data():
@@ -10,13 +9,20 @@ def get_data():
             'color': '#9C27B0',
             'icon': 'fa fa-cubes',
             'type': 'module',
-            'label': _('PSD SELF')
+            'label': 'PSD SELF',
         },
         {
             'module_name': 'Ultimate Art',
             'color': '#9C27B0',
-            'icon': 'fa fa-store',
+            'icon': 'fa fa-cube',
             'type': 'module',
-            'label': _('Ultimate Art')
+            'label': 'Ultimate Art',
+        },
+        {
+            'module_name': 'Fitness World',
+            'color': '#9C27B0',
+            'icon': 'fa fa-cube',
+            'type': 'module',
+            'label': 'Fitness World',
         }
     ]
