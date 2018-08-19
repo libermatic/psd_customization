@@ -23,6 +23,9 @@ fixtures = [
             'Purchase Invoice Item-rate-columns',
             'Purchase Invoice Item-batch_no-in_list_view',
             'Purchase Invoice Item-batch_no-columns',
+            'Sales Invoice-update_stock-default',
+            'Purchase Invoice-is_paid-default',
+            'Purchase Invoice-update_stock-default',
         ]]],
     },
 ]
