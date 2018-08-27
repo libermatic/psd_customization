@@ -114,7 +114,10 @@ doc_events = {
     'Batch': {
         'before_save': 'psd_customization.doc_events.batch.before_save',
         'autoname': 'psd_customization.doc_events.batch.autoname',
-    }
+    },
+    'Subscription': {
+        'on_submit': 'psd_customization.doc_events.subscription.on_submit',
+    },
 }
 
 # Scheduled Tasks
