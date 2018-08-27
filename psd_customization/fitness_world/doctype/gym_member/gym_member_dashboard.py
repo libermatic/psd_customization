@@ -5,12 +5,11 @@
 
 def get_data():
     return {
-        'heatmap': True,
+        'fieldname': 'member',
         'transactions': [
             {
                 'label': 'Reference',
                 'items': ['Gym Membership'],
-                'fieldname': 'member',
             },
         ],
     }
