@@ -117,6 +117,8 @@ doc_events = {
     },
     'Subscription': {
         'on_submit': 'psd_customization.doc_events.subscription.on_submit',
+        'on_update_after_submit':
+            'psd_customization.doc_events.subscription.on_update_after_submit',
     },
 }
 
