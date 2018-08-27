@@ -28,6 +28,12 @@ fixtures = [
             'Purchase Invoice-update_stock-default',
         ]]],
     },
+    {
+        'doctype': 'Custom Field',
+        'filters': [['name', 'in', [
+            'Subscription-reference_gym_member',
+        ]]]
+    },
 ]
 
 # Includes in <head>
@@ -48,7 +54,9 @@ app_include_js = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+    'Subscription': 'public/js/subscription.js',
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
