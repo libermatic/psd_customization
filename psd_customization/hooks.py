@@ -120,6 +120,9 @@ doc_events = {
         'on_update_after_submit':
             'psd_customization.doc_events.subscription.on_update_after_submit',
     },
+    'Sales Invoice': {
+        'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
+    }
 }
 
 # Scheduled Tasks
