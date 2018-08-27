@@ -37,3 +37,9 @@ def link_member_to_doctype(member, doctype, docname):
             })
             link_doc.save()
     return link_doc
+
+
+@frappe.whitelist()
+def get_members_by_customer(customer):
+    members = frappe.get_all('Gym Member', filters={'customer': customer})
+    return map(lambda x: x.get('name'), members)

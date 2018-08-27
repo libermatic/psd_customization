@@ -5,7 +5,8 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.contacts.address_and_contact import load_address_and_contact
+from frappe.contacts.address_and_contact \
+    import load_address_and_contact, delete_contact_and_address
 from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from psd_customization.utils.fp import pick, compact
@@ -30,6 +31,9 @@ class GymMember(Document):
                 self.save()
             self.fetch_and_link_doc('Address', get_default_address)
             self.fetch_and_link_doc('Contact', get_default_contact)
+
+    def on_trash(self):
+        delete_contact_and_address('Gym Member', self.name)
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)

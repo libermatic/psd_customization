@@ -28,6 +28,12 @@ fixtures = [
             'Purchase Invoice-update_stock-default',
         ]]],
     },
+    {
+        'doctype': 'Custom Field',
+        'filters': [['name', 'in', [
+            'Subscription-reference_gym_member',
+        ]]]
+    },
 ]
 
 # Includes in <head>
@@ -48,7 +54,9 @@ app_include_js = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+    'Subscription': 'public/js/subscription.js',
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -106,6 +114,14 @@ doc_events = {
     'Batch': {
         'before_save': 'psd_customization.doc_events.batch.before_save',
         'autoname': 'psd_customization.doc_events.batch.autoname',
+    },
+    'Subscription': {
+        'on_submit': 'psd_customization.doc_events.subscription.on_submit',
+        'on_update_after_submit':
+            'psd_customization.doc_events.subscription.on_update_after_submit',
+    },
+    'Sales Invoice': {
+        'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
     }
 }
 
