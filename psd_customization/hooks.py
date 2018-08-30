@@ -12,6 +12,8 @@ app_color = "#9C27B0"
 app_email = "info@libermatic.com"
 app_license = "MIT"
 
+error_report_email = "support@libermatic.com"
+
 fixtures = [
     {
         'doctype': 'Property Setter',
