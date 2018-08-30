@@ -153,7 +153,7 @@
    "label": "Status", 
    "length": 0, 
    "no_copy": 0, 
-   "options": "\nActive\nExpired\nCancelled", 
+   "options": "\nActive\nPending\nExpired\nStopped\nCancelled", 
    "permlevel": 0, 
    "precision": "", 
    "print_hide": 0, 
