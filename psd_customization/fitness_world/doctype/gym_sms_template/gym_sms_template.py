@@ -6,5 +6,15 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
+
 class GymSMSTemplate(Document):
-	pass
+    pass
+
+
+def get_sms_text(template_name, doc):
+    template = frappe.db.get_value(
+        'Gym SMS Template', template_name, 'content'
+    )
+    if not template:
+        return None
+    return frappe.render_template(template, {'doc': doc})
