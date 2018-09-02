@@ -8,6 +8,7 @@ frappe.ui.form.on('Gym Membership', {
   refresh: function(frm) {
     frm.toggle_display(
       [
+        'status',
         'validity_section',
         'start_date',
         'end_date',
