@@ -48,8 +48,8 @@ class GymMembership(Document):
         subscription = frappe.get_doc('Subscription', self.subscription)
         subscription.cancel()
 
-    def update_expiry_date(self, expiry_date):
-        if date_diff(expiry_date, self.expiry_date) > 0:
+    def update_expiry_date(self, expiry_date, force=False):
+        if force or date_diff(expiry_date, self.expiry_date) > 0:
             self.expiry_date = expiry_date
             self.save()
 
