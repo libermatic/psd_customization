@@ -47,3 +47,11 @@ def make_payment_entry(source_name):
     if pe.party_account:
         pe.set_amounts()
     return pe
+
+
+def get_membership_by_subscription(subscription):
+    membership_name = frappe.db.get_value(
+        'Gym Membership', filters={'subscription': subscription}
+    )
+    return frappe.get_doc('Gym Membership', membership_name) \
+        if membership_name else None

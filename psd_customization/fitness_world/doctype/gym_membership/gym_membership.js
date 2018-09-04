@@ -2,21 +2,35 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Gym Membership', {
+  onload: function(frm) {
+    frm.trigger('set_subscription_query');
+  },
   refresh: function(frm) {
-    frm.trigger('set_defaults');
+    frm.toggle_display(
+      [
+        'status',
+        'validity_section',
+        'start_date',
+        'end_date',
+        'frequency',
+        'services_section',
+        'items',
+      ],
+      frm.doc['docstatus'] === 1
+    );
     frm.trigger('add_actions');
   },
-  set_defaults: async function(frm) {
-    const { message: settings = {} } = await frappe.db.get_value(
-      'Gym Settings',
-      null,
-      'default_item_group'
-    );
-    if (settings['default_item_group']) {
-      frm.set_query('item', 'items', () => ({
-        filters: { item_group: settings['default_item_group'] },
-      }));
-    }
+  member: function(frm) {
+    frm.trigger('set_subscription_query');
+  },
+  set_subscription_query: function(frm) {
+    frm.toggle_display('subscription', frm.doc['member']);
+    frm.set_query('subscription', () => ({
+      filters: {
+        reference_gym_member: frm.doc['member'],
+        docstatus: 1,
+      },
+    }));
   },
   add_actions: async function(frm) {
     if (frm.doc.docstatus === 1) {
