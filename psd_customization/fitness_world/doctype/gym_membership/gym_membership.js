@@ -53,7 +53,10 @@ frappe.ui.form.on('Gym Membership', {
   calculate_total: function(frm) {
     if (frm.fields_dict['items'] && frm.fields_dict['amount']) {
       const { items = [] } = frm.doc;
-      frm.set_value('amount', items.reduce((a, { amount: x = 0 }) => a + x, 0));
+      frm.set_value(
+        'total_amount',
+        items.reduce((a, { amount: x = 0 }) => a + x, 0)
+      );
     }
   },
 });
