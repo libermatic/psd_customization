@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import add_days, add_months, add_years
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
@@ -47,6 +48,24 @@ def make_payment_entry(source_name):
     if pe.party_account:
         pe.set_amounts()
     return pe
+
+
+def get_end_date(start_date, frequency, times=1):
+    if times < 1:
+        raise Exception('times cannot be less than 1')
+    if frequency == 'Daily':
+        return add_days(start_date, times - 1)
+    if frequency == 'Weekly':
+        return add_days(start_date, times * 7 - 1)
+    if frequency == 'Monthly':
+        return add_days(add_months(start_date, times), -1)
+    if frequency == 'Quaterly':
+        return add_days(add_months(start_date, times * 3), -1)
+    if frequency == 'Half-Yearly':
+        return add_days(add_months(start_date, times * 6), -1)
+    if frequency == 'Yearly':
+        return add_days(add_years(start_date, times), -1)
+    return None
 
 
 @frappe.whitelist()

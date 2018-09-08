@@ -18,6 +18,11 @@ def get_data():
                     "name": "Gym Membership",
                     "label": "Membership",
                 },
+                {
+                    "type": "doctype",
+                    "name": "Gym Fee",
+                    "label": "Fee",
+                },
             ]
         },
         {
