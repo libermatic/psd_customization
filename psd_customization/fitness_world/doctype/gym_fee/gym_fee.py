@@ -3,6 +3,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import frappe
+from frappe.utils import getdate
 from functools import reduce
 from frappe.model.document import Document
 
@@ -27,3 +29,43 @@ class GymFee(Document):
                 get_items(self.membership, self.duration),
             )
         self.total_amount = reduce(lambda a, x: a + x.amount, self.items, 0)
+
+    def on_submit(self):
+        self.reference_invoice = self.create_sales_invoice()
+        self.save()
+
+    def before_cancel(self):
+        self.flags.prev_si = self.reference_invoice
+        self.reference_invoice = None
+
+    def on_cancel(self):
+        if self.flags.prev_si:
+            si = frappe.get_doc('Sales Invoice', self.flags.prev_si)
+            si.cancel()
+
+    def create_sales_invoice(self):
+        si = frappe.new_doc('Sales Invoice')
+        si.set_posting_time = 1
+        si.posting_date = self.posting_date
+        si.customer = frappe.db.get_value(
+            'Gym Member', self.member, 'customer'
+        )
+        for item in self.items:
+            si.append('items', {
+                'item_code': item.item_code,
+                'qty': item.qty,
+                'rate': item.rate,
+            })
+        si.taxes_and_charges = frappe.db.get_value(
+            'Gym Settings', None, 'default_tax_template',
+        )
+        si.set_taxes()
+        si.append('payment_schedule', {
+            'due_date': max(
+                getdate(self.to_date), getdate(self.posting_date)
+            ),
+            'invoice_portion': 100,
+        })
+        si.save()
+        si.submit()
+        return si.name
