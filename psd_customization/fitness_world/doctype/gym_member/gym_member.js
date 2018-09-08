@@ -22,7 +22,6 @@ frappe.ui.form.on('Gym Member', {
     frm.toggle_enable('customer', frm.doc.__islocal);
     if (!frm.doc.__islocal) {
       frm.trigger('render_address_and_contact');
-      frm.trigger('add_actions');
     } else {
       frappe.contacts.clear_address_and_contact(frm);
     }
@@ -75,12 +74,5 @@ frappe.ui.form.on('Gym Member', {
         });
       })
       .after($link_btn_contact);
-  },
-  add_actions: async function(frm) {
-    frm.add_custom_button('Make Sales Invoice', async function() {
-      frappe.new_doc('Sales Invoice', {
-        customer: frm.doc['customer'],
-      });
-    });
   },
 });
