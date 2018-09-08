@@ -49,9 +49,17 @@ def make_payment_entry(source_name):
     return pe
 
 
-def get_membership_by_subscription(subscription):
-    membership_name = frappe.db.get_value(
-        'Gym Membership', filters={'subscription': subscription}
+@frappe.whitelist()
+def get_item_price(item_code, price_list='Standard Selling'):
+    prices = frappe.db.sql(
+        """
+            SELECT price_list_rate
+            FROM `tabItem Price`
+            WHERE
+                price_list = '{price_list}' AND
+                item_code = '{item_code}'
+        """.format(item_code=item_code, price_list=price_list)
     )
-    return frappe.get_doc('Gym Membership', membership_name) \
-        if membership_name else None
+    if prices:
+        return prices[0][0]
+    return 0
