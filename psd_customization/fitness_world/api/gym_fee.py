@@ -7,6 +7,8 @@ import frappe
 from frappe.utils import add_days, cint, getdate
 from functools import partial
 from toolz import get, compose, first, merge
+from erpnext.accounts.doctype.payment_entry.payment_entry \
+    import get_payment_entry
 
 from psd_customization.fitness_world.api.gym_membership import get_end_date
 from psd_customization.utils.fp import pick
@@ -62,3 +64,11 @@ def get_items(membership, duration):
         )
     doc = frappe.get_doc('Gym Membership', membership)
     return map(update_amounts, doc.items)
+
+
+@frappe.whitelist()
+def make_payment_entry(source_name):
+    reference_invoice = frappe.db.get_value(
+        'Gym Fee', source_name, 'reference_invoice'
+    )
+    return get_payment_entry('Sales Invoice', reference_invoice)
