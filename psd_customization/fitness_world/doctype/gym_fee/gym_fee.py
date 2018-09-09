@@ -15,13 +15,14 @@ from psd_customization.fitness_world.api.gym_fee import (
 
 class GymFee(Document):
     def onload(self):
-        rounded_total, status = frappe.db.get_value(
-            'Sales Invoice',
-            self.reference_invoice,
-            ['rounded_total', 'status'],
-        )
-        self.set_onload('si_value', rounded_total)
-        self.set_onload('si_status', status)
+        if self.docstatus == 1:
+            rounded_total, status = frappe.db.get_value(
+                'Sales Invoice',
+                self.reference_invoice,
+                ['rounded_total', 'status'],
+            )
+            self.set_onload('si_value', rounded_total)
+            self.set_onload('si_status', status)
 
     def before_save(self):
         if not self.from_date:
