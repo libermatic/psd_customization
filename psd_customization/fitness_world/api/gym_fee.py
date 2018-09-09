@@ -18,11 +18,8 @@ from psd_customization.utils.fp import pick
 def get_next_from_date(membership):
     existing_fees = frappe.db.sql(
         """
-            SELECT to_date
-            FROM `tabGym Fee`
-            WHERE
-                docstatus = 1 AND
-                membership = '{membership}'
+            SELECT to_date FROM `tabGym Fee`
+            WHERE docstatus = 1 AND membership = '{membership}'
             ORDER BY to_date DESC
             LIMIT 1
         """.format(membership=membership),
@@ -72,3 +69,15 @@ def make_payment_entry(source_name):
         'Gym Fee', source_name, 'reference_invoice'
     )
     return get_payment_entry('Sales Invoice', reference_invoice)
+
+
+def get_fee_by_invoice(invoice):
+    invoices = frappe.db.sql(
+        """
+            SELECT name FROM `tabGym Fee`
+            WHERE docstatus = 1 AND reference_invoice = '{invoice}'
+        """.format(invoice=invoice),
+        as_dict=True,
+    )
+    get_name = compose(partial(get, 'name'), first)
+    return get_name(invoices) if invoices else None

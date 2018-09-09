@@ -4,6 +4,7 @@ import frappe
 from frappe.utils import formatdate
 from frappe.core.doctype.sms_settings.sms_settings \
     import get_contact_number, send_sms
+from psd_customization.fitness_world.api.gym_fee import get_fee_by_invoice
 
 from psd_customization.fitness_world.doctype.gym_sms_template.\
     gym_sms_template import get_sms_text
@@ -54,3 +55,8 @@ def on_submit(doc, method):
             if mobile_no and text:
                 # fix for json.loads casting to int during number validation
                 send_sms('"{}"'.format(mobile_no), text)
+def on_cancel(doc, method):
+    fee_name = get_fee_by_invoice(doc.name)
+    if fee_name:
+        fee = frappe.get_doc('Gym Fee', fee_name)
+        fee.cancel()
