@@ -79,5 +79,9 @@ def get_fee_by_invoice(invoice):
         """.format(invoice=invoice),
         as_dict=True,
     )
-    get_name = compose(partial(get, 'name'), first)
-    return get_name(invoices) if invoices else None
+    get_one_fee = compose(
+        partial(frappe.get_doc, 'Gym Fee'),
+        partial(get, 'name'),
+        first,
+    )
+    return get_one_fee(invoices) if invoices else None

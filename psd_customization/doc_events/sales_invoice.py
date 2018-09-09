@@ -56,7 +56,6 @@ def on_submit(doc, method):
                 # fix for json.loads casting to int during number validation
                 send_sms('"{}"'.format(mobile_no), text)
 def on_cancel(doc, method):
-    fee_name = get_fee_by_invoice(doc.name)
-    if fee_name:
-        fee = frappe.get_doc('Gym Fee', fee_name)
+    fee = get_fee_by_invoice(doc.name)
+    if fee:
         fee.cancel()
