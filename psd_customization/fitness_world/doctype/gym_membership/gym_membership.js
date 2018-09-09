@@ -37,7 +37,9 @@ frappe.ui.form.on('Gym Membership', {
       });
     }
   },
-  refresh: function(frm) {},
+  refresh: function(frm) {
+    frm.trigger('add_actions');
+  },
   set_queries: async function(frm) {
     const { message: settings = {} } = await frappe.db.get_value(
       'Gym Settings',
@@ -57,6 +59,18 @@ frappe.ui.form.on('Gym Membership', {
         'total_amount',
         items.reduce((a, { amount: x = 0 }) => a + x, 0)
       );
+    }
+  },
+
+  add_actions: function(frm) {
+    if (frm.doc.docstatus === 1) {
+      frm.add_custom_button('Make Payment', async function() {
+        frappe.model.open_mapped_doc({
+          frm,
+          method:
+            'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
+        });
+      });
     }
   },
 });
