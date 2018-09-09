@@ -229,7 +229,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-   "allow_on_submit": 0, 
+   "allow_on_submit": 1, 
    "bold": 0, 
    "collapsible": 0, 
    "columns": 0, 
@@ -540,7 +540,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-09-09 03:14:58.752941", 
+ "modified": "2018-09-09 23:27:44.140991", 
  "modified_by": "Administrator", 
  "module": "Fitness World", 
  "name": "Gym Fee", 

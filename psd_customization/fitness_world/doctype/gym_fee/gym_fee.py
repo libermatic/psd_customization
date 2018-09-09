@@ -30,6 +30,9 @@ class GymFee(Document):
             )
         self.total_amount = reduce(lambda a, x: a + x.amount, self.items, 0)
 
+    def before_submit(self):
+        self.status = 'Unpaid'
+
     def on_submit(self):
         self.reference_invoice = self.create_sales_invoice()
         self.save()
