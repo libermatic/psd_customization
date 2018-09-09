@@ -89,7 +89,7 @@ frappe.ui.form.on('Gym Fee', {
     );
   },
   add_actions: function(frm) {
-    if (frm.doc.docstatus === 1) {
+    if (frm.doc.docstatus === 1 && frm.doc['status'] === 'Unpaid') {
       frm.add_custom_button('Make Payment', async function() {
         frappe.model.open_mapped_doc({
           frm,
