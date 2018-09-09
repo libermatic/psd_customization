@@ -1,0 +1,23 @@
+<div class="row">
+  <div class="col-sm-4 psd-dash-detail">
+    <span class="indicator {{ invoices.color }}" />
+    <dl>
+      <dt>Invoices: All / Unpaid</dt>
+      <dd>{{ invoices.total }} / {{ invoices.unpaid }}</dd>
+    </dl>
+  </div>
+  <div class="col-sm-4 psd-dash-detail">
+    <span class="indicator {{ outstanding.color }}" />
+    <dl>
+      <dt>Current Outstanding</dt>
+      <dd>{{ outstanding.amount }}</dd>
+    </dl>
+  </div>
+  <div class="col-sm-4 psd-dash-detail">
+    <span class="indicator {{ validity.color }}" />
+    <dl>
+      <dt>Valid Till</dt>
+      <dd>{{ validity.end_date }}</dd>
+    </dl>
+  </div>
+</div>

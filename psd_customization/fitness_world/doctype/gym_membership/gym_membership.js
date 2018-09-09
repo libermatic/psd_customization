@@ -39,6 +39,7 @@ frappe.ui.form.on('Gym Membership', {
   },
   refresh: function(frm) {
     frm.trigger('add_actions');
+    frm.trigger('render_membership_details');
   },
   set_queries: async function(frm) {
     const { message: settings = {} } = await frappe.db.get_value(
@@ -61,7 +62,6 @@ frappe.ui.form.on('Gym Membership', {
       );
     }
   },
-
   add_actions: function(frm) {
     if (frm.doc.docstatus === 1) {
       frm.add_custom_button('Make Payment', async function() {
@@ -71,6 +71,40 @@ frappe.ui.form.on('Gym Membership', {
             'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
         });
       });
+    }
+  },
+  render_membership_details: function(frm) {
+    if (frm.doc.__onload) {
+      const {
+        total_invoices,
+        unpaid_invoices,
+        outstanding,
+        end_date,
+      } = frm.doc.__onload;
+      frm.dashboard.add_section(
+        frappe.render_template('gym_membership_dashboard', {
+          invoices: {
+            color: unpaid_invoices ? 'orange' : 'green',
+            total: total_invoices || '-',
+            unpaid: unpaid_invoices || '-',
+          },
+          outstanding: {
+            color: outstanding ? 'orange' : 'lightblue',
+            amount: outstanding
+              ? format_currency(
+                  outstanding,
+                  frappe.defaults.get_default('currency')
+                )
+              : '-',
+          },
+          validity: {
+            color: moment().isSameOrBefore(end_date || undefined)
+              ? 'lightblue'
+              : 'red',
+            end_date: end_date ? frappe.datetime.str_to_user(end_date) : '-',
+          },
+        })
+      );
     }
   },
 });
