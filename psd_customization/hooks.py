@@ -26,15 +26,10 @@ fixtures = [
             'Purchase Invoice Item-batch_no-in_list_view',
             'Purchase Invoice Item-batch_no-columns',
             'Sales Invoice-update_stock-default',
+            'Sales Invoice-subscription_section-collapsible',
             'Purchase Invoice-is_paid-default',
             'Purchase Invoice-update_stock-default',
         ]]],
-    },
-    {
-        'doctype': 'Custom Field',
-        'filters': [['name', 'in', [
-            'Subscription-reference_gym_member',
-        ]]]
     },
 ]
 
