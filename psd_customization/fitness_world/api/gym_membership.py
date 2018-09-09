@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import add_days, add_months, add_years
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
@@ -49,9 +50,35 @@ def make_payment_entry(source_name):
     return pe
 
 
-def get_membership_by_subscription(subscription):
-    membership_name = frappe.db.get_value(
-        'Gym Membership', filters={'subscription': subscription}
+def get_end_date(start_date, frequency, times=1):
+    if times < 1:
+        raise Exception('times cannot be less than 1')
+    if frequency == 'Daily':
+        return add_days(start_date, times - 1)
+    if frequency == 'Weekly':
+        return add_days(start_date, times * 7 - 1)
+    if frequency == 'Monthly':
+        return add_days(add_months(start_date, times), -1)
+    if frequency == 'Quaterly':
+        return add_days(add_months(start_date, times * 3), -1)
+    if frequency == 'Half-Yearly':
+        return add_days(add_months(start_date, times * 6), -1)
+    if frequency == 'Yearly':
+        return add_days(add_years(start_date, times), -1)
+    return None
+
+
+@frappe.whitelist()
+def get_item_price(item_code, price_list='Standard Selling'):
+    prices = frappe.db.sql(
+        """
+            SELECT price_list_rate
+            FROM `tabItem Price`
+            WHERE
+                price_list = '{price_list}' AND
+                item_code = '{item_code}'
+        """.format(item_code=item_code, price_list=price_list)
     )
-    return frappe.get_doc('Gym Membership', membership_name) \
-        if membership_name else None
+    if prices:
+        return prices[0][0]
+    return 0

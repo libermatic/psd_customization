@@ -26,9 +26,7 @@ class GymMember(Document):
     def on_update(self):
         if self.flags.is_new_doc:
             if not self.customer:
-                customer = create_customer(self)
-                self.customer = customer.name
-                self.save()
+                self.create_and_set_customer()
             self.fetch_and_link_doc('Address', get_default_address)
             self.fetch_and_link_doc('Contact', get_default_contact)
 
@@ -45,22 +43,23 @@ class GymMember(Document):
             })
             doc.save()
 
-
-def create_customer(doc):
-    field_kwargs = pick([
-        'email_id', 'mobile_no',
-        'address_line1', 'address_line2',
-        'city', 'state', 'pincode', 'country',
-    ], doc)
-    customer_group = frappe.get_value(
-        'Gym Settings', None, 'default_customer_group'
-    )
-    return frappe.get_doc(
-        merge({
-            'doctype': 'Customer',
-            'customer_name': doc.member_name,
-            'customer_type': 'Individual',
-            'customer_group': customer_group or 'All Customer Groups',
-            'territory': 'All Territories',
-        }, field_kwargs)
-    ).insert()
+    def create_and_set_customer(self):
+        field_kwargs = pick([
+            'email_id', 'mobile_no',
+            'address_line1', 'address_line2',
+            'city', 'state', 'pincode', 'country',
+        ], self)
+        customer_group = frappe.get_value(
+            'Gym Settings', None, 'default_customer_group'
+        )
+        customer = frappe.get_doc(
+            merge({
+                'doctype': 'Customer',
+                'customer_name': self.member_name,
+                'customer_type': 'Individual',
+                'customer_group': customer_group or 'All Customer Groups',
+                'territory': 'All Territories',
+            }, field_kwargs)
+        ).insert()
+        self.customer = customer.name
+        self.save()

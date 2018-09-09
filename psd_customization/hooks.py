@@ -26,15 +26,10 @@ fixtures = [
             'Purchase Invoice Item-batch_no-in_list_view',
             'Purchase Invoice Item-batch_no-columns',
             'Sales Invoice-update_stock-default',
+            'Sales Invoice-subscription_section-collapsible',
             'Purchase Invoice-is_paid-default',
             'Purchase Invoice-update_stock-default',
         ]]],
-    },
-    {
-        'doctype': 'Custom Field',
-        'filters': [['name', 'in', [
-            'Subscription-reference_gym_member',
-        ]]]
     },
 ]
 
@@ -42,8 +37,12 @@ fixtures = [
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/psd_customization/css/psd_customization.css"
+app_include_css = [
+    '/assets/css/psd_customization.css',
+    '/assets/psd_customization/css/dashboard.css',
+]
 app_include_js = [
+    '/assets/js/psd_customization.min.js',
     '/assets/psd_customization/js/naming_series.js',
     '/assets/psd_customization/js/gym_member_quick_entry.js',
 ]
@@ -56,9 +55,7 @@ app_include_js = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-    'Subscription': 'public/js/subscription.js',
-}
+# doctype_js = {'doctype': 'public/js/doctype.js'}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -117,13 +114,8 @@ doc_events = {
         'before_save': 'psd_customization.doc_events.batch.before_save',
         'autoname': 'psd_customization.doc_events.batch.autoname',
     },
-    'Subscription': {
-        'on_submit': 'psd_customization.doc_events.subscription.on_submit',
-        'on_update_after_submit':
-            'psd_customization.doc_events.subscription.on_update_after_submit',
-    },
     'Sales Invoice': {
-        'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
+        'on_cancel': 'psd_customization.doc_events.sales_invoice.on_cancel',
     },
     'Payment Entry': {
         'on_submit':
