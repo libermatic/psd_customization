@@ -63,14 +63,41 @@ frappe.ui.form.on('Gym Membership', {
     }
   },
   add_actions: function(frm) {
+    function get_status_props(status) {
+      if (status === 'Active') {
+        return {
+          label: 'Stop',
+          method: 'psd_customization.fitness_world.api.gym_membership.stop',
+        };
+      }
+      if (status === 'Stopped') {
+        return {
+          label: 'Resume',
+          method: 'psd_customization.fitness_world.api.gym_membership.resume',
+        };
+      }
+      return null;
+    }
     if (frm.doc.docstatus === 1) {
-      frm.add_custom_button('Make Payment', async function() {
-        frappe.model.open_mapped_doc({
-          frm,
-          method:
-            'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
+      const { label, method } = get_status_props(frm.doc['status']) || {};
+      if (method) {
+        frm.add_custom_button(label, async function() {
+          await frappe.call({ method, args: { name: frm.doc['name'] } });
+          frm.reload_doc();
         });
-      });
+      }
+      frm
+        .add_custom_button('Make Payment', function() {
+          frappe.model.open_mapped_doc({
+            frm,
+            method:
+              'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
+          });
+        })
+        .toggleClass(
+          'btn-primary',
+          frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
+        );
     }
   },
   render_membership_details: function(frm) {

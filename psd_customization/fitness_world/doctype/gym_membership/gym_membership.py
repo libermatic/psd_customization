@@ -43,3 +43,6 @@ class GymMembership(Document):
         paid_fees = filter(lambda x: x.get('status') == 'Paid', all_fees)
         end_date = get('end_date', first(paid_fees)) if paid_fees else None
         self.set_onload('end_date', end_date)
+
+    def before_submit(self):
+        self.status = 'Active'

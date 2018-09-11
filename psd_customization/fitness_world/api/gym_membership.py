@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import add_days, add_months, add_years
+from frappe.utils import add_days, add_months, add_years, today
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
@@ -82,3 +82,21 @@ def get_item_price(item_code, price_list='Standard Selling'):
     if prices:
         return prices[0][0]
     return 0
+
+
+@frappe.whitelist()
+def stop(name, end_date=today()):
+    membership = frappe.get_doc('Gym Membership', name)
+    if membership:
+        membership.status = 'Stopped'
+        membership.end_date = end_date
+        membership.save()
+
+
+@frappe.whitelist()
+def resume(name):
+    membership = frappe.get_doc('Gym Membership', name)
+    if membership:
+        membership.status = 'Active'
+        membership.end_date = None
+        membership.save()
