@@ -37,6 +37,8 @@ class GymMembership(Document):
         self.set_onload('end_date', end_date)
 
     def validate(self):
+        if not self.items:
+            frappe.throw('Services cannot be empty.')
         existing_memberships = frappe.db.sql(
             """
                 SELECT name from `tabGym Membership`
@@ -52,6 +54,9 @@ class GymMembership(Document):
                     get('name', first(existing_memberships))
                 )
             )
+
+    def before_save(self):
+        self.total_amount = reduce(lambda a, x: a + x.amount, self.items, 0)
 
     def before_submit(self):
         self.status = 'Active'
