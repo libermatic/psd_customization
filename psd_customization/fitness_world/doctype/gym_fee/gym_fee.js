@@ -92,14 +92,17 @@ frappe.ui.form.on('Gym Fee', {
     );
   },
   add_actions: function(frm) {
-    if (frm.doc.docstatus === 1 && frm.doc['status'] === 'Unpaid') {
-      frm.add_custom_button('Make Payment', async function() {
-        frappe.model.open_mapped_doc({
-          frm,
-          method:
-            'psd_customization.fitness_world.api.gym_fee.make_payment_entry',
-        });
-      });
+    if (frm.doc.docstatus === 1) {
+      frm
+        .add_custom_button('Make Payment', async function() {
+          frappe.model.open_mapped_doc({
+            frm,
+            method:
+              'psd_customization.fitness_world.api.gym_fee.make_payment_entry',
+          });
+        })
+        .addClass('btn-primary')
+        .toggleClass('disabled', frm.doc['status'] === 'Paid');
     }
   },
   render_fee_details: function(frm) {
