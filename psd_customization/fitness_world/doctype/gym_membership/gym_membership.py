@@ -60,3 +60,4 @@ class GymMembership(Document):
 
     def before_submit(self):
         self.status = 'Active'
+        self.auto_repeat = 'Yes'

@@ -64,26 +64,28 @@ frappe.ui.form.on('Gym Membership', {
     function get_status_props(status) {
       if (status === 'Active') {
         return {
-          label: 'Stop',
+          label: 'Stop Membership',
           method: 'psd_customization.fitness_world.api.gym_membership.stop',
         };
       }
       if (status === 'Stopped') {
         return {
-          label: 'Resume',
+          label: 'Resume Membership',
           method: 'psd_customization.fitness_world.api.gym_membership.resume',
         };
       }
       return null;
     }
+    function get_repeat_props(auto_repeat) {
+      return {
+        label:
+          auto_repeat === 'Yes' ? 'Disable Auto-Repeat' : 'Enable Auto-Repeat',
+        method:
+          'psd_customization.fitness_world.api.gym_membership.set_auto_repeat',
+        args: { auto_repeat: auto_repeat === 'Yes' ? 'No' : 'Yes' },
+      };
+    }
     if (frm.doc.docstatus === 1) {
-      const { label, method } = get_status_props(frm.doc['status']) || {};
-      if (method) {
-        frm.add_custom_button(label, async function() {
-          await frappe.call({ method, args: { name: frm.doc['name'] } });
-          frm.reload_doc();
-        });
-      }
       frm
         .add_custom_button('Make Payment', function() {
           frappe.model.open_mapped_doc({
@@ -96,6 +98,32 @@ frappe.ui.form.on('Gym Membership', {
           'btn-primary',
           frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
         );
+      const status_props = get_status_props(frm.doc['status']);
+      if (status_props) {
+        frm.add_custom_button(
+          status_props.label,
+          async function() {
+            await frappe.call({
+              method: status_props.method,
+              args: { name: frm.doc['name'] },
+            });
+            frm.reload_doc();
+          },
+          'Manage'
+        );
+      }
+      const repeat_props = get_repeat_props(frm.doc['auto_repeat']);
+      frm.add_custom_button(
+        repeat_props.label,
+        async function() {
+          await frappe.call({
+            method: repeat_props.method,
+            args: { name: frm.doc['name'], ...repeat_props.args },
+          });
+          frm.reload_doc();
+        },
+        'Manage'
+      );
     }
   },
   render_membership_details: function(frm) {
@@ -106,6 +134,7 @@ frappe.ui.form.on('Gym Membership', {
         outstanding,
         end_date,
       } = frm.doc.__onload;
+      const { auto_repeat } = frm.doc;
       frm.dashboard.add_section(
         frappe.render_template('gym_membership_dashboard', {
           invoices: {
@@ -127,6 +156,10 @@ frappe.ui.form.on('Gym Membership', {
               ? 'lightblue'
               : 'red',
             end_date: end_date ? frappe.datetime.str_to_user(end_date) : '-',
+          },
+          repeat: {
+            color: auto_repeat === 'Yes' ? 'lightblue' : 'darkgrey',
+            text: { Yes: 'Auto', No: 'Manual' }[auto_repeat] || '-',
           },
         })
       );

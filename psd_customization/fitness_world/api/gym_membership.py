@@ -100,3 +100,11 @@ def resume(name):
         membership.status = 'Active'
         membership.end_date = None
         membership.save()
+
+
+@frappe.whitelist()
+def set_auto_repeat(name, auto_repeat):
+    membership = frappe.get_doc('Gym Membership', name)
+    if membership:
+        membership.auto_repeat = auto_repeat
+        membership.save()
