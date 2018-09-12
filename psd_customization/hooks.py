@@ -135,23 +135,14 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"psd_customization.tasks.all"
-# 	],
-# 	"daily": [
-# 		"psd_customization.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"psd_customization.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"psd_customization.tasks.weekly"
-# 	]
-# 	"monthly": [
-# 		"psd_customization.tasks.monthly"
-# 	]
-# }
+scheduler_events = {
+    'daily': ['psd_customization.tasks.daily'],
+}
+
+# 	"all": ["psd_customization.tasks.all"],
+# 	"hourly": ["psd_customization.tasks.hourly"],
+# 	"weekly": ["psd_customization.tasks.weekly"]
+# 	"monthly": ["psd_customization.tasks.monthly"]
 
 # Testing
 # -------

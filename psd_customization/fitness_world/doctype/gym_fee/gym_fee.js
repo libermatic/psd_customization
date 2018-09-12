@@ -3,9 +3,14 @@
 
 frappe.ui.form.on('Gym Fee', {
   setup: function(frm) {
-    frm.set_query('membership', () => ({
-      filters: { docstatus: 1 },
-    }));
+    frm.set_query('membership', () => ({ filters: { docstatus: 1 } }));
+    frappe.meta.get_docfield(
+      'Gym Membership Item',
+      'one_time',
+      frm.doc['name']
+    ).in_list_view = 0;
+  },
+  refresh: function(frm) {
     frappe.ui.form.on('Gym Membership Item', {
       item_code: async function(frm, cdt, cdn) {
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
@@ -36,8 +41,6 @@ frappe.ui.form.on('Gym Fee', {
         frm.trigger('calculate_total');
       },
     });
-  },
-  refresh: function(frm) {
     frm.trigger('add_actions');
     frm.trigger('render_fee_details');
   },
@@ -89,14 +92,17 @@ frappe.ui.form.on('Gym Fee', {
     );
   },
   add_actions: function(frm) {
-    if (frm.doc.docstatus === 1 && frm.doc['status'] === 'Unpaid') {
-      frm.add_custom_button('Make Payment', async function() {
-        frappe.model.open_mapped_doc({
-          frm,
-          method:
-            'psd_customization.fitness_world.api.gym_fee.make_payment_entry',
-        });
-      });
+    if (frm.doc.docstatus === 1) {
+      frm
+        .add_custom_button('Make Payment', async function() {
+          frappe.model.open_mapped_doc({
+            frm,
+            method:
+              'psd_customization.fitness_world.api.gym_fee.make_payment_entry',
+          });
+        })
+        .addClass('btn-primary')
+        .toggleClass('disabled', frm.doc['status'] === 'Paid');
     }
   },
   render_fee_details: function(frm) {

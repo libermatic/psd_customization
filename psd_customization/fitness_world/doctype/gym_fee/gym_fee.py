@@ -65,9 +65,10 @@ class GymFee(Document):
                 'qty': item.qty,
                 'rate': item.rate,
             })
-        si.taxes_and_charges = frappe.db.get_value(
-            'Gym Settings', None, 'default_tax_template',
-        )
+        settings = frappe.get_single('Gym Settings')
+        si.company = settings.default_company
+        si.naming_series = settings.naming_series
+        si.taxes_and_charges = settings.default_tax_template
         si.set_taxes()
         si.append('payment_schedule', {
             'due_date': max(

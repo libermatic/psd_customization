@@ -14,9 +14,8 @@ from psd_customization.fitness_world.api.gym_membership import get_end_date
 from psd_customization.utils.fp import pick
 
 
-@frappe.whitelist()
-def get_next_from_date(membership):
-    existing_fees = frappe.db.sql(
+def _existing_fees(membership):
+    return frappe.db.sql(
         """
             SELECT to_date FROM `tabGym Fee`
             WHERE docstatus = 1 AND membership = '{membership}'
@@ -25,6 +24,11 @@ def get_next_from_date(membership):
         """.format(membership=membership),
         as_dict=True,
     )
+
+
+@frappe.whitelist()
+def get_next_from_date(membership):
+    existing_fees = _existing_fees(membership)
     if existing_fees:
         return compose(
             partial(add_days, days=1),
@@ -59,8 +63,14 @@ def get_items(membership, duration):
                 'amount': row.amount * cint(duration),
             },
         )
+
     doc = frappe.get_doc('Gym Membership', membership)
-    return map(update_amounts, doc.items)
+    return map(
+        update_amounts,
+        filter(
+            lambda x: not x.get('one_time'), doc.items
+        ) if _existing_fees(membership) else doc.items
+    )
 
 
 @frappe.whitelist()
@@ -85,3 +95,13 @@ def get_fee_by_invoice(invoice):
         first,
     )
     return get_one_fee(invoices) if invoices else None
+
+
+def make_gym_fee(membership, posting_date, do_not_submit=True):
+    fee = frappe.new_doc('Gym Fee')
+    fee.membership = membership
+    fee.posting_date = posting_date
+    fee.insert()
+    if not do_not_submit:
+        fee.submit()
+    return fee
