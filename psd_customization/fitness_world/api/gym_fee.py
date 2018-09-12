@@ -95,3 +95,13 @@ def get_fee_by_invoice(invoice):
         first,
     )
     return get_one_fee(invoices) if invoices else None
+
+
+def make_gym_fee(membership, posting_date, do_not_submit=True):
+    fee = frappe.new_doc('Gym Fee')
+    fee.membership = membership
+    fee.posting_date = posting_date
+    fee.insert()
+    if not do_not_submit:
+        fee.submit()
+    return fee
