@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import add_days, add_months, add_years, today
+from frappe.utils import add_days, add_months, add_years, today, getdate
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
@@ -85,11 +85,11 @@ def get_item_price(item_code, price_list='Standard Selling'):
 
 
 @frappe.whitelist()
-def stop(name, end_date=today()):
+def stop(name, end_date=None):
     membership = frappe.get_doc('Gym Membership', name)
     if membership:
         membership.status = 'Stopped'
-        membership.end_date = end_date
+        membership.end_date = end_date or today()
         membership.save()
 
 
@@ -108,3 +108,26 @@ def set_auto_repeat(name, auto_repeat):
     if membership:
         membership.auto_repeat = auto_repeat
         membership.save()
+
+
+def generate_new_fees_on(posting_date):
+    from psd_customization.fitness_world.api.gym_fee import (
+        get_next_from_date, make_gym_fee
+    )
+    memberships = pluck('name', frappe.get_all(
+        'Gym Membership',
+        filters={
+            'docstatus': 1,
+            'status': 'Active',
+            'auto_repeat': 'Yes',
+        }
+    ))
+    do_not_submit = not frappe.db.get_value(
+        'Gym Settings', None, 'submit_auto_fees'
+    )
+    for membership in memberships:
+        if get_next_from_date(membership) == getdate(posting_date):
+            fee = make_gym_fee(membership, posting_date, do_not_submit)
+            frappe.logger(__name__).debug(
+                'Gym Fee {} ({}) generated'.format(fee.name, posting_date)
+            )
