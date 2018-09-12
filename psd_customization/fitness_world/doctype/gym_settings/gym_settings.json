@@ -243,7 +243,7 @@
    "label": "Series", 
    "length": 0, 
    "no_copy": 0, 
-   "options": "[Select]\n", 
+   "options": "[Select]", 
    "permlevel": 0, 
    "precision": "", 
    "print_hide": 0, 
