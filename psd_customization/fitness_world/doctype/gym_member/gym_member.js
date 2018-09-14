@@ -2,14 +2,10 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Gym Member', {
+  setup: function(frm) {
+    frm.trigger('set_queries');
+  },
   refresh: function(frm) {
-    frm.set_query('emergency_contact', function(doc) {
-      return {
-        query:
-          'psd_customization.fitness_world.api.gym_member.get_member_contacts',
-        filters: { member: doc.name },
-      };
-    });
     frappe.dynamic_link = {
       doc: frm.doc,
       fieldname: 'name',
@@ -25,6 +21,17 @@ frappe.ui.form.on('Gym Member', {
     } else {
       frappe.contacts.clear_address_and_contact(frm);
     }
+  },
+  set_queries: function(frm) {
+    ['emergency_contact', 'primary_contact'].forEach(contact => {
+      frm.set_query(contact, function(doc) {
+        return {
+          query:
+            'psd_customization.fitness_world.api.gym_member.get_member_contacts',
+          filters: { member: doc.name },
+        };
+      });
+    });
   },
   render_address_and_contact: function(frm) {
     frappe.contacts.render_address_and_contact(frm);
