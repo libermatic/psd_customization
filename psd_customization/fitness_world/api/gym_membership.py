@@ -23,10 +23,13 @@ def _make_new_pe(membership):
 @frappe.whitelist()
 def make_payment_entry(source_name):
     membership = frappe.get_doc('Gym Membership', source_name)
+    customer = frappe.db.get_value('Gym Member', membership.member, 'customer')
+    if not customer:
+        frappe.throw('Unknown customer.')
     invoices = frappe.get_all(
         'Sales Invoice',
         filters=[
-            ['customer', '=', membership.customer],
+            ['customer', '=', customer],
             ['docstatus', '=', '1'],
             ['status', '!=', 'Paid'],
         ],
