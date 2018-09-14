@@ -53,10 +53,6 @@ def make_payment_entry(source_name):
 def get_end_date(start_date, frequency, times=1):
     if times < 1:
         raise Exception('times cannot be less than 1')
-    if frequency == 'Daily':
-        return add_days(start_date, times - 1)
-    if frequency == 'Weekly':
-        return add_days(start_date, times * 7 - 1)
     if frequency == 'Monthly':
         return add_days(add_months(start_date, times), -1)
     if frequency == 'Quaterly':
