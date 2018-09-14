@@ -5,9 +5,9 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from toolz import count, first, pluck, get
+from toolz import count, first, pluck, get, compose
 import operator
-from functools import reduce
+from functools import reduce, partial
 
 
 class GymMembership(Document):
@@ -60,4 +60,30 @@ class GymMembership(Document):
 
     def before_submit(self):
         self.status = 'Active'
-        self.auto_repeat = 'Yes'
+        if self.frequency == 'Lifetime':
+            self.auto_repeat = 'No'
+        else:
+            self.auto_repeat = 'Yes'
+            self.expiry_date = self.start_date
+
+    def update_expiry_date(self):
+        try:
+            self.expiry_date = compose(
+                partial(get, 'to_date'),
+                first,
+            )(
+                frappe.db.sql(
+                    """
+                        SELECT to_date FROM `tabGym Fee`
+                        WHERE docstatus = 1 AND
+                        membership = '{membership}' AND
+                        status = 'Paid'
+                        ORDER BY to_date DESC
+                        LIMIT 1
+                    """.format(membership=self.name),
+                    as_dict=True,
+                )
+            )
+            self.save()
+        except StopIteration as e:
+            raise e

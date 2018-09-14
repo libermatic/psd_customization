@@ -47,6 +47,10 @@ class GymFee(Document):
         self.reference_invoice = self.create_sales_invoice()
         self.save()
 
+    def on_update_after_submit(self):
+        membership = frappe.get_doc('Gym Membership', self.membership)
+        membership.update_expiry_date()
+
     def on_cancel(self):
         si = frappe.get_doc('Sales Invoice', self.reference_invoice)
         si.cancel()
