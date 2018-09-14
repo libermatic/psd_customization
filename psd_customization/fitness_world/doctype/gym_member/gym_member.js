@@ -18,6 +18,7 @@ frappe.ui.form.on('Gym Member', {
     frm.toggle_enable('customer', frm.doc.__islocal);
     if (!frm.doc.__islocal) {
       frm.trigger('render_address_and_contact');
+      frm.trigger('render_membership_details');
     } else {
       frappe.contacts.clear_address_and_contact(frm);
     }
@@ -81,5 +82,44 @@ frappe.ui.form.on('Gym Member', {
         });
       })
       .after($link_btn_contact);
+  },
+  render_membership_details: function(frm) {
+    if (frm.doc.__onload && frm.doc.__onload['membership_details']) {
+      const {
+        total_invoices,
+        unpaid_invoices,
+        outstanding,
+        end_date,
+      } = frm.doc.__onload['membership_details'];
+      const { auto_renew } = frm.doc;
+      frm.dashboard.add_section(
+        frappe.render_template('gym_member_dashboard', {
+          invoices: {
+            color: unpaid_invoices ? 'orange' : 'green',
+            total: total_invoices || '-',
+            unpaid: unpaid_invoices || '-',
+          },
+          outstanding: {
+            color: outstanding ? 'orange' : 'lightblue',
+            amount: outstanding
+              ? format_currency(
+                  outstanding,
+                  frappe.defaults.get_default('currency')
+                )
+              : '-',
+          },
+          validity: {
+            color: moment().isSameOrBefore(end_date || undefined)
+              ? 'lightblue'
+              : 'red',
+            end_date: end_date ? frappe.datetime.str_to_user(end_date) : '-',
+          },
+          renew: {
+            color: auto_renew === 'Yes' ? 'lightblue' : 'darkgrey',
+            text: { Yes: 'Auto', No: 'Manual' }[auto_renew] || '-',
+          },
+        })
+      );
+    }
   },
 });

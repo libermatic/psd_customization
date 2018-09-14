@@ -8,7 +8,7 @@ def get_data():
         'fieldname': 'member',
         'transactions': [
             {
-                'label': 'Reference',
+                'label': 'Transactions',
                 'items': ['Gym Membership'],
             },
         ],

@@ -10,12 +10,15 @@ from frappe.contacts.address_and_contact \
 from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from psd_customization.utils.fp import pick, compact
-from toolz import merge
+import operator
+from functools import reduce
+from toolz import merge, count, first, pluck, get
 
 
 class GymMember(Document):
     def onload(self):
         load_address_and_contact(self)
+        self.load_membership_details()
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
@@ -32,6 +35,40 @@ class GymMember(Document):
 
     def on_trash(self):
         delete_contact_and_address('Gym Member', self.name)
+
+    def load_membership_details(self):
+        all_memberships = frappe.db.sql(
+            """
+                SELECT
+                    si.rounded_total AS amount,
+                    ms.status AS status,
+                    ms.to_date AS end_date
+                FROM `tabGym Membership` AS ms, `tabSales Invoice` AS si
+                WHERE
+                    ms.docstatus = 1 AND
+                    ms.member = '{member}' AND
+                    ms.reference_invoice = si.name
+                ORDER BY ms.to_date DESC
+            """.format(member=self.name),
+            as_dict=True,
+        )
+        unpaid_memberships = filter(
+            lambda x: x.get('status') == 'Unpaid', all_memberships
+        )
+        outstanding = reduce(
+            operator.add, pluck('amount', unpaid_memberships), 0
+        )
+        paid_memberships = filter(
+            lambda x: x.get('status') == 'Paid', all_memberships
+        )
+        end_date = get('end_date', first(paid_memberships)) \
+            if paid_memberships else None
+        self.set_onload('membership_details', {
+            'total_invoices': count(all_memberships),
+            'unpaid_invoices': count(unpaid_memberships),
+            'outstanding': outstanding,
+            'end_date': end_date,
+        })
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)
