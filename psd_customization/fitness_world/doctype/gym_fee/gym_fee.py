@@ -48,9 +48,8 @@ class GymFee(Document):
         self.save()
 
     def on_cancel(self):
-        if self.flags.prev_si:
-            si = frappe.get_doc('Sales Invoice', self.flags.prev_si)
-            si.cancel()
+        si = frappe.get_doc('Sales Invoice', self.reference_invoice)
+        si.cancel()
 
     def create_sales_invoice(self):
         si = frappe.new_doc('Sales Invoice')
