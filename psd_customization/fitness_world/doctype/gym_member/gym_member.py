@@ -25,11 +25,15 @@ class GymMember(Document):
         self.member_name = ' '.join(
             compact([self.first_name, self.last_name])
         )
+        if not self.status:
+            self.status = 'Active'
+        if not self.auto_renew:
+            self.auto_renew = 'Yes'
+        if not self.customer:
+            self.customer = self.create_customer()
 
     def on_update(self):
         if self.flags.is_new_doc:
-            if not self.customer:
-                self.create_and_set_customer()
             self.fetch_and_link_doc('Address', get_default_address)
             self.fetch_and_link_doc('Contact', get_default_contact)
 
@@ -80,7 +84,7 @@ class GymMember(Document):
             })
             doc.save()
 
-    def create_and_set_customer(self):
+    def create_customer(self):
         field_kwargs = pick([
             'email_id', 'mobile_no',
             'address_line1', 'address_line2',
@@ -98,5 +102,4 @@ class GymMember(Document):
                 'territory': 'All Territories',
             }, field_kwargs)
         ).insert()
-        self.customer = customer.name
-        self.save()
+        return customer.name
