@@ -19,6 +19,7 @@ frappe.ui.form.on('Gym Member', {
     if (!frm.doc.__islocal) {
       frm.trigger('render_address_and_contact');
       frm.trigger('render_membership_details');
+      frm.trigger('add_actions');
     } else {
       frappe.contacts.clear_address_and_contact(frm);
     }
@@ -121,5 +122,69 @@ frappe.ui.form.on('Gym Member', {
         })
       );
     }
+  },
+
+  add_actions: function(frm) {
+    function get_status_props(status) {
+      if (status === 'Active') {
+        return {
+          label: 'Stop Membership',
+          method: 'psd_customization.fitness_world.api.gym_member.stop',
+        };
+      }
+      if (status === 'Stopped' || status === 'Expired') {
+        return {
+          label: 'Resume Membership',
+          method: 'psd_customization.fitness_world.api.gym_member.resume',
+        };
+      }
+      return null;
+    }
+    function get_renew_props(auto_renew) {
+      return {
+        label:
+          auto_renew === 'Yes' ? 'Disable Auto-Renew' : 'Enable Auto-Renew',
+        method: 'psd_customization.fitness_world.api.gym_member.set_auto_renew',
+        args: { auto_renew: auto_renew === 'Yes' ? 'No' : 'Yes' },
+      };
+    }
+    frm
+      .add_custom_button('Make Payment', function() {
+        frappe.model.open_mapped_doc({
+          frm,
+          method:
+            'psd_customization.fitness_world.api.gym_member.make_payment_entry',
+        });
+      })
+      .toggleClass(
+        'btn-primary',
+        frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
+      );
+    const status_props = get_status_props(frm.doc['status']);
+    if (status_props) {
+      frm.add_custom_button(
+        status_props.label,
+        async function() {
+          await frappe.call({
+            method: status_props.method,
+            args: { name: frm.doc['name'] },
+          });
+          frm.reload_doc();
+        },
+        'Manage'
+      );
+    }
+    const renew_props = get_renew_props(frm.doc['auto_renew']);
+    frm.add_custom_button(
+      renew_props.label,
+      async function() {
+        await frappe.call({
+          method: renew_props.method,
+          args: { name: frm.doc['name'], ...renew_props.args },
+        });
+        frm.reload_doc();
+      },
+      'Manage'
+    );
   },
 });
