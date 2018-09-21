@@ -9,9 +9,8 @@ from frappe.model.document import Document
 from functools import reduce
 
 from psd_customization.fitness_world.api.gym_membership import (
-    get_next_from_date, get_to_date
+    get_next_from_date, get_to_date, get_items
 )
-from psd_customization.fitness_world.api.gym_membership_plan import get_items
 
 
 class GymMembership(Document):
