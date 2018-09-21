@@ -11,8 +11,8 @@ from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from psd_customization.utils.fp import pick, compact
 import operator
-from functools import reduce
-from toolz import merge, count, first, pluck, get
+from functools import reduce, partial
+from toolz import merge, count, first, pluck, get, compose
 
 
 class GymMember(Document):
@@ -103,3 +103,25 @@ class GymMember(Document):
             }, field_kwargs)
         ).insert()
         return customer.name
+
+    def update_expiry_date(self):
+        try:
+            self.expiry_date = compose(
+                partial(get, 'to_date'),
+                first,
+            )(
+                frappe.db.sql(
+                    """
+                        SELECT to_date FROM `tabGym Membership`
+                        WHERE docstatus = 1 AND
+                            member = '{member}' AND
+                            status = 'Paid'
+                        ORDER BY to_date DESC
+                        LIMIT 1
+                    """.format(member=self.name),
+                    as_dict=True,
+                )
+            )
+            self.save()
+        except StopIteration:
+            pass
