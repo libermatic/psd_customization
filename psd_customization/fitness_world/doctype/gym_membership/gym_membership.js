@@ -39,7 +39,34 @@ frappe.ui.form.on('Gym Membership', {
       },
     });
     frm.trigger('add_actions');
-    frm.trigger('render_membership_details');
+  },
+  member: async function(frm) {
+    if (frm.doc['member']) {
+      const [{ message: member }, { message: from_date }] = await Promise.all([
+        frappe.db.get_value('Gym Member', frm.doc['member'], 'membership_plan'),
+        frappe.call({
+          method:
+            'psd_customization.fitness_world.api.gym_membership.get_next_from_date',
+          args: { member: frm.doc['member'] },
+        }),
+      ]);
+      frm.set_value('membership_plan', member['membership_plan']);
+      frm.set_value('from_date', from_date || frappe.datetime.get_today());
+    }
+  },
+  membership_plan: async function(frm) {
+    if (frm.doc['membership_plan']) {
+      frm.clear_table('items');
+      const { message: plan = [] } = await frappe.call({
+        method: 'psd_customization.fitness_world.api.gym_membership.get_items',
+        args: {
+          member: frm.doc['member'],
+          membership_plan: frm.doc['membership_plan'],
+        },
+      });
+      plan.forEach(item => frm.add_child('items', item));
+      frm.refresh_field('items');
+    }
   },
   set_queries: async function(frm) {
     const { message: settings = {} } = await frappe.db.get_value(
@@ -61,30 +88,6 @@ frappe.ui.form.on('Gym Membership', {
     );
   },
   add_actions: function(frm) {
-    function get_status_props(status) {
-      if (status === 'Active') {
-        return {
-          label: 'Stop Membership',
-          method: 'psd_customization.fitness_world.api.gym_membership.stop',
-        };
-      }
-      if (status === 'Stopped') {
-        return {
-          label: 'Resume Membership',
-          method: 'psd_customization.fitness_world.api.gym_membership.resume',
-        };
-      }
-      return null;
-    }
-    function get_repeat_props(auto_repeat) {
-      return {
-        label:
-          auto_repeat === 'Yes' ? 'Disable Auto-Repeat' : 'Enable Auto-Repeat',
-        method:
-          'psd_customization.fitness_world.api.gym_membership.set_auto_repeat',
-        args: { auto_repeat: auto_repeat === 'Yes' ? 'No' : 'Yes' },
-      };
-    }
     if (frm.doc.docstatus === 1) {
       frm
         .add_custom_button('Make Payment', function() {
@@ -94,75 +97,8 @@ frappe.ui.form.on('Gym Membership', {
               'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
           });
         })
-        .toggleClass(
-          'btn-primary',
-          frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
-        );
-      const status_props = get_status_props(frm.doc['status']);
-      if (status_props) {
-        frm.add_custom_button(
-          status_props.label,
-          async function() {
-            await frappe.call({
-              method: status_props.method,
-              args: { name: frm.doc['name'] },
-            });
-            frm.reload_doc();
-          },
-          'Manage'
-        );
-      }
-      const repeat_props = get_repeat_props(frm.doc['auto_repeat']);
-      frm.add_custom_button(
-        repeat_props.label,
-        async function() {
-          await frappe.call({
-            method: repeat_props.method,
-            args: { name: frm.doc['name'], ...repeat_props.args },
-          });
-          frm.reload_doc();
-        },
-        'Manage'
-      );
-    }
-  },
-  render_membership_details: function(frm) {
-    if (frm.doc.docstatus > 0 && frm.doc.__onload) {
-      const {
-        total_invoices,
-        unpaid_invoices,
-        outstanding,
-        end_date,
-      } = frm.doc.__onload;
-      const { auto_repeat } = frm.doc;
-      frm.dashboard.add_section(
-        frappe.render_template('gym_membership_dashboard', {
-          invoices: {
-            color: unpaid_invoices ? 'orange' : 'green',
-            total: total_invoices || '-',
-            unpaid: unpaid_invoices || '-',
-          },
-          outstanding: {
-            color: outstanding ? 'orange' : 'lightblue',
-            amount: outstanding
-              ? format_currency(
-                  outstanding,
-                  frappe.defaults.get_default('currency')
-                )
-              : '-',
-          },
-          validity: {
-            color: moment().isSameOrBefore(end_date || undefined)
-              ? 'lightblue'
-              : 'red',
-            end_date: end_date ? frappe.datetime.str_to_user(end_date) : '-',
-          },
-          repeat: {
-            color: auto_repeat === 'Yes' ? 'lightblue' : 'darkgrey',
-            text: { Yes: 'Auto', No: 'Manual' }[auto_repeat] || '-',
-          },
-        })
-      );
+        .addClass('btn-primary')
+        .toggleClass('disabled', frm.doc['status'] === 'Paid');
     }
   },
 });
