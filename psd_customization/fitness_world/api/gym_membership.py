@@ -4,53 +4,77 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import add_days, add_months, add_years, today, getdate
+from frappe.utils import add_days, add_months, getdate
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
-from toolz import pluck, compose, first, drop
+from toolz import pluck, compose, get, first
 
-
-def _make_new_pe(membership):
-    pe = frappe.new_doc('Payment Entry')
-    pe.payment_type = 'Receive'
-    pe.party_type = 'Customer'
-    pe.party = membership.customer
-    pe.party_name = membership.member_name
-    return pe
+from psd_customization.utils.fp import pick
 
 
 @frappe.whitelist()
 def make_payment_entry(source_name):
-    membership = frappe.get_doc('Gym Membership', source_name)
-    customer = frappe.db.get_value('Gym Member', membership.member, 'customer')
-    if not customer:
-        frappe.throw('Unknown customer.')
-    invoices = frappe.get_all(
-        'Sales Invoice',
-        filters=[
-            ['customer', '=', customer],
-            ['docstatus', '=', '1'],
-            ['status', '!=', 'Paid'],
-        ],
+    reference_invoice = frappe.db.get_value(
+        'Gym Membership', source_name, 'reference_invoice'
     )
-    pes = compose(
-        partial(map, lambda x: get_payment_entry('Sales Invoice', x)),
-        partial(pluck, 'name'),
-    )(invoices)
-    pe = first(pes) if pes else _make_new_pe(membership)
-    for entry in drop(1, pes):
-        pe.set(
-            'paid_amount', pe.paid_amount + entry.paid_amount
-        )
-        pe.set(
-            'received_amount', pe.received_amount + entry.received_amount
-        )
-        for ref in entry.references:
-            pe.append('references', ref)
-    if pe.party_account:
-        pe.set_amounts()
-    return pe
+    return get_payment_entry('Sales Invoice', reference_invoice)
+
+
+def _existing_membership(member):
+    return frappe.db.sql(
+        """
+            SELECT to_date FROM `tabGym Membership`
+            WHERE docstatus = 1 AND member = '{member}'
+            ORDER BY to_date DESC
+            LIMIT 1
+        """.format(member=member),
+        as_dict=True,
+    )
+
+
+@frappe.whitelist()
+def get_next_from_date(member):
+    existing_memberships = _existing_membership(member)
+    if existing_memberships:
+        return compose(
+            partial(add_days, days=1),
+            getdate,
+            partial(get, 'to_date'),
+            first,
+        )(existing_memberships)
+    return frappe.db.get_value('Gym Member', member, 'membership_start_date')
+
+
+def get_to_date(from_date, frequency):
+    make_end_of_freq = compose(
+        partial(add_days, days=-1), partial(add_months, from_date)
+    )
+    freq_map = {
+        'Monthly': 1,
+        'Quaterly': 3,
+        'Half-Yearly': 6,
+        'Yearly': 12,
+    }
+    try:
+        return make_end_of_freq(freq_map[frequency])
+    except Exception as e:
+        raise e
+
+
+@frappe.whitelist()
+def get_items(member, membership_plan):
+    plan = frappe.get_doc('Gym Membership Plan', membership_plan)
+    existing_memberships = _existing_membership(member)
+    pick_fields = compose(
+        partial(pick, ['item_code', 'item_name', 'qty', 'rate', 'amount']),
+        lambda x: x.as_dict()
+    )
+
+    make_items = compose(
+        partial(map, pick_fields),
+        partial(filter, lambda x: not existing_memberships or not x.one_time),
+    )
 
 
 def get_end_date(start_date, frequency, times=1):
@@ -65,6 +89,7 @@ def get_end_date(start_date, frequency, times=1):
     if frequency == 'Yearly':
         return add_days(add_years(start_date, times), -1)
     return None
+    return make_items(plan.items) if plan else None
 
 
 @frappe.whitelist()
@@ -81,32 +106,6 @@ def get_item_price(item_code, price_list='Standard Selling'):
     if prices:
         return prices[0][0]
     return 0
-
-
-@frappe.whitelist()
-def stop(name, end_date=None):
-    membership = frappe.get_doc('Gym Membership', name)
-    if membership:
-        membership.status = 'Stopped'
-        membership.end_date = end_date or today()
-        membership.save()
-
-
-@frappe.whitelist()
-def resume(name):
-    membership = frappe.get_doc('Gym Membership', name)
-    if membership:
-        membership.status = 'Active'
-        membership.end_date = None
-        membership.save()
-
-
-@frappe.whitelist()
-def set_auto_repeat(name, auto_repeat):
-    membership = frappe.get_doc('Gym Membership', name)
-    if membership:
-        membership.auto_repeat = auto_repeat
-        membership.save()
 
 
 def generate_new_fees_on(posting_date):
