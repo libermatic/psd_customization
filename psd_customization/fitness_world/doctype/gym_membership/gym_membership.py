@@ -15,6 +15,16 @@ from psd_customization.fitness_world.api.gym_membership_plan import get_items
 
 
 class GymMembership(Document):
+    def onload(self):
+        if self.docstatus == 1:
+            rounded_total, status = frappe.db.get_value(
+                'Sales Invoice',
+                self.reference_invoice,
+                ['rounded_total', 'status'],
+            )
+            self.set_onload('si_value', rounded_total)
+            self.set_onload('si_status', status)
+
     def validate(self):
         if not self.items:
             frappe.throw('Services cannot be empty.')
