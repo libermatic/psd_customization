@@ -130,7 +130,7 @@ def generate_new_memberships_on(posting_date):
         }
     ))
     do_not_submit = not frappe.db.get_value(
-        'Gym Settings', None, 'submit_auto_fees'
+        'Gym Settings', None, 'submit_auto_renew'
     )
     for member in members:
         if get_next_from_date(member) == getdate(posting_date):
