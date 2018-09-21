@@ -4,11 +4,13 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import add_days, add_months, getdate
+from frappe.utils import add_days, add_months, getdate, cint, today, flt
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
+from erpnext.accounts.doctype.pricing_rule.pricing_rule \
+    import get_pricing_rule_for_item
 from functools import partial
-from toolz import pluck, compose, get, first
+from toolz import pluck, compose, get, first, merge
 
 from psd_customization.utils.fp import pick
 
@@ -63,11 +65,25 @@ def get_to_date(from_date, frequency):
 
 
 @frappe.whitelist()
-def get_items(member, membership_plan):
+def get_items(member, membership_plan, transaction_date=None):
     plan = frappe.get_doc('Gym Membership Plan', membership_plan)
     existing_memberships = _existing_membership(member)
+
+    def update_amounts(item):
+        price = get_item_price(
+            item.get('item_code'),
+            member=member,
+            transaction_date=transaction_date,
+            no_pricing_rule=0,
+        )
+        return merge(
+            item,
+            {'rate': price, 'amount': price * item.get('qty', 0)}
+        )
+
     pick_fields = compose(
         partial(pick, ['item_code', 'item_name', 'qty', 'rate', 'amount']),
+        update_amounts,
         lambda x: x.as_dict()
     )
 
@@ -79,19 +95,39 @@ def get_items(member, membership_plan):
 
 
 @frappe.whitelist()
-def get_item_price(item_code, price_list='Standard Selling'):
+def get_item_price(
+    item_code,
+    member=None,
+    company=None,
+    transaction_date=None,
+    price_list='Standard Selling',
+    no_pricing_rule=1
+):
     prices = frappe.db.sql(
         """
-            SELECT price_list_rate
-            FROM `tabItem Price`
-            WHERE
-                price_list = '{price_list}' AND
-                item_code = '{item_code}'
+            SELECT price_list_rate FROM `tabItem Price`
+            WHERE price_list = '{price_list}' AND item_code = '{item_code}'
         """.format(item_code=item_code, price_list=price_list)
     )
-    if prices:
-        return prices[0][0]
-    return 0
+    price_list_rate = prices[0][0] if prices else 0
+    if cint(no_pricing_rule):
+        return price_list_rate
+    if not member:
+        return frappe.throw('Cannot fetch price without Member')
+    applied_pricing_rule = get_pricing_rule_for_item(frappe._dict({
+        'item_code': item_code,
+        'transaction_type': 'selling',
+        'customer': frappe.db.get_value('Gym Member', member, 'customer'),
+        'price_list': price_list,
+        'company': company or frappe.db.get_value(
+            'Gym Settings', None, 'default_company'
+        ) or frappe.defaults.get_user_default('company'),
+        'transaction_date': transaction_date or today(),
+    }))
+    return applied_pricing_rule.get('price_list_rate') or \
+        price_list_rate * (1 - flt(
+            applied_pricing_rule.get('discount_percentage', 0)
+        ) / 100)
 
 
 def get_membership_by_invoice(invoice):

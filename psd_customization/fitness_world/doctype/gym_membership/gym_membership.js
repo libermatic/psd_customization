@@ -7,15 +7,28 @@ frappe.ui.form.on('Gym Membership', {
       frm.trigger('set_queries');
     }
   },
+  set_queries: async function(frm) {
+    const { message: settings = {} } = await frappe.db.get_value(
+      'Gym Settings',
+      null,
+      'default_item_group'
+    );
+    if (settings['default_item_group']) {
+      frm.set_query('item_code', 'items', () => ({
+        filters: { item_group: settings['default_item_group'] },
+      }));
+    }
+  },
   refresh: function(frm) {
     frappe.ui.form.on('Gym Membership Item', {
       item_code: async function(frm, cdt, cdn) {
+        const { member, posting_date: transaction_date } = frm.doc;
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
         if (item_code) {
           const { message: price } = await frappe.call({
             method:
               'psd_customization.fitness_world.api.gym_membership.get_item_price',
-            args: { item_code },
+            args: { item_code, member, transaction_date, no_pricing_rule: 0 },
           });
           frappe.model.set_value(cdt, cdn, 'rate', price);
           frappe.model.set_value(cdt, cdn, 'qty', 1);
@@ -56,29 +69,19 @@ frappe.ui.form.on('Gym Membership', {
     }
   },
   membership_plan: async function(frm) {
-    if (frm.doc['membership_plan']) {
+    if (frm.doc['membership_plan'] && frm.doc['member']) {
       frm.clear_table('items');
+      const {
+        member,
+        membership_plan,
+        posting_date: transaction_date,
+      } = frm.doc;
       const { message: plan = [] } = await frappe.call({
         method: 'psd_customization.fitness_world.api.gym_membership.get_items',
-        args: {
-          member: frm.doc['member'],
-          membership_plan: frm.doc['membership_plan'],
-        },
+        args: { member, membership_plan, transaction_date },
       });
       plan.forEach(item => frm.add_child('items', item));
       frm.refresh_field('items');
-    }
-  },
-  set_queries: async function(frm) {
-    const { message: settings = {} } = await frappe.db.get_value(
-      'Gym Settings',
-      null,
-      'default_item_group'
-    );
-    if (settings['default_item_group']) {
-      frm.set_query('item_code', 'items', () => ({
-        filters: { item_group: settings['default_item_group'] },
-      }));
     }
   },
   calculate_total: function(frm) {
