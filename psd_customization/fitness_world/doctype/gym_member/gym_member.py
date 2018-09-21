@@ -10,28 +10,69 @@ from frappe.contacts.address_and_contact \
 from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from psd_customization.utils.fp import pick, compact
-from toolz import merge
+import operator
+from functools import reduce, partial
+from toolz import merge, count, first, pluck, get, compose
 
 
 class GymMember(Document):
     def onload(self):
         load_address_and_contact(self)
+        self.load_membership_details()
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
         self.member_name = ' '.join(
             compact([self.first_name, self.last_name])
         )
+        if not self.status:
+            self.status = 'Active'
+        if not self.auto_renew:
+            self.auto_renew = 'Yes'
+        if not self.customer:
+            self.customer = self.create_customer()
 
     def on_update(self):
         if self.flags.is_new_doc:
-            if not self.customer:
-                self.create_and_set_customer()
             self.fetch_and_link_doc('Address', get_default_address)
             self.fetch_and_link_doc('Contact', get_default_contact)
 
     def on_trash(self):
         delete_contact_and_address('Gym Member', self.name)
+
+    def load_membership_details(self):
+        all_memberships = frappe.db.sql(
+            """
+                SELECT
+                    si.rounded_total AS amount,
+                    ms.status AS status,
+                    ms.to_date AS end_date
+                FROM `tabGym Membership` AS ms, `tabSales Invoice` AS si
+                WHERE
+                    ms.docstatus = 1 AND
+                    ms.member = '{member}' AND
+                    ms.reference_invoice = si.name
+                ORDER BY ms.to_date DESC
+            """.format(member=self.name),
+            as_dict=True,
+        )
+        unpaid_memberships = filter(
+            lambda x: x.get('status') == 'Unpaid', all_memberships
+        )
+        outstanding = reduce(
+            operator.add, pluck('amount', unpaid_memberships), 0
+        )
+        paid_memberships = filter(
+            lambda x: x.get('status') == 'Paid', all_memberships
+        )
+        end_date = get('end_date', first(paid_memberships)) \
+            if paid_memberships else None
+        self.set_onload('membership_details', {
+            'total_invoices': count(all_memberships),
+            'unpaid_invoices': count(unpaid_memberships),
+            'outstanding': outstanding,
+            'end_date': end_date,
+        })
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)
@@ -43,7 +84,7 @@ class GymMember(Document):
             })
             doc.save()
 
-    def create_and_set_customer(self):
+    def create_customer(self):
         field_kwargs = pick([
             'email_id', 'mobile_no',
             'address_line1', 'address_line2',
@@ -61,5 +102,26 @@ class GymMember(Document):
                 'territory': 'All Territories',
             }, field_kwargs)
         ).insert()
-        self.customer = customer.name
-        self.save()
+        return customer.name
+
+    def update_expiry_date(self):
+        try:
+            self.expiry_date = compose(
+                partial(get, 'to_date'),
+                first,
+            )(
+                frappe.db.sql(
+                    """
+                        SELECT to_date FROM `tabGym Membership`
+                        WHERE docstatus = 1 AND
+                            member = '{member}' AND
+                            status = 'Paid'
+                        ORDER BY to_date DESC
+                        LIMIT 1
+                    """.format(member=self.name),
+                    as_dict=True,
+                )
+            )
+            self.save()
+        except StopIteration:
+            pass

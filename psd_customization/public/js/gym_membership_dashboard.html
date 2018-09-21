@@ -1,30 +1,9 @@
 <div class="row">
-  <div class="col-sm-3 psd-dash-detail">
-    <span class="indicator {{ invoices.color }}" />
+  <div class="col-sm-12 psd-dash-detail">
+    <span class="indicator {{ color }}" />
     <dl>
-      <dt>Invoices: All / Unpaid</dt>
-      <dd>{{ invoices.total }} / {{ invoices.unpaid }}</dd>
-    </dl>
-  </div>
-  <div class="col-sm-3 psd-dash-detail">
-    <span class="indicator {{ outstanding.color }}" />
-    <dl>
-      <dt>Current Outstanding</dt>
-      <dd>{{ outstanding.amount }}</dd>
-    </dl>
-  </div>
-  <div class="col-sm-3 psd-dash-detail">
-    <span class="indicator {{ validity.color }}" />
-    <dl>
-      <dt>Valid Till</dt>
-      <dd>{{ validity.end_date }}</dd>
-    </dl>
-  </div>
-  <div class="col-sm-3 psd-dash-detail">
-    <span class="indicator {{ repeat.color }}" />
-    <dl>
-      <dt>Fee Creation</dt>
-      <dd>{{ repeat.text }}</dd>
+      <dt>Actual Invoice Amount</dt>
+      <dd>{{ amount }}</dd>
     </dl>
   </div>
 </div>

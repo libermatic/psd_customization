@@ -4,9 +4,12 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import today
 from functools import partial
-
-from psd_customization.utils.fp import compose
+from erpnext.accounts.party import get_party_account
+from erpnext.accounts.doctype.payment_entry.payment_entry \
+    import get_payment_entry
+from toolz import pluck, compose, first, drop
 
 
 def get_member_contacts(doctype, txt, searchfield, start, page_len, filters):
@@ -39,7 +42,80 @@ def link_member_to_doctype(member, doctype, docname):
     return link_doc
 
 
+def _make_new_pe(member):
+    pe = frappe.new_doc('Payment Entry')
+    pe.payment_type = 'Receive'
+    pe.party_type = 'Customer'
+    pe.party = member.customer
+    pe.party_name = member.member_name
+    company = frappe.db.get_value('Gym Settings', None, 'default_company')
+    pe.party_account = get_party_account('Customer', member.customer, company)
+    pe.paid_from = pe.party_account
+    return pe
+
+
+@frappe.whitelist()
+def make_payment_entry(source_name):
+    member = frappe.get_doc('Gym Member', source_name)
+    invoices = frappe.get_all(
+        'Sales Invoice',
+        filters=[
+            ['customer', '=', member.customer],
+            ['docstatus', '=', '1'],
+            ['status', '!=', 'Paid'],
+        ],
+    )
+    pes = compose(
+        partial(map, lambda x: get_payment_entry('Sales Invoice', x)),
+        partial(pluck, 'name'),
+    )(invoices)
+    pe = first(pes) if pes else _make_new_pe(member)
+    for entry in drop(1, pes):
+        pe.set(
+            'paid_amount', pe.paid_amount + entry.paid_amount
+        )
+        pe.set(
+            'received_amount', pe.received_amount + entry.received_amount
+        )
+        for ref in entry.references:
+            pe.append('references', ref)
+    pe.set_amounts()
+    return pe
+
+
 @frappe.whitelist()
 def get_members_by_customer(customer):
     members = frappe.get_all('Gym Member', filters={'customer': customer})
     return map(lambda x: x.get('name'), members)
+
+
+@frappe.whitelist()
+def stop(name, end_date=None):
+    try:
+        member = frappe.get_doc('Gym Member', name)
+        member.status = 'Stopped'
+        member.end_date = end_date or today()
+        member.save()
+    except AttributeError:
+        pass
+
+
+@frappe.whitelist()
+def resume(name):
+    try:
+        member = frappe.get_doc('Gym Member', name)
+        member.status = 'Active'
+        member.end_date = None
+        member.save()
+    except AttributeError:
+        pass
+
+
+@frappe.whitelist()
+def set_auto_renew(name, auto_renew):
+    try:
+        member = frappe.get_doc('Gym Member', name)
+        member.auto_renew = auto_renew
+        member.save()
+    except AttributeError:
+        pass

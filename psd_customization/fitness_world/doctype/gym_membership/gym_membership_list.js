@@ -2,13 +2,16 @@
 // For license information, please see license.txt
 
 frappe.listview_settings['Gym Membership'] = {
-  add_fields: ['status'],
-  get_indicator: function({ status }) {
-    if (status === 'Active') {
-      return [status, 'green', 'status,=,Active'];
+  add_fields: ['status', 'to_date'],
+  get_indicator: function({ status, to_date }) {
+    if (status === 'Paid') {
+      return [status, 'green', 'status,=,Paid'];
     }
-    if (status === 'Stopped' || status === 'Expired') {
-      return [status, 'red', `status,=,${status}`];
+    if (status === 'Unpaid') {
+      if (moment().isAfter(to_date)) {
+        return ['Overdue', 'red', 'status,=,Unpaid|to_date,<=,Today'];
+      }
+      return [status, 'orange', 'status,=,Unpaid|to_date,>,Today'];
     }
   },
 };

@@ -18,16 +18,16 @@ def get_data():
                     "name": "Gym Membership",
                     "label": "Membership",
                 },
-                {
-                    "type": "doctype",
-                    "name": "Gym Fee",
-                    "label": "Fee",
-                },
             ]
         },
         {
             "label": _("Setup"),
             "items": [
+                {
+                    "type": "doctype",
+                    "name": "Gym Membership Plan",
+                    "label": "Membership Plan",
+                },
                 {
                     "type": "doctype",
                     "name": "Gym SMS Template",

@@ -7,15 +7,28 @@ frappe.ui.form.on('Gym Membership', {
       frm.trigger('set_queries');
     }
   },
+  set_queries: async function(frm) {
+    const { message: settings = {} } = await frappe.db.get_value(
+      'Gym Settings',
+      null,
+      'default_item_group'
+    );
+    if (settings['default_item_group']) {
+      frm.set_query('item_code', 'items', () => ({
+        filters: { item_group: settings['default_item_group'] },
+      }));
+    }
+  },
   refresh: function(frm) {
     frappe.ui.form.on('Gym Membership Item', {
       item_code: async function(frm, cdt, cdn) {
+        const { member, posting_date: transaction_date } = frm.doc;
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
         if (item_code) {
           const { message: price } = await frappe.call({
             method:
               'psd_customization.fitness_world.api.gym_membership.get_item_price',
-            args: { item_code },
+            args: { item_code, member, transaction_date, no_pricing_rule: 0 },
           });
           frappe.model.set_value(cdt, cdn, 'rate', price);
           frappe.model.set_value(cdt, cdn, 'qty', 1);
@@ -41,16 +54,34 @@ frappe.ui.form.on('Gym Membership', {
     frm.trigger('add_actions');
     frm.trigger('render_membership_details');
   },
-  set_queries: async function(frm) {
-    const { message: settings = {} } = await frappe.db.get_value(
-      'Gym Settings',
-      null,
-      'default_item_group'
-    );
-    if (settings['default_item_group']) {
-      frm.set_query('item_code', 'items', () => ({
-        filters: { item_group: settings['default_item_group'] },
-      }));
+  member: async function(frm) {
+    if (frm.doc['member']) {
+      const [{ message: member }, { message: from_date }] = await Promise.all([
+        frappe.db.get_value('Gym Member', frm.doc['member'], 'membership_plan'),
+        frappe.call({
+          method:
+            'psd_customization.fitness_world.api.gym_membership.get_next_from_date',
+          args: { member: frm.doc['member'] },
+        }),
+      ]);
+      frm.set_value('membership_plan', member['membership_plan']);
+      frm.set_value('from_date', from_date || frappe.datetime.get_today());
+    }
+  },
+  membership_plan: async function(frm) {
+    if (frm.doc['membership_plan'] && frm.doc['member']) {
+      frm.clear_table('items');
+      const {
+        member,
+        membership_plan,
+        posting_date: transaction_date,
+      } = frm.doc;
+      const { message: plan = [] } = await frappe.call({
+        method: 'psd_customization.fitness_world.api.gym_membership.get_items',
+        args: { member, membership_plan, transaction_date },
+      });
+      plan.forEach(item => frm.add_child('items', item));
+      frm.refresh_field('items');
     }
   },
   calculate_total: function(frm) {
@@ -61,30 +92,6 @@ frappe.ui.form.on('Gym Membership', {
     );
   },
   add_actions: function(frm) {
-    function get_status_props(status) {
-      if (status === 'Active') {
-        return {
-          label: 'Stop Membership',
-          method: 'psd_customization.fitness_world.api.gym_membership.stop',
-        };
-      }
-      if (status === 'Stopped') {
-        return {
-          label: 'Resume Membership',
-          method: 'psd_customization.fitness_world.api.gym_membership.resume',
-        };
-      }
-      return null;
-    }
-    function get_repeat_props(auto_repeat) {
-      return {
-        label:
-          auto_repeat === 'Yes' ? 'Disable Auto-Repeat' : 'Enable Auto-Repeat',
-        method:
-          'psd_customization.fitness_world.api.gym_membership.set_auto_repeat',
-        args: { auto_repeat: auto_repeat === 'Yes' ? 'No' : 'Yes' },
-      };
-    }
     if (frm.doc.docstatus === 1) {
       frm
         .add_custom_button('Make Payment', function() {
@@ -94,75 +101,34 @@ frappe.ui.form.on('Gym Membership', {
               'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
           });
         })
-        .toggleClass(
-          'btn-primary',
-          frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
-        );
-      const status_props = get_status_props(frm.doc['status']);
-      if (status_props) {
-        frm.add_custom_button(
-          status_props.label,
-          async function() {
-            await frappe.call({
-              method: status_props.method,
-              args: { name: frm.doc['name'] },
-            });
-            frm.reload_doc();
-          },
-          'Manage'
-        );
-      }
-      const repeat_props = get_repeat_props(frm.doc['auto_repeat']);
-      frm.add_custom_button(
-        repeat_props.label,
-        async function() {
-          await frappe.call({
-            method: repeat_props.method,
-            args: { name: frm.doc['name'], ...repeat_props.args },
-          });
-          frm.reload_doc();
-        },
-        'Manage'
-      );
+        .addClass('btn-primary')
+        .toggleClass('disabled', frm.doc['status'] === 'Paid');
     }
   },
   render_membership_details: function(frm) {
-    if (frm.doc.docstatus > 0 && frm.doc.__onload) {
-      const {
-        total_invoices,
-        unpaid_invoices,
-        outstanding,
-        end_date,
-      } = frm.doc.__onload;
-      const { auto_repeat } = frm.doc;
-      frm.dashboard.add_section(
-        frappe.render_template('gym_membership_dashboard', {
-          invoices: {
-            color: unpaid_invoices ? 'orange' : 'green',
-            total: total_invoices || '-',
-            unpaid: unpaid_invoices || '-',
-          },
-          outstanding: {
-            color: outstanding ? 'orange' : 'lightblue',
-            amount: outstanding
-              ? format_currency(
-                  outstanding,
-                  frappe.defaults.get_default('currency')
-                )
-              : '-',
-          },
-          validity: {
-            color: moment().isSameOrBefore(end_date || undefined)
-              ? 'lightblue'
-              : 'red',
-            end_date: end_date ? frappe.datetime.str_to_user(end_date) : '-',
-          },
-          repeat: {
-            color: auto_repeat === 'Yes' ? 'lightblue' : 'darkgrey',
-            text: { Yes: 'Auto', No: 'Manual' }[auto_repeat] || '-',
-          },
-        })
-      );
+    if (frm.doc.__onload && frm.doc.docstatus === 1) {
+      function get_color(status) {
+        if (status === 'Paid') {
+          return 'green';
+        }
+        if (status === 'Unpaid') {
+          return 'orange';
+        }
+        if (status === 'Overdue') {
+          return 'red';
+        }
+        return 'blue';
+      }
+      const { si_value, si_status } = frm.doc.__onload;
+      const html = frappe.render_template('gym_membership_dashboard', {
+        amount: format_currency(
+          si_value,
+          frappe.defaults.get_default('currency')
+        ),
+        color: get_color(si_status),
+      });
+      frm.dashboard.show();
+      frm.dashboard.add_section(html);
     }
   },
 });
