@@ -94,6 +94,22 @@ def get_item_price(item_code, price_list='Standard Selling'):
     return 0
 
 
+def get_membership_by_invoice(invoice):
+    invoices = frappe.db.sql(
+        """
+            SELECT name FROM `tabGym Membership`
+            WHERE docstatus = 1 AND reference_invoice = '{invoice}'
+        """.format(invoice=invoice),
+        as_dict=True,
+    )
+    get_one_membership = compose(
+        partial(frappe.get_doc, 'Gym Membership'),
+        partial(get, 'name'),
+        first,
+    )
+    return get_one_membership(invoices) if invoices else None
+
+
 def generate_new_fees_on(posting_date):
     from psd_customization.fitness_world.api.gym_fee import (
         get_next_from_date, make_gym_fee

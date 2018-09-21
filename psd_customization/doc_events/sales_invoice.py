@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from psd_customization.fitness_world.api.gym_fee import get_fee_by_invoice
+from psd_customization.fitness_world.api.gym_membership \
+    import get_membership_by_invoice
 
 
 def on_cancel(doc, method):
-    fee = get_fee_by_invoice(doc.name)
-    if fee:
-        fee.cancel()
+    membership = get_membership_by_invoice(doc.name)
+    if membership:
+        membership.cancel()
