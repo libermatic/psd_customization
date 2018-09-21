@@ -75,20 +75,6 @@ def get_items(member, membership_plan):
         partial(map, pick_fields),
         partial(filter, lambda x: not existing_memberships or not x.one_time),
     )
-
-
-def get_end_date(start_date, frequency, times=1):
-    if times < 1:
-        raise Exception('times cannot be less than 1')
-    if frequency == 'Monthly':
-        return add_days(add_months(start_date, times), -1)
-    if frequency == 'Quaterly':
-        return add_days(add_months(start_date, times * 3), -1)
-    if frequency == 'Half-Yearly':
-        return add_days(add_months(start_date, times * 6), -1)
-    if frequency == 'Yearly':
-        return add_days(add_years(start_date, times), -1)
-    return None
     return make_items(plan.items) if plan else None
 
 
