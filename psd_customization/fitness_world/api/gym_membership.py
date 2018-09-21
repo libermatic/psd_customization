@@ -110,24 +110,33 @@ def get_membership_by_invoice(invoice):
     return get_one_membership(invoices) if invoices else None
 
 
-def generate_new_fees_on(posting_date):
-    from psd_customization.fitness_world.api.gym_fee import (
-        get_next_from_date, make_gym_fee
-    )
-    memberships = pluck('name', frappe.get_all(
+def _make_gym_membership(member, posting_date, do_not_submit=True):
+    membership = frappe.new_doc('Gym Membership')
+    membership.member = member
+    membership.posting_date = posting_date
+    membership.insert()
+    if not do_not_submit:
+        membership.submit()
+    return membership
+
+
+def generate_new_memberships_on(posting_date):
+    members = pluck('name', frappe.get_all(
         'Gym Membership',
         filters={
             'docstatus': 1,
             'status': 'Active',
-            'auto_repeat': 'Yes',
+            'auto_renew': 'Yes',
         }
     ))
     do_not_submit = not frappe.db.get_value(
         'Gym Settings', None, 'submit_auto_fees'
     )
-    for membership in memberships:
-        if get_next_from_date(membership) == getdate(posting_date):
-            fee = make_gym_fee(membership, posting_date, do_not_submit)
+    for member in members:
+        if get_next_from_date(member) == getdate(posting_date):
+            fee = _make_gym_membership(member, posting_date, do_not_submit)
             frappe.logger(__name__).debug(
-                'Gym Fee {} ({}) generated'.format(fee.name, posting_date)
+                'Gym Membership {} ({}) generated'.format(
+                    fee.name, posting_date
+                )
             )
