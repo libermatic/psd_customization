@@ -30,7 +30,7 @@ def get_data():
                 },
                 {
                     "type": "doctype",
-                    "name": "Gym SMS Template",
+                    "name": "SMS Template",
                     "label": "SMS Template",
                 },
                 {
