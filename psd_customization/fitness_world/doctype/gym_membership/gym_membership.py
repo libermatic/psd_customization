@@ -9,7 +9,7 @@ from frappe.model.document import Document
 from functools import reduce
 
 from psd_customization.fitness_world.api.gym_membership import (
-    get_next_from_date, get_to_date, get_items
+    get_next_from_date, get_to_date, get_items, dispatch_sms
 )
 
 
@@ -53,6 +53,8 @@ class GymMembership(Document):
     def on_update_after_submit(self):
         member = frappe.get_doc('Gym Member', self.member)
         member.update_expiry_date()
+        if self.status == 'Paid':
+            dispatch_sms(self.name, 'sms_receipt')
 
     def on_cancel(self):
         si = frappe.get_doc('Sales Invoice', self.reference_invoice)

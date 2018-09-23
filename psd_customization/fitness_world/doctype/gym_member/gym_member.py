@@ -28,14 +28,24 @@ class GymMember(Document):
         if not self.status:
             self.status = 'Active'
         if not self.auto_renew:
-            self.auto_renew = 'Yes'
+            frequency = frappe.db.get_value(
+                'Gym Membership Plan', self.membership_plan, 'frequency'
+            )
+            if frequency == 'Lifetime':
+                self.auto_renew = 'No'
+            else:
+                self.auto_renew = 'Yes'
         if not self.customer:
             self.customer = self.create_customer()
+        if not self.notification_contact:
+            self.notification_number = None
 
     def on_update(self):
         if self.flags.is_new_doc:
             self.fetch_and_link_doc('Address', get_default_address)
-            self.fetch_and_link_doc('Contact', get_default_contact)
+            self.notification_contact = \
+                self.fetch_and_link_doc('Contact', get_default_contact)
+            self.save()
 
     def on_trash(self):
         delete_contact_and_address('Gym Member', self.name)
@@ -62,16 +72,16 @@ class GymMember(Document):
         outstanding = reduce(
             operator.add, pluck('amount', unpaid_memberships), 0
         )
-        paid_memberships = filter(
-            lambda x: x.get('status') == 'Paid', all_memberships
+        frequency = frappe.db.get_value(
+            'Gym Membership Plan', self.membership_plan, 'frequency'
         )
-        end_date = get('end_date', first(paid_memberships)) \
-            if paid_memberships else None
+        frequency = 'Lifetime'
         self.set_onload('membership_details', {
             'total_invoices': count(all_memberships),
             'unpaid_invoices': count(unpaid_memberships),
             'outstanding': outstanding,
-            'end_date': end_date,
+            'frequency': frequency,
+            'end_date': self.expiry_date,
         })
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
@@ -83,6 +93,7 @@ class GymMember(Document):
                 'link_name': self.name,
             })
             doc.save()
+        return docname
 
     def create_customer(self):
         field_kwargs = pick([

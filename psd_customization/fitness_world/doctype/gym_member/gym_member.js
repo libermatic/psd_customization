@@ -12,7 +12,13 @@ frappe.ui.form.on('Gym Member', {
       doctype: 'Gym Member',
     };
     frm.toggle_display(
-      ['contact_section', 'address_html', 'contact_html', 'emergency_contact'],
+      [
+        'contact_section',
+        'address_html',
+        'contact_html',
+        'notification_contact',
+        'emergency_contact',
+      ],
       !frm.doc.__islocal
     );
     frm.toggle_enable('customer', frm.doc.__islocal);
@@ -25,7 +31,7 @@ frappe.ui.form.on('Gym Member', {
     }
   },
   set_queries: function(frm) {
-    ['emergency_contact', 'primary_contact'].forEach(contact => {
+    ['notification_contact', 'emergency_contact'].forEach(contact => {
       frm.set_query(contact, function(doc) {
         return {
           query:
@@ -34,6 +40,11 @@ frappe.ui.form.on('Gym Member', {
         };
       });
     });
+  },
+  notification_contact: async function(frm) {
+    if (!frm.doc['notification_contact']) {
+      frm.set_value('notification_number', null);
+    }
   },
   render_address_and_contact: function(frm) {
     frappe.contacts.render_address_and_contact(frm);
@@ -90,6 +101,7 @@ frappe.ui.form.on('Gym Member', {
         total_invoices,
         unpaid_invoices,
         outstanding,
+        frequency,
         end_date,
       } = frm.doc.__onload['membership_details'];
       const { auto_renew } = frm.doc;
@@ -110,14 +122,27 @@ frappe.ui.form.on('Gym Member', {
               : '-',
           },
           validity: {
-            color: moment().isSameOrBefore(end_date || undefined)
-              ? 'lightblue'
-              : 'red',
-            end_date: end_date ? frappe.datetime.str_to_user(end_date) : '-',
+            color:
+              frequency === 'Lifetime' ||
+              moment().isSameOrBefore(end_date || undefined)
+                ? 'lightblue'
+                : 'red',
+            end_date:
+              frequency === 'Lifetime'
+                ? 'Unlimited'
+                : end_date
+                  ? frappe.datetime.str_to_user(end_date)
+                  : '-',
           },
           renew: {
-            color: auto_renew === 'Yes' ? 'lightblue' : 'darkgrey',
-            text: { Yes: 'Auto', No: 'Manual' }[auto_renew] || '-',
+            color:
+              frequency === 'Lifetime' || auto_renew === 'Yes'
+                ? 'lightblue'
+                : 'darkgrey',
+            text:
+              frequency === 'Lifetime'
+                ? 'N/A'
+                : { Yes: 'Auto', No: 'Manual' }[auto_renew] || '-',
           },
         })
       );
@@ -175,16 +200,24 @@ frappe.ui.form.on('Gym Member', {
       );
     }
     const renew_props = get_renew_props(frm.doc['auto_renew']);
-    frm.add_custom_button(
-      renew_props.label,
-      async function() {
-        await frappe.call({
-          method: renew_props.method,
-          args: { name: frm.doc['name'], ...renew_props.args },
-        });
-        frm.reload_doc();
-      },
-      'Manage'
-    );
+    if (
+      !(
+        frm.doc.__onload &&
+        frm.doc.__onload['membership_details'] &&
+        frm.doc.__onload['membership_details']['frequency'] === 'Lifetime'
+      )
+    ) {
+      frm.add_custom_button(
+        renew_props.label,
+        async function() {
+          await frappe.call({
+            method: renew_props.method,
+            args: { name: frm.doc['name'], ...renew_props.args },
+          });
+          frm.reload_doc();
+        },
+        'Manage'
+      );
+    }
   },
 });

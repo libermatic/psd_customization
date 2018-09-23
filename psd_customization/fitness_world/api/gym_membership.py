@@ -13,6 +13,7 @@ from functools import partial
 from toolz import pluck, compose, get, first, merge
 
 from psd_customization.utils.fp import pick
+from sms_extras.sms_extras.api.sms import get_sms_text, request_sms
 
 
 @frappe.whitelist()
@@ -156,9 +157,27 @@ def _make_gym_membership(member, posting_date, do_not_submit=True):
     return membership
 
 
-def generate_new_memberships_on(posting_date):
+def dispatch_sms(membership, template_field):
+    doc = frappe.get_doc('Gym Membership', membership)
+    template = frappe.db.get_value('Gym Settings', None, template_field)
+    mobile_no = frappe.db.get_value(
+        'Gym Member', doc.member, 'notification_number'
+    )
+    if template and mobile_no:
+        content = get_sms_text(template, doc.as_dict())
+        if content:
+            request_sms(mobile_no, content, communication={
+                'subject': 'SMS: {} for {}'.format(template, doc.member),
+                'reference_doctype': 'Gym Membership',
+                'reference_name': doc.name,
+                'timeline_doctype': 'Gym Member',
+                'timeline_name': doc.member,
+            })
+
+
+def generate_new_memberships_on(posting_date=today()):
     members = pluck('name', frappe.get_all(
-        'Gym Membership',
+        'Gym Member',
         filters={
             'docstatus': 1,
             'status': 'Active',
@@ -170,9 +189,12 @@ def generate_new_memberships_on(posting_date):
     )
     for member in members:
         if get_next_from_date(member) == getdate(posting_date):
-            fee = _make_gym_membership(member, posting_date, do_not_submit)
+            membership = _make_gym_membership(
+                member, posting_date, do_not_submit
+            )
             frappe.logger(__name__).debug(
                 'Gym Membership {} ({}) generated'.format(
-                    fee.name, posting_date
+                    membership.name, posting_date
                 )
             )
+            dispatch_sms(membership.name, 'sms_invoiced')
