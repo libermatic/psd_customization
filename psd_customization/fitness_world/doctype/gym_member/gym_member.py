@@ -31,11 +31,15 @@ class GymMember(Document):
             self.auto_renew = 'Yes'
         if not self.customer:
             self.customer = self.create_customer()
+        if not self.notification_contact:
+            self.notification_number = None
 
     def on_update(self):
         if self.flags.is_new_doc:
             self.fetch_and_link_doc('Address', get_default_address)
-            self.fetch_and_link_doc('Contact', get_default_contact)
+            self.notification_contact = \
+                self.fetch_and_link_doc('Contact', get_default_contact)
+            self.save()
 
     def on_trash(self):
         delete_contact_and_address('Gym Member', self.name)
@@ -83,6 +87,7 @@ class GymMember(Document):
                 'link_name': self.name,
             })
             doc.save()
+        return docname
 
     def create_customer(self):
         field_kwargs = pick([

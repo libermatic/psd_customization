@@ -12,7 +12,13 @@ frappe.ui.form.on('Gym Member', {
       doctype: 'Gym Member',
     };
     frm.toggle_display(
-      ['contact_section', 'address_html', 'contact_html', 'emergency_contact'],
+      [
+        'contact_section',
+        'address_html',
+        'contact_html',
+        'notification_contact',
+        'emergency_contact',
+      ],
       !frm.doc.__islocal
     );
     frm.toggle_enable('customer', frm.doc.__islocal);
@@ -25,7 +31,7 @@ frappe.ui.form.on('Gym Member', {
     }
   },
   set_queries: function(frm) {
-    ['emergency_contact', 'primary_contact'].forEach(contact => {
+    ['notification_contact', 'emergency_contact'].forEach(contact => {
       frm.set_query(contact, function(doc) {
         return {
           query:
@@ -34,6 +40,11 @@ frappe.ui.form.on('Gym Member', {
         };
       });
     });
+  },
+  notification_contact: async function(frm) {
+    if (!frm.doc['notification_contact']) {
+      frm.set_value('notification_number', null);
+    }
   },
   render_address_and_contact: function(frm) {
     frappe.contacts.render_address_and_contact(frm);
