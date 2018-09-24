@@ -13,7 +13,7 @@ from functools import partial
 from toolz import pluck, compose, get, first, merge
 
 from psd_customization.utils.fp import pick
-from sms_extras.sms_extras.api.sms import get_sms_text, request_sms
+from sms_extras.api.sms import get_sms_text, request_sms
 
 
 @frappe.whitelist()
@@ -164,7 +164,7 @@ def dispatch_sms(membership, template_field):
         'Gym Member', doc.member, 'notification_number'
     )
     if template and mobile_no:
-        content = get_sms_text(template, doc.as_dict())
+        content = get_sms_text(template, doc)
         if content:
             request_sms(mobile_no, content, communication={
                 'subject': 'SMS: {} for {}'.format(template, doc.member),
