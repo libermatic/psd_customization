@@ -106,6 +106,9 @@ class GymMembership(Document):
             })
         settings = frappe.get_single('Gym Settings')
         si.company = settings.default_company
+        si.cost_center = frappe.db.get_value(
+            'Company', settings.default_company, 'cost_center',
+        )
         si.naming_series = settings.naming_series
         si.taxes_and_charges = settings.default_tax_template
         si.set_taxes()
