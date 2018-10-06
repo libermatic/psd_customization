@@ -24,7 +24,24 @@ def make_payment_entry(source_name):
     return get_payment_entry('Sales Invoice', reference_invoice)
 
 
-def _existing_membership(member):
+def _existing_membership(member, item_code=None):
+    if item_code:
+        return frappe.db.sql(
+            """
+                SELECT mi.end_date AS to_date
+                FROM
+                    `tabGym Membership Item` AS mi,
+                    `tabGym Membership` AS ms
+                WHERE
+                    mi.parent = ms.name AND
+                    mi.item_code = '{item_code}' AND
+                    ms.docstatus = 1 AND
+                    ms.member = '{member}'
+                ORDER BY mi.end_date DESC
+                LIMIT 1
+            """.format(member=member, item_code=item_code),
+            as_dict=True,
+        )
     return frappe.db.sql(
         """
             SELECT to_date FROM `tabGym Membership`
@@ -37,8 +54,8 @@ def _existing_membership(member):
 
 
 @frappe.whitelist()
-def get_next_from_date(member):
-    existing_memberships = _existing_membership(member)
+def get_next_from_date(member, item_code=None):
+    existing_memberships = _existing_membership(member, item_code)
     if existing_memberships:
         return compose(
             partial(add_days, days=1),
@@ -50,6 +67,8 @@ def get_next_from_date(member):
 
 
 def get_to_date(from_date, frequency):
+    if frequency == 'Lifetime':
+        return None
     make_end_of_freq = compose(
         partial(add_days, days=-1), partial(add_months, from_date)
     )
@@ -59,10 +78,7 @@ def get_to_date(from_date, frequency):
         'Half-Yearly': 6,
         'Yearly': 12,
     }
-    try:
-        return make_end_of_freq(freq_map[frequency])
-    except Exception as e:
-        raise e
+    return make_end_of_freq(freq_map[frequency])
 
 
 @frappe.whitelist()
@@ -82,8 +98,25 @@ def get_items(member, membership_plan, transaction_date=None):
             {'rate': price, 'amount': price * item.get('qty', 0)}
         )
 
+    def update_dates(item):
+        if cint(item.get('one_time')):
+            return item
+        next_date = get_next_from_date(member, item.get('item_code'))
+        return merge(
+            item,
+            {
+                'start_date': next_date,
+                'end_date': get_to_date(next_date, plan.frequency),
+            }
+        )
+
     pick_fields = compose(
-        partial(pick, ['item_code', 'item_name', 'qty', 'rate', 'amount']),
+        partial(pick, [
+            'item_code', 'item_name',
+            'qty', 'rate', 'amount',
+            'start_date', 'end_date',
+        ]),
+        update_dates,
         update_amounts,
         lambda x: x.as_dict()
     )

@@ -1,6 +1,18 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+function _update_item_end_date(cdn) {
+  const { qty, start_date } = frappe.get_doc('Gym Membership Item', cdn) || {};
+  if (qty && start_date) {
+    frappe.model.set_value(
+      'Gym Membership Item',
+      cdn,
+      'end_date',
+      frappe.datetime.add_days(frappe.datetime.add_months(start_date, qty), -1)
+    );
+  }
+}
+
 frappe.ui.form.on('Gym Membership', {
   setup: function(frm) {
     if (frm.doc.docstatus !== 1) {
@@ -37,8 +49,10 @@ frappe.ui.form.on('Gym Membership', {
         }
       },
       qty: function(frm, cdt, cdn) {
-        const { qty = 0, rate = 0 } = frappe.get_doc(cdt, cdn) || {};
+        const { qty = 0, rate = 0, start_date } =
+          frappe.get_doc(cdt, cdn) || {};
         frappe.model.set_value(cdt, cdn, 'amount', qty * rate);
+        _update_item_end_date(cdn);
       },
       rate: function(frm, cdt, cdn) {
         const { qty = 0, rate = 0 } = frappe.get_doc(cdt, cdn) || {};
@@ -46,6 +60,9 @@ frappe.ui.form.on('Gym Membership', {
       },
       amount: function(frm) {
         frm.trigger('calculate_total');
+      },
+      start_date: function(frm, cdt, cdn) {
+        _update_item_end_date(cdn);
       },
       items_remove: function(frm) {
         frm.trigger('calculate_total');
