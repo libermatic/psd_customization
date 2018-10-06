@@ -46,7 +46,7 @@ def get_next_from_date(member):
             partial(get, 'to_date'),
             first,
         )(existing_memberships)
-    return frappe.db.get_value('Gym Member', member, 'membership_start_date')
+    return frappe.db.get_value('Gym Member', member, 'enrollment_date')
 
 
 def get_to_date(from_date, frequency):

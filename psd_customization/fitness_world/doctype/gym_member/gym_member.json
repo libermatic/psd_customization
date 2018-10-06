@@ -260,7 +260,7 @@
    "bold": 0, 
    "collapsible": 0, 
    "columns": 0, 
-   "default": "Today", 
+   "default": "", 
    "fieldname": "enrollment_date", 
    "fieldtype": "Date", 
    "hidden": 0, 
@@ -282,7 +282,7 @@
    "report_hide": 0, 
    "reqd": 0, 
    "search_index": 0, 
-   "set_only_once": 0, 
+   "set_only_once": 1, 
    "unique": 0
   }, 
   {
@@ -901,7 +901,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-09-23 22:57:28.290508", 
+ "modified": "2018-10-06 14:36:16.291408", 
  "modified_by": "Administrator", 
  "module": "Fitness World", 
  "name": "Gym Member", 

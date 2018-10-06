@@ -4,6 +4,9 @@
 frappe.ui.form.on('Gym Member', {
   setup: function(frm) {
     frm.trigger('set_queries');
+    if (frm.doc.__islocal) {
+      frm.set_value('enrollment_date', frappe.datetime.get_today());
+    }
   },
   refresh: function(frm) {
     frappe.dynamic_link = {
