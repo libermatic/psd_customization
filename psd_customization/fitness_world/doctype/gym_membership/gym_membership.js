@@ -98,7 +98,20 @@ frappe.ui.form.on('Gym Membership', {
         args: { member, membership_plan, transaction_date },
       });
       plan.forEach(item => frm.add_child('items', item));
-      frm.refresh_field('items');
+      await frm.refresh_field('items');
+      frm.trigger('from_date');
+    }
+  },
+  from_date: function(frm) {
+    if (frm.doc['from_date'] && locals['Gym Membership Item']) {
+      Object.keys(locals['Gym Membership Item']).forEach(cdn => {
+        frappe.model.set_value(
+          'Gym Membership Item',
+          cdn,
+          'start_date',
+          frm.doc['from_date']
+        );
+      });
     }
   },
   calculate_total: function(frm) {

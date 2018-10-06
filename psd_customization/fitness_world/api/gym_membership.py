@@ -113,7 +113,7 @@ def get_items(member, membership_plan, transaction_date=None):
     pick_fields = compose(
         partial(pick, [
             'item_code', 'item_name',
-            'qty', 'rate', 'amount',
+            'qty', 'rate', 'amount', 'one_time',
             'start_date', 'end_date',
         ]),
         update_dates,
