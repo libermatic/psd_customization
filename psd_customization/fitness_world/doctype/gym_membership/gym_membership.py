@@ -108,12 +108,23 @@ class GymMembership(Document):
         si.customer = frappe.db.get_value(
             'Gym Member', self.member, 'customer'
         )
+
+        def get_description(item):
+            if not item.start_date:
+                return item.item_name
+            return '{item_name}: Valid from {start_date} to {end_date}'.format(
+                item_name=item.item_name,
+                start_date=item.get_formatted('start_date'),
+                end_date=item.get_formatted('end_date'),
+            )
         for item in self.items:
             si.append('items', {
                 'item_code': item.item_code,
+                'description': get_description(item),
                 'qty': item.qty,
                 'rate': item.rate,
             })
+
         settings = frappe.get_single('Gym Settings')
         si.company = settings.default_company
         si.cost_center = frappe.db.get_value(
