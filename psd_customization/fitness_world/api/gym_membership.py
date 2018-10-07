@@ -24,6 +24,43 @@ def make_payment_entry(source_name):
     return get_payment_entry('Sales Invoice', reference_invoice)
 
 
+@frappe.whitelist()
+def make_sales_invoice(source_name):
+    membership = frappe.get_doc('Gym Membership', source_name)
+    si = frappe.new_doc('Sales Invoice')
+    si.gym_membership = source_name
+    si.customer = frappe.db.get_value(
+        'Gym Member', membership.member, 'customer'
+    )
+
+    def get_description(item):
+        if not item.start_date:
+            return item.item_name
+        return '{item_name}: Valid from {start_date} to {end_date}'.format(
+            item_name=item.item_name,
+            start_date=item.get_formatted('start_date'),
+            end_date=item.get_formatted('end_date'),
+        )
+    for item in membership.items:
+        si.append('items', {
+            'item_code': item.item_code,
+            'description': get_description(item),
+            'qty': item.qty,
+            'rate': item.rate,
+        })
+
+    settings = frappe.get_single('Gym Settings')
+    si.company = settings.default_company
+    si.cost_center = frappe.db.get_value(
+        'Company', settings.default_company, 'cost_center',
+    )
+    si.naming_series = settings.naming_series
+    si.taxes_and_charges = settings.default_tax_template
+    si.run_method('set_missing_values')
+    si.run_method('set_taxes')
+    return si
+
+
 def _existing_membership(member, item_code=None):
     if item_code:
         return frappe.db.sql(

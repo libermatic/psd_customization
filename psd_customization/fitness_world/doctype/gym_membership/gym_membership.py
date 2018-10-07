@@ -16,7 +16,7 @@ from psd_customization.fitness_world.api.gym_membership import (
 
 class GymMembership(Document):
     def onload(self):
-        if self.docstatus == 1:
+        if self.reference_invoice and self.docstatus == 1:
             rounded_total, status = frappe.db.get_value(
                 'Sales Invoice',
                 self.reference_invoice,
@@ -51,8 +51,8 @@ class GymMembership(Document):
         self.status = 'Unpaid'
 
     def on_submit(self):
-        self.reference_invoice = self.create_sales_invoice()
-        self.save()
+        if not self.no_invoice:
+            self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
         member = frappe.get_doc('Gym Member', self.member)
@@ -61,8 +61,9 @@ class GymMembership(Document):
             dispatch_sms(self.name, 'sms_receipt')
 
     def on_cancel(self):
-        si = frappe.get_doc('Sales Invoice', self.reference_invoice)
-        si.cancel()
+        if self.reference_invoice:
+            si = frappe.get_doc('Sales Invoice', self.reference_invoice)
+            si.cancel()
 
     def validate_dates(self):
         enrollment_date = frappe.db.get_value(

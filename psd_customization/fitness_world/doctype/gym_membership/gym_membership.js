@@ -98,8 +98,7 @@ frappe.ui.form.on('Gym Membership', {
         args: { member, membership_plan, transaction_date },
       });
       plan.forEach(item => frm.add_child('items', item));
-      await frm.refresh_field('items');
-      frm.trigger('from_date');
+      frm.refresh_field('items');
     }
   },
   from_date: function(frm) {
@@ -123,13 +122,24 @@ frappe.ui.form.on('Gym Membership', {
   },
   add_actions: function(frm) {
     if (frm.doc.docstatus === 1) {
-      frm
-        .add_custom_button('Make Payment', function() {
-          frappe.model.open_mapped_doc({
-            frm,
+      function get_invoice_props() {
+        if (frm.doc['reference_invoice']) {
+          return {
+            label: 'Make Payment',
             method:
               'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
-          });
+          };
+        }
+        return {
+          label: 'Make Invoice',
+          method:
+            'psd_customization.fitness_world.api.gym_membership.make_sales_invoice',
+        };
+      }
+      const { label, method } = get_invoice_props();
+      frm
+        .add_custom_button(label, function() {
+          frappe.model.open_mapped_doc({ frm, method });
         })
         .addClass('btn-primary')
         .toggleClass('disabled', frm.doc['status'] === 'Paid');
