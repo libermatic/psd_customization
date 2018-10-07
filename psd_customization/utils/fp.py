@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 from functools import reduce
 from copy import deepcopy
-from toolz import assoc, filter
+from toolz import assoc, filter, keyfilter
 
 
 def compose(*funcs):
@@ -32,6 +32,10 @@ def pick(fields, from_dict):
             return assoc(a, x, from_dict.get(x))
         return a
     return reduce(set_field, fields, {})
+
+
+def omit(blacklist, d):
+    return keyfilter(lambda k: k not in blacklist, d)
 
 
 def compact(iter):

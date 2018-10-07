@@ -133,6 +133,28 @@ frappe.ui.form.on('Gym Member', {
         })
       );
     }
+
+    function get_color(item) {
+      if (moment().isAfter(item.expiry_date)) {
+        return 'red';
+      }
+      return item.status === 'Paid' ? 'green' : 'orange';
+    }
+    if (
+      frm.doc.__onload &&
+      frm.doc.__onload['membership_items'] &&
+      frm.doc.__onload['membership_items'].length > 0
+    ) {
+      console.log(frm.doc.__onload['membership_items']);
+
+      frm.dashboard.add_section(
+        frappe.render_template('gym_member_dashboard_items', {
+          items: frm.doc.__onload['membership_items'].map(item =>
+            Object.assign({}, item, { color: get_color(item) })
+          ),
+        })
+      );
+    }
   },
 
   add_actions: function(frm) {

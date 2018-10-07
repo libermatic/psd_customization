@@ -79,12 +79,14 @@ class GymMember(Document):
             'unpaid_invoices': count(unpaid_memberships),
             'outstanding': outstanding,
         })
+
         all_membership_items = frappe.db.sql(
             """
                 SELECT
                     mi.item_code AS item_code,
                     mi.item_name AS item_name,
                     MAX(mi.end_date) AS expiry_date,
+                    ms.name AS membership,
                     ms.status AS status
                 FROM
                     `tabGym Membership Item` AS mi,
@@ -95,28 +97,11 @@ class GymMember(Document):
                     ms.docstatus = 1 AND
                     ms.name = mi.parent
                 GROUP BY
-                    mi.item_code,
-                    ms.status
+                    mi.item_code
             """.format(member=self.name),
             as_dict=1,
         )
-
-        def set_expiry_by(status, d):
-            return assoc(d, '{}_expiry'.format(status), d.get('expiry_date')) \
-                if d.get('status').lower() == status else d
-
-        set_paid_expiry = partial(set_expiry_by, 'paid')
-        set_unpaid_expiry = partial(set_expiry_by, 'unpaid')
-        omit_fields = partial(omit, ['expiry_date', 'status'])
-        make_items = compose(
-            partial(reduceby, 'item_code', lambda a, x: merge(a, x), init={}),
-            partial(map, omit_fields),
-            partial(map, set_unpaid_expiry),
-            partial(map, set_paid_expiry),
-        )
-        self.set_onload(
-            'membership_items', make_items(all_membership_items).values(),
-        )
+        self.set_onload('membership_items', all_membership_items)
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)
