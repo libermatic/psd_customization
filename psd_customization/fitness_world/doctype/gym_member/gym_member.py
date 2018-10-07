@@ -35,10 +35,7 @@ class GymMember(Document):
             self.enrollment_date = today()
         if not self.status:
             self.status = 'Active'
-        frequency = frappe.db.get_value(
-            'Gym Membership Plan', self.membership_plan, 'frequency'
-        )
-        if frequency == 'Lifetime' or not self.auto_renew:
+        if not self.auto_renew:
             self.auto_renew = 'No'
         if not self.customer:
             self.customer = self.create_customer()
