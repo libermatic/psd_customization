@@ -37,15 +37,27 @@ frappe.ui.form.on('Gym Membership', {
         const { member, posting_date: transaction_date } = frm.doc;
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
         if (item_code) {
-          const { message: price } = await frappe.call({
-            method:
-              'psd_customization.fitness_world.api.gym_membership.get_item_price',
-            args: { item_code, member, transaction_date, no_pricing_rule: 0 },
-          });
+          const [
+            { message: price },
+            { message: start_date },
+          ] = await Promise.all([
+            frappe.call({
+              method:
+                'psd_customization.fitness_world.api.gym_membership.get_item_price',
+              args: { item_code, member, transaction_date, no_pricing_rule: 0 },
+            }),
+            frappe.call({
+              method:
+                'psd_customization.fitness_world.api.gym_membership.get_next_from_date',
+              args: { member, item_code },
+            }),
+          ]);
           frappe.model.set_value(cdt, cdn, 'rate', price);
           frappe.model.set_value(cdt, cdn, 'qty', 1);
+          frappe.model.set_value(cdt, cdn, 'start_date', start_date);
         } else {
           frappe.model.set_value(cdt, cdn, 'rate', 0);
+          frappe.model.set_value(cdt, cdn, 'start_date', null);
         }
       },
       qty: function(frm, cdt, cdn) {
