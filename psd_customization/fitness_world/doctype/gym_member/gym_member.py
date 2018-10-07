@@ -12,9 +12,9 @@ from frappe.contacts.doctype.contact.contact import get_default_contact
 from frappe.utils import today
 import operator
 from functools import reduce, partial
-from toolz import merge, count, first, pluck, get, compose
+from toolz import merge, count, pluck, compose, assoc, reduceby
 
-from psd_customization.utils.fp import pick, compact
+from psd_customization.utils.fp import pick, omit, compact
 
 
 class GymMember(Document):
@@ -74,16 +74,49 @@ class GymMember(Document):
         outstanding = reduce(
             operator.add, pluck('amount', unpaid_memberships), 0
         )
-        frequency = frappe.db.get_value(
-            'Gym Membership Plan', self.membership_plan, 'frequency'
-        )
         self.set_onload('membership_details', {
             'total_invoices': count(all_memberships),
             'unpaid_invoices': count(unpaid_memberships),
             'outstanding': outstanding,
-            'frequency': frequency,
-            'end_date': self.expiry_date,
         })
+        all_membership_items = frappe.db.sql(
+            """
+                SELECT
+                    mi.item_code AS item_code,
+                    mi.item_name AS item_name,
+                    MAX(mi.end_date) AS expiry_date,
+                    ms.status AS status
+                FROM
+                    `tabGym Membership Item` AS mi,
+                    `tabGym Membership` AS ms
+                WHERE
+                    mi.one_time != 1 AND
+                    ms.member = '{member}' AND
+                    ms.docstatus = 1 AND
+                    ms.name = mi.parent
+                GROUP BY
+                    mi.item_code,
+                    ms.status
+            """.format(member=self.name),
+            as_dict=1,
+        )
+
+        def set_expiry_by(status, d):
+            return assoc(d, '{}_expiry'.format(status), d.get('expiry_date')) \
+                if d.get('status').lower() == status else d
+
+        set_paid_expiry = partial(set_expiry_by, 'paid')
+        set_unpaid_expiry = partial(set_expiry_by, 'unpaid')
+        omit_fields = partial(omit, ['expiry_date', 'status'])
+        make_items = compose(
+            partial(reduceby, 'item_code', lambda a, x: merge(a, x), init={}),
+            partial(map, omit_fields),
+            partial(map, set_unpaid_expiry),
+            partial(map, set_paid_expiry),
+        )
+        self.set_onload(
+            'membership_items', make_items(all_membership_items).values(),
+        )
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)
@@ -115,25 +148,3 @@ class GymMember(Document):
             }, field_kwargs)
         ).insert()
         return customer.name
-
-    def update_expiry_date(self):
-        try:
-            self.expiry_date = compose(
-                partial(get, 'to_date'),
-                first,
-            )(
-                frappe.db.sql(
-                    """
-                        SELECT to_date FROM `tabGym Membership`
-                        WHERE docstatus = 1 AND
-                            member = '{member}' AND
-                            status = 'Paid'
-                        ORDER BY to_date DESC
-                        LIMIT 1
-                    """.format(member=self.name),
-                    as_dict=True,
-                )
-            )
-            self.save()
-        except StopIteration:
-            pass

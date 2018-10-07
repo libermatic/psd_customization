@@ -55,8 +55,6 @@ class GymMembership(Document):
             self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
-        member = frappe.get_doc('Gym Member', self.member)
-        member.update_expiry_date()
         if self.status == 'Paid':
             dispatch_sms(self.name, 'sms_receipt')
 
