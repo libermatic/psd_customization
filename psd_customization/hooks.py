@@ -123,6 +123,8 @@ doc_events = {
         'autoname': 'psd_customization.doc_events.batch.autoname',
     },
     'Sales Invoice': {
+        'validate': 'psd_customization.doc_events.sales_invoice.validate',
+        'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
         'on_cancel': 'psd_customization.doc_events.sales_invoice.on_cancel',
     },
     'Payment Entry': {

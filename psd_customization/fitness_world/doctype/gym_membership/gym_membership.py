@@ -63,7 +63,8 @@ class GymMembership(Document):
     def on_cancel(self):
         if self.reference_invoice:
             si = frappe.get_doc('Sales Invoice', self.reference_invoice)
-            si.cancel()
+            if si.docstatus == 1:
+                si.cancel()
 
     def validate_dates(self):
         enrollment_date = frappe.db.get_value(
