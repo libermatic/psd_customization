@@ -4,18 +4,19 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import getdate, date_diff, formatdate
+from frappe.utils import getdate, date_diff, formatdate, cint
 from frappe.model.document import Document
-from functools import reduce
+from functools import reduce, partial
+from toolz import compose
 
 from psd_customization.fitness_world.api.gym_membership import (
-    get_next_from_date, get_to_date, get_items, dispatch_sms
+    get_items, dispatch_sms
 )
 
 
 class GymMembership(Document):
     def onload(self):
-        if self.docstatus == 1:
+        if self.reference_invoice and self.docstatus == 1:
             rounded_total, status = frappe.db.get_value(
                 'Sales Invoice',
                 self.reference_invoice,
@@ -29,17 +30,20 @@ class GymMembership(Document):
             frappe.throw('Services cannot be empty.')
 
     def before_save(self):
-        if not self.from_date:
-            self.from_date = get_next_from_date(self.member)
+        def pick_date(key):
+            return compose(
+                partial(map, lambda x: getdate(x)),
+                partial(filter, lambda x: x),
+                partial(map, lambda x: x.get(key)),
+                partial(map, lambda x: x.as_dict()),
+            )
         if not self.items:
             map(
                 lambda item: self.append('items', item),
                 get_items(self.membership, self.duration),
             )
-        frequency = frappe.db.get_value(
-            'Gym Membership Plan', self.membership_plan, 'frequency'
-        )
-        self.to_date = get_to_date(self.from_date, frequency)
+        self.from_date = compose(min, pick_date('start_date'))(self.items)
+        self.to_date = compose(max, pick_date('end_date'))(self.items)
         self.validate_dates()
         self.total_amount = reduce(lambda a, x: a + x.amount, self.items, 0)
 
@@ -47,40 +51,20 @@ class GymMembership(Document):
         self.status = 'Unpaid'
 
     def on_submit(self):
-        self.reference_invoice = self.create_sales_invoice()
-        self.save()
+        if not self.no_invoice:
+            self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
-        member = frappe.get_doc('Gym Member', self.member)
-        member.update_expiry_date()
         if self.status == 'Paid':
             dispatch_sms(self.name, 'sms_receipt')
 
     def on_cancel(self):
-        si = frappe.get_doc('Sales Invoice', self.reference_invoice)
-        si.cancel()
+        if self.reference_invoice:
+            si = frappe.get_doc('Sales Invoice', self.reference_invoice)
+            if si.docstatus == 1:
+                si.cancel()
 
     def validate_dates(self):
-        existing_membership = frappe.db.sql(
-            """
-                SELECT name FROM `tabGym Membership`
-                WHERE docstatus = 1 AND
-                    member = '{member}' AND (
-                    '{from_date}' BETWEEN from_date AND to_date
-                    OR '{to_date}' BETWEEN from_date AND to_date
-                )
-            """.format(
-                member=self.member,
-                from_date=self.from_date,
-                to_date=self.to_date
-            )
-        )
-        print(existing_membership)
-        if existing_membership:
-            return frappe.throw(
-                'Another membership already exists during this time frame. '
-                'Please refresh to let the system auto-set the dates.'
-            )
         enrollment_date = frappe.db.get_value(
             'Gym Member', self.member, 'enrollment_date'
         )
@@ -90,6 +74,32 @@ class GymMembership(Document):
                     formatdate(enrollment_date)
                 )
             )
+        for item in filter(lambda x: not cint(x.one_time), self.items):
+            if frappe.db.sql(
+                """
+                    SELECT EXISTS(
+                        SELECT 1 FROM
+                            `tabGym Membership Item` AS mi,
+                            `tabGym Membership` as ms
+                        WHERE
+                            mi.item_code = '{item_code}' AND
+                            mi.parent = ms.name AND
+                            ms.docstatus = 1 AND
+                            ms.member = '{member}' AND
+                            mi.start_date <= '{end_date}' AND
+                            mi.end_date >= '{start_date}'
+                    )
+                """.format(
+                    member=self.member,
+                    item_code=item.item_code,
+                    start_date=item.start_date,
+                    end_date=item.end_date,
+                ),
+            )[0][0]:
+                return frappe.throw(
+                    'Another Membership for {item_code} already exists during'
+                    ' this time frame.'.format(item_code=item.item_name)
+                )
 
     def create_sales_invoice(self):
         si = frappe.new_doc('Sales Invoice')
@@ -98,14 +108,28 @@ class GymMembership(Document):
         si.customer = frappe.db.get_value(
             'Gym Member', self.member, 'customer'
         )
+
+        def get_description(item):
+            if not item.start_date:
+                return item.item_name
+            return '{item_name}: Valid from {start_date} to {end_date}'.format(
+                item_name=item.item_name,
+                start_date=item.get_formatted('start_date'),
+                end_date=item.get_formatted('end_date'),
+            )
         for item in self.items:
             si.append('items', {
                 'item_code': item.item_code,
+                'description': get_description(item),
                 'qty': item.qty,
                 'rate': item.rate,
             })
+
         settings = frappe.get_single('Gym Settings')
         si.company = settings.default_company
+        si.cost_center = frappe.db.get_value(
+            'Company', settings.default_company, 'cost_center',
+        )
         si.naming_series = settings.naming_series
         si.taxes_and_charges = settings.default_tax_template
         si.set_taxes()

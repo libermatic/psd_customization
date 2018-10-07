@@ -24,7 +24,61 @@ def make_payment_entry(source_name):
     return get_payment_entry('Sales Invoice', reference_invoice)
 
 
-def _existing_membership(member):
+@frappe.whitelist()
+def make_sales_invoice(source_name):
+    membership = frappe.get_doc('Gym Membership', source_name)
+    si = frappe.new_doc('Sales Invoice')
+    si.gym_membership = source_name
+    si.customer = frappe.db.get_value(
+        'Gym Member', membership.member, 'customer'
+    )
+
+    def get_description(item):
+        if not item.start_date:
+            return item.item_name
+        return '{item_name}: Valid from {start_date} to {end_date}'.format(
+            item_name=item.item_name,
+            start_date=item.get_formatted('start_date'),
+            end_date=item.get_formatted('end_date'),
+        )
+    for item in membership.items:
+        si.append('items', {
+            'item_code': item.item_code,
+            'description': get_description(item),
+            'qty': item.qty,
+            'rate': item.rate,
+        })
+
+    settings = frappe.get_single('Gym Settings')
+    si.company = settings.default_company
+    si.cost_center = frappe.db.get_value(
+        'Company', settings.default_company, 'cost_center',
+    )
+    si.naming_series = settings.naming_series
+    si.taxes_and_charges = settings.default_tax_template
+    si.run_method('set_missing_values')
+    si.run_method('set_taxes')
+    return si
+
+
+def _existing_membership(member, item_code=None):
+    if item_code:
+        return frappe.db.sql(
+            """
+                SELECT mi.end_date AS to_date
+                FROM
+                    `tabGym Membership Item` AS mi,
+                    `tabGym Membership` AS ms
+                WHERE
+                    mi.parent = ms.name AND
+                    mi.item_code = '{item_code}' AND
+                    ms.docstatus = 1 AND
+                    ms.member = '{member}'
+                ORDER BY mi.end_date DESC
+                LIMIT 1
+            """.format(member=member, item_code=item_code),
+            as_dict=True,
+        )
     return frappe.db.sql(
         """
             SELECT to_date FROM `tabGym Membership`
@@ -37,8 +91,8 @@ def _existing_membership(member):
 
 
 @frappe.whitelist()
-def get_next_from_date(member):
-    existing_memberships = _existing_membership(member)
+def get_next_from_date(member, item_code=None):
+    existing_memberships = _existing_membership(member, item_code)
     if existing_memberships:
         return compose(
             partial(add_days, days=1),
@@ -46,10 +100,12 @@ def get_next_from_date(member):
             partial(get, 'to_date'),
             first,
         )(existing_memberships)
-    return frappe.db.get_value('Gym Member', member, 'membership_start_date')
+    return frappe.db.get_value('Gym Member', member, 'enrollment_date')
 
 
 def get_to_date(from_date, frequency):
+    if frequency == 'Lifetime':
+        return None
     make_end_of_freq = compose(
         partial(add_days, days=-1), partial(add_months, from_date)
     )
@@ -59,10 +115,7 @@ def get_to_date(from_date, frequency):
         'Half-Yearly': 6,
         'Yearly': 12,
     }
-    try:
-        return make_end_of_freq(freq_map[frequency])
-    except Exception as e:
-        raise e
+    return make_end_of_freq(freq_map[frequency])
 
 
 @frappe.whitelist()
@@ -82,8 +135,25 @@ def get_items(member, membership_plan, transaction_date=None):
             {'rate': price, 'amount': price * item.get('qty', 0)}
         )
 
+    def update_dates(item):
+        if cint(item.get('one_time')):
+            return item
+        next_date = get_next_from_date(member, item.get('item_code'))
+        return merge(
+            item,
+            {
+                'start_date': next_date,
+                'end_date': get_to_date(next_date, plan.frequency),
+            }
+        )
+
     pick_fields = compose(
-        partial(pick, ['item_code', 'item_name', 'qty', 'rate', 'amount']),
+        partial(pick, [
+            'item_code', 'item_name',
+            'qty', 'rate', 'amount', 'one_time',
+            'start_date', 'end_date',
+        ]),
+        update_dates,
         update_amounts,
         lambda x: x.as_dict()
     )

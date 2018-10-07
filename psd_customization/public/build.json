@@ -2,6 +2,7 @@
   "css/psd_customization.css": ["public/less/dashboard.less"],
   "js/psd_customization.min.js": [
     "public/js/gym_member_dashboard.html",
+    "public/js/gym_member_dashboard_items.html",
     "public/js/gym_membership_dashboard.html"
   ]
 }

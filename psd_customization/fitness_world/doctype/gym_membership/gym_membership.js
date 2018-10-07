@@ -1,6 +1,18 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+function _update_item_end_date(cdn) {
+  const { qty, start_date } = frappe.get_doc('Gym Membership Item', cdn) || {};
+  if (qty && start_date) {
+    frappe.model.set_value(
+      'Gym Membership Item',
+      cdn,
+      'end_date',
+      frappe.datetime.add_days(frappe.datetime.add_months(start_date, qty), -1)
+    );
+  }
+}
+
 frappe.ui.form.on('Gym Membership', {
   setup: function(frm) {
     if (frm.doc.docstatus !== 1) {
@@ -25,20 +37,34 @@ frappe.ui.form.on('Gym Membership', {
         const { member, posting_date: transaction_date } = frm.doc;
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
         if (item_code) {
-          const { message: price } = await frappe.call({
-            method:
-              'psd_customization.fitness_world.api.gym_membership.get_item_price',
-            args: { item_code, member, transaction_date, no_pricing_rule: 0 },
-          });
+          const [
+            { message: price },
+            { message: start_date },
+          ] = await Promise.all([
+            frappe.call({
+              method:
+                'psd_customization.fitness_world.api.gym_membership.get_item_price',
+              args: { item_code, member, transaction_date, no_pricing_rule: 0 },
+            }),
+            frappe.call({
+              method:
+                'psd_customization.fitness_world.api.gym_membership.get_next_from_date',
+              args: { member, item_code },
+            }),
+          ]);
           frappe.model.set_value(cdt, cdn, 'rate', price);
           frappe.model.set_value(cdt, cdn, 'qty', 1);
+          frappe.model.set_value(cdt, cdn, 'start_date', start_date);
         } else {
           frappe.model.set_value(cdt, cdn, 'rate', 0);
+          frappe.model.set_value(cdt, cdn, 'start_date', null);
         }
       },
       qty: function(frm, cdt, cdn) {
-        const { qty = 0, rate = 0 } = frappe.get_doc(cdt, cdn) || {};
+        const { qty = 0, rate = 0, start_date } =
+          frappe.get_doc(cdt, cdn) || {};
         frappe.model.set_value(cdt, cdn, 'amount', qty * rate);
+        _update_item_end_date(cdn);
       },
       rate: function(frm, cdt, cdn) {
         const { qty = 0, rate = 0 } = frappe.get_doc(cdt, cdn) || {};
@@ -46,6 +72,9 @@ frappe.ui.form.on('Gym Membership', {
       },
       amount: function(frm) {
         frm.trigger('calculate_total');
+      },
+      start_date: function(frm, cdt, cdn) {
+        _update_item_end_date(cdn);
       },
       items_remove: function(frm) {
         frm.trigger('calculate_total');
@@ -56,16 +85,12 @@ frappe.ui.form.on('Gym Membership', {
   },
   member: async function(frm) {
     if (frm.doc['member']) {
-      const [{ message: member }, { message: from_date }] = await Promise.all([
-        frappe.db.get_value('Gym Member', frm.doc['member'], 'membership_plan'),
-        frappe.call({
-          method:
-            'psd_customization.fitness_world.api.gym_membership.get_next_from_date',
-          args: { member: frm.doc['member'] },
-        }),
-      ]);
+      const { message: member } = await frappe.db.get_value(
+        'Gym Member',
+        frm.doc['member'],
+        'membership_plan'
+      );
       frm.set_value('membership_plan', member['membership_plan']);
-      frm.set_value('from_date', from_date || frappe.datetime.get_today());
     }
   },
   membership_plan: async function(frm) {
@@ -84,6 +109,18 @@ frappe.ui.form.on('Gym Membership', {
       frm.refresh_field('items');
     }
   },
+  from_date: function(frm) {
+    if (frm.doc['from_date'] && locals['Gym Membership Item']) {
+      Object.keys(locals['Gym Membership Item']).forEach(cdn => {
+        frappe.model.set_value(
+          'Gym Membership Item',
+          cdn,
+          'start_date',
+          frm.doc['from_date']
+        );
+      });
+    }
+  },
   calculate_total: function(frm) {
     const { items = [] } = frm.doc;
     frm.set_value(
@@ -93,13 +130,24 @@ frappe.ui.form.on('Gym Membership', {
   },
   add_actions: function(frm) {
     if (frm.doc.docstatus === 1) {
-      frm
-        .add_custom_button('Make Payment', function() {
-          frappe.model.open_mapped_doc({
-            frm,
+      function get_invoice_props() {
+        if (frm.doc['reference_invoice']) {
+          return {
+            label: 'Make Payment',
             method:
               'psd_customization.fitness_world.api.gym_membership.make_payment_entry',
-          });
+          };
+        }
+        return {
+          label: 'Make Invoice',
+          method:
+            'psd_customization.fitness_world.api.gym_membership.make_sales_invoice',
+        };
+      }
+      const { label, method } = get_invoice_props();
+      frm
+        .add_custom_button(label, function() {
+          frappe.model.open_mapped_doc({ frm, method });
         })
         .addClass('btn-primary')
         .toggleClass('disabled', frm.doc['status'] === 'Paid');

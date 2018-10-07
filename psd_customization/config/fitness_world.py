@@ -40,4 +40,15 @@ def get_data():
                 },
             ]
         },
+        {
+            "label": _("Reports"),
+            "items": [
+                {
+                    "type": "report",
+                    "is_query_report": True,
+                    "name": "Gym Membership Status",
+                    "label": "Membership Status",
+                },
+            ]
+        },
     ]

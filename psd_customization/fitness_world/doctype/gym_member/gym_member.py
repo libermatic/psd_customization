@@ -9,10 +9,12 @@ from frappe.contacts.address_and_contact \
     import load_address_and_contact, delete_contact_and_address
 from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
-from psd_customization.utils.fp import pick, compact
+from frappe.utils import today
 import operator
 from functools import reduce, partial
-from toolz import merge, count, first, pluck, get, compose
+from toolz import merge, count, pluck, compose, assoc, reduceby
+
+from psd_customization.utils.fp import pick, omit, compact
 
 
 class GymMember(Document):
@@ -20,17 +22,20 @@ class GymMember(Document):
         load_address_and_contact(self)
         self.load_membership_details()
 
+    def validate(self):
+        if not self.is_new() and not self.enrollment_date:
+            frappe.throw('Enrollment Date cannot be empty.')
+
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
         self.member_name = ' '.join(
             compact([self.first_name, self.last_name])
         )
+        if self.is_new() and not self.enrollment_date:
+            self.enrollment_date = today()
         if not self.status:
             self.status = 'Active'
-        frequency = frappe.db.get_value(
-            'Gym Membership Plan', self.membership_plan, 'frequency'
-        )
-        if frequency == 'Lifetime' or not self.auto_renew:
+        if not self.auto_renew:
             self.auto_renew = 'No'
         if not self.customer:
             self.customer = self.create_customer()
@@ -69,17 +74,34 @@ class GymMember(Document):
         outstanding = reduce(
             operator.add, pluck('amount', unpaid_memberships), 0
         )
-        frequency = frappe.db.get_value(
-            'Gym Membership Plan', self.membership_plan, 'frequency'
-        )
-        frequency = 'Lifetime'
         self.set_onload('membership_details', {
             'total_invoices': count(all_memberships),
             'unpaid_invoices': count(unpaid_memberships),
             'outstanding': outstanding,
-            'frequency': frequency,
-            'end_date': self.expiry_date,
         })
+
+        all_membership_items = frappe.db.sql(
+            """
+                SELECT
+                    mi.item_code AS item_code,
+                    mi.item_name AS item_name,
+                    MAX(mi.end_date) AS expiry_date,
+                    ms.name AS membership,
+                    ms.status AS status
+                FROM
+                    `tabGym Membership Item` AS mi,
+                    `tabGym Membership` AS ms
+                WHERE
+                    mi.one_time != 1 AND
+                    ms.member = '{member}' AND
+                    ms.docstatus = 1 AND
+                    ms.name = mi.parent
+                GROUP BY
+                    mi.item_code
+            """.format(member=self.name),
+            as_dict=1,
+        )
+        self.set_onload('membership_items', all_membership_items)
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)
@@ -111,25 +133,3 @@ class GymMember(Document):
             }, field_kwargs)
         ).insert()
         return customer.name
-
-    def update_expiry_date(self):
-        try:
-            self.expiry_date = compose(
-                partial(get, 'to_date'),
-                first,
-            )(
-                frappe.db.sql(
-                    """
-                        SELECT to_date FROM `tabGym Membership`
-                        WHERE docstatus = 1 AND
-                            member = '{member}' AND
-                            status = 'Paid'
-                        ORDER BY to_date DESC
-                        LIMIT 1
-                    """.format(member=self.name),
-                    as_dict=True,
-                )
-            )
-            self.save()
-        except StopIteration:
-            pass
