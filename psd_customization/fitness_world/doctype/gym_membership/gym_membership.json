@@ -374,7 +374,7 @@
    "read_only": 0, 
    "remember_last_selected_value": 0, 
    "report_hide": 0, 
-   "reqd": 1, 
+   "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
    "unique": 0
@@ -541,7 +541,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-10-07 13:26:01.784062", 
+ "modified": "2018-10-07 14:09:49.948667", 
  "modified_by": "Administrator", 
  "module": "Fitness World", 
  "name": "Gym Membership", 

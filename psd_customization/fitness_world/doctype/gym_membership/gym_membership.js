@@ -73,16 +73,12 @@ frappe.ui.form.on('Gym Membership', {
   },
   member: async function(frm) {
     if (frm.doc['member']) {
-      const [{ message: member }, { message: from_date }] = await Promise.all([
-        frappe.db.get_value('Gym Member', frm.doc['member'], 'membership_plan'),
-        frappe.call({
-          method:
-            'psd_customization.fitness_world.api.gym_membership.get_next_from_date',
-          args: { member: frm.doc['member'] },
-        }),
-      ]);
+      const { message: member } = await frappe.db.get_value(
+        'Gym Member',
+        frm.doc['member'],
+        'membership_plan'
+      );
       frm.set_value('membership_plan', member['membership_plan']);
-      frm.set_value('from_date', from_date || frappe.datetime.get_today());
     }
   },
   membership_plan: async function(frm) {
