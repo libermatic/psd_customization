@@ -14,7 +14,7 @@ import operator
 from functools import reduce
 from toolz import merge, count, pluck
 
-from psd_customization.utils.fp import pick, compact
+from psd_customization.utils.fp import pick
 
 
 class GymMember(Document):
@@ -28,9 +28,6 @@ class GymMember(Document):
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
-        self.member_name = ' '.join(
-            compact([self.first_name, self.last_name])
-        )
         if self.is_new() and not self.enrollment_date:
             self.enrollment_date = today()
         if not self.status:

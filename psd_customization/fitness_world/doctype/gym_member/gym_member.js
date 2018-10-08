@@ -91,10 +91,7 @@ frappe.ui.form.on('Gym Member', {
       .find('.btn-contact')
       .unbind('click')
       .on('click', function() {
-        frappe.new_doc('Contact', {
-          first_name: frm.doc['first_name'],
-          last_name: frm.doc['last_name'],
-        });
+        frappe.new_doc('Contact');
       })
       .after($link_btn_contact);
   },
