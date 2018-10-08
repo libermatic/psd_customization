@@ -17,7 +17,11 @@ They are auto-selected based on **Company** by creating **Naming Series** entry 
 
 ### Journal Entry
 
-`branch` field added to differentiate branch-specific entries. Also added `company` field in **Branch** handle `set_query` in **Journal Entry**
+`branch` field added to differentiate branch-specific entries. Also added `company` field in **Branch** handle `set_query` in **Journal Entry**.
+
+### Sales Invoice
+
+`gym_subscription` field added to reference **Gym Subscription**.
 
 #### License
 

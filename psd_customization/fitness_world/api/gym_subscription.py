@@ -54,6 +54,7 @@ def make_sales_invoice(source_name):
     si.naming_series = settings.naming_series
     si.taxes_and_charges = settings.default_tax_template
     si.run_method('set_missing_values')
+    si.run_method('set_taxes')
     si.run_method('calculate_taxes_and_totals')
     return si
 
