@@ -51,13 +51,10 @@ def make_sales_invoice(source_name):
 
     settings = frappe.get_single('Gym Settings')
     si.company = settings.default_company
-    si.cost_center = frappe.db.get_value(
-        'Company', settings.default_company, 'cost_center',
-    )
     si.naming_series = settings.naming_series
     si.taxes_and_charges = settings.default_tax_template
     si.run_method('set_missing_values')
-    si.run_method('set_taxes')
+    si.run_method('calculate_taxes_and_totals')
     return si
 
 

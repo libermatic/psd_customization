@@ -10,7 +10,7 @@ from functools import reduce, partial
 from toolz import compose
 
 from psd_customization.fitness_world.api.gym_membership import (
-    get_items, dispatch_sms
+    get_items, dispatch_sms, make_sales_invoice
 )
 
 
@@ -102,43 +102,12 @@ class GymMembership(Document):
                 )
 
     def create_sales_invoice(self):
-        si = frappe.new_doc('Sales Invoice')
+        si = make_sales_invoice(self.name)
         si.set_posting_time = 1
         si.posting_date = self.posting_date
-        si.customer = frappe.db.get_value(
-            'Gym Member', self.member, 'customer'
+        si.payment_terms_template = frappe.db.get_value(
+            'Gym Settings', None, 'default_payment_template'
         )
-
-        def get_description(item):
-            if not item.start_date:
-                return item.item_name
-            return '{item_name}: Valid from {start_date} to {end_date}'.format(
-                item_name=item.item_name,
-                start_date=item.get_formatted('start_date'),
-                end_date=item.get_formatted('end_date'),
-            )
-        for item in self.items:
-            si.append('items', {
-                'item_code': item.item_code,
-                'description': get_description(item),
-                'qty': item.qty,
-                'rate': item.rate,
-            })
-
-        settings = frappe.get_single('Gym Settings')
-        si.company = settings.default_company
-        si.cost_center = frappe.db.get_value(
-            'Company', settings.default_company, 'cost_center',
-        )
-        si.naming_series = settings.naming_series
-        si.taxes_and_charges = settings.default_tax_template
-        si.set_taxes()
-        si.append('payment_schedule', {
-            'due_date': max(
-                getdate(self.to_date), getdate(self.posting_date)
-            ),
-            'invoice_portion': 100,
-        })
-        si.save()
+        si.insert()
         si.submit()
         return si.name
