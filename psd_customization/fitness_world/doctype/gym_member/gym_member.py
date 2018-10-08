@@ -52,6 +52,9 @@ class GymMember(Document):
     def on_trash(self):
         delete_contact_and_address('Gym Member', self.name)
 
+    def after_delete(self):
+        frappe.delete_doc('Customer', self.customer)
+
     def load_subscription_details(self):
         all_subscriptions = frappe.db.sql(
             """
