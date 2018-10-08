@@ -51,7 +51,7 @@ class GymMembership(Document):
         self.status = 'Unpaid'
 
     def on_submit(self):
-        if not self.no_invoice:
+        if not cint(self.no_invoice):
             self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
