@@ -142,8 +142,6 @@ frappe.ui.form.on('Gym Member', {
       frm.doc.__onload['subscription_items'] &&
       frm.doc.__onload['subscription_items'].length > 0
     ) {
-      console.log(frm.doc.__onload['subscription_items']);
-
       frm.dashboard.add_section(
         frappe.render_template('gym_member_dashboard_items', {
           items: frm.doc.__onload['subscription_items'].map(item =>
@@ -205,7 +203,7 @@ frappe.ui.form.on('Gym Member', {
       );
     }
     const renew_props = get_renew_props(frm.doc['auto_renew']);
-    if (frm.doc['member_type' !== 'Lifetime']) {
+    if (frm.doc['member_type'] !== 'Lifetime') {
       frm.add_custom_button(
         renew_props.label,
         async function() {
