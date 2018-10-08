@@ -21,10 +21,10 @@ def get_columns():
         _('Member Name') + '::180',
         _('Activity') + '::90',
         _('Item Code') + '::90',
-        _('Membership Item Name') + '::150',
+        _('Subscription Item Name') + '::150',
         _('Expires On') + ':Date:90',
         _('Expiry (In Days)') + ':Int:90',
-        _('Ref Membership') + ':Link/Gym Membership:120',
+        _('Ref Subscription') + ':Link/Gym Subscription:120',
         _('Status') + '::90',
     ]
     return columns
@@ -40,13 +40,13 @@ def make_conditions(filters={}):
         conds.append(
             "m.status = '{}'".format(filters.get('member_status'))
         )
-    if filters.get('membership_item'):
+    if filters.get('subscription_item'):
         conds.append(
-            "mi.item_code = '{}'".format(filters.get('membership_item'))
+            "mi.item_code = '{}'".format(filters.get('subscription_item'))
         )
-    if filters.get('membership_status'):
+    if filters.get('subscription_status'):
         conds.append(
-            "ms.status = '{}'".format(filters.get('membership_status'))
+            "ms.status = '{}'".format(filters.get('subscription_status'))
         )
     return conds
 
@@ -61,12 +61,12 @@ def query_data(conditions):
                 mi.item_code AS item_code,
                 mi.item_name AS item_name,
                 MAX(mi.end_date) AS expiry_date,
-                ms.name AS membership,
-                ms.status AS membership_status
+                ms.name AS subscription,
+                ms.status AS subscription_status
             FROM
                 `tabGym Member` AS m,
-                `tabGym Membership` AS ms,
-                `tabGym Membership Item` AS mi
+                `tabGym Subscription` AS ms,
+                `tabGym Subscription Item` AS mi
             WHERE
                 %s
                 m.name = ms.member AND
@@ -92,6 +92,6 @@ def make_row(row):
     keys = [
         'member_id', 'member_name', 'member_status',
         'item_code', 'item_name', 'expiry_date', 'expiry_status',
-        'membership', 'membership_status',
+        'subscription', 'subscription_status',
     ]
     return map(lambda x: row.get(x), keys)

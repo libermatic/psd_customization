@@ -11,16 +11,16 @@ from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from frappe.utils import today
 import operator
-from functools import reduce, partial
-from toolz import merge, count, pluck, compose, assoc, reduceby
+from functools import reduce
+from toolz import merge, count, pluck
 
-from psd_customization.utils.fp import pick, omit, compact
+from psd_customization.utils.fp import pick, compact
 
 
 class GymMember(Document):
     def onload(self):
         load_address_and_contact(self)
-        self.load_membership_details()
+        self.load_subscription_details()
 
     def validate(self):
         if not self.is_new() and not self.enrollment_date:
@@ -52,14 +52,14 @@ class GymMember(Document):
     def on_trash(self):
         delete_contact_and_address('Gym Member', self.name)
 
-    def load_membership_details(self):
-        all_memberships = frappe.db.sql(
+    def load_subscription_details(self):
+        all_subscriptions = frappe.db.sql(
             """
                 SELECT
                     si.rounded_total AS amount,
                     ms.status AS status,
                     ms.to_date AS end_date
-                FROM `tabGym Membership` AS ms, `tabSales Invoice` AS si
+                FROM `tabGym Subscription` AS ms, `tabSales Invoice` AS si
                 WHERE
                     ms.docstatus = 1 AND
                     ms.member = '{member}' AND
@@ -68,29 +68,29 @@ class GymMember(Document):
             """.format(member=self.name),
             as_dict=True,
         )
-        unpaid_memberships = filter(
-            lambda x: x.get('status') == 'Unpaid', all_memberships
+        unpaid_subscriptions = filter(
+            lambda x: x.get('status') == 'Unpaid', all_subscriptions
         )
         outstanding = reduce(
-            operator.add, pluck('amount', unpaid_memberships), 0
+            operator.add, pluck('amount', unpaid_subscriptions), 0
         )
-        self.set_onload('membership_details', {
-            'total_invoices': count(all_memberships),
-            'unpaid_invoices': count(unpaid_memberships),
+        self.set_onload('subscription_details', {
+            'total_invoices': count(all_subscriptions),
+            'unpaid_invoices': count(unpaid_subscriptions),
             'outstanding': outstanding,
         })
 
-        all_membership_items = frappe.db.sql(
+        all_subscription_items = frappe.db.sql(
             """
                 SELECT
                     mi.item_code AS item_code,
                     mi.item_name AS item_name,
                     MAX(mi.end_date) AS expiry_date,
-                    ms.name AS membership,
+                    ms.name AS subscription,
                     ms.status AS status
                 FROM
-                    `tabGym Membership Item` AS mi,
-                    `tabGym Membership` AS ms
+                    `tabGym Subscription Item` AS mi,
+                    `tabGym Subscription` AS ms
                 WHERE
                     mi.one_time != 1 AND
                     ms.member = '{member}' AND
@@ -101,7 +101,7 @@ class GymMember(Document):
             """.format(member=self.name),
             as_dict=1,
         )
-        self.set_onload('membership_items', all_membership_items)
+        self.set_onload('subscription_items', all_subscription_items)
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)

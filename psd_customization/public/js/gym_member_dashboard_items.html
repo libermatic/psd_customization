@@ -1,11 +1,11 @@
 <div class="row">
   <div class="col-sm-12">
-    <h6>Membership Items</h6>
+    <h6>Subscription Items</h6>
     <div class="psd-dash-items">
       {% for(let i = 0; i < items.length; i++) { %}
       <div>
         <span class="indicator {%= items[i].color %}" />
-        <a href="#Form/Gym Membership/{%= encodeURIComponent(items[i].membership) %}">
+        <a href="#Form/Gym Subscription/{%= encodeURIComponent(items[i].subscription) %}">
           {%= items[i].item_name %} ends
           <span class="psd-text-strong">
             {%= frappe.datetime.str_to_user(items[i].expiry_date) %}

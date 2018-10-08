@@ -9,12 +9,12 @@ from frappe.model.document import Document
 from functools import reduce, partial
 from toolz import compose
 
-from psd_customization.fitness_world.api.gym_membership import (
+from psd_customization.fitness_world.api.gym_subscription import (
     get_items, dispatch_sms, make_sales_invoice
 )
 
 
-class GymMembership(Document):
+class GymSubscription(Document):
     def onload(self):
         if self.reference_invoice and self.docstatus == 1:
             rounded_total, status = frappe.db.get_value(
@@ -40,7 +40,7 @@ class GymMembership(Document):
         if not self.items:
             map(
                 lambda item: self.append('items', item),
-                get_items(self.membership, self.duration),
+                get_items(self.subscription, self.duration),
             )
         self.from_date = compose(min, pick_date('start_date'))(self.items)
         self.to_date = compose(max, pick_date('end_date'))(self.items)
@@ -70,7 +70,7 @@ class GymMembership(Document):
         )
         if date_diff(self.from_date, enrollment_date) < 0:
             return frappe.throw(
-                'Membership cannot start before enrollment date {}.'.format(
+                'Subscription cannot start before enrollment date {}.'.format(
                     formatdate(enrollment_date)
                 )
             )
@@ -79,8 +79,8 @@ class GymMembership(Document):
                 """
                     SELECT EXISTS(
                         SELECT 1 FROM
-                            `tabGym Membership Item` AS mi,
-                            `tabGym Membership` as ms
+                            `tabGym Subscription Item` AS mi,
+                            `tabGym Subscription` as ms
                         WHERE
                             mi.item_code = '{item_code}' AND
                             mi.parent = ms.name AND
@@ -97,8 +97,8 @@ class GymMembership(Document):
                 ),
             )[0][0]:
                 return frappe.throw(
-                    'Another Membership for {item_code} already exists during'
-                    ' this time frame.'.format(item_code=item.item_name)
+                    'Another Subscription for {item_code} already exists '
+                    'during this time frame.'.format(item_code=item.item_name)
                 )
 
     def create_sales_invoice(self):

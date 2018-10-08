@@ -1,7 +1,7 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-frappe.listview_settings['Gym Membership'] = {
+frappe.listview_settings['Gym Subscription'] = {
   add_fields: ['status', 'to_date'],
   get_indicator: function({ status, to_date }) {
     if (status === 'Paid') {

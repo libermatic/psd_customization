@@ -1,18 +1,18 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Gym Membership Plan', {
+frappe.ui.form.on('Gym Subscription Plan', {
   setup: function(frm) {
     frm.trigger('set_queries');
   },
   refresh: function(frm) {
-    frappe.ui.form.on('Gym Membership Item', {
+    frappe.ui.form.on('Gym Subscription Item', {
       item_code: async function(frm, cdt, cdn) {
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
         if (item_code) {
           const { message: price } = await frappe.call({
             method:
-              'psd_customization.fitness_world.api.gym_membership.get_item_price',
+              'psd_customization.fitness_world.api.gym_subscription.get_item_price',
             args: { item_code },
           });
           frappe.model.set_value(cdt, cdn, 'rate', price);

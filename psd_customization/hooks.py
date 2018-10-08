@@ -36,7 +36,7 @@ fixtures = [
         'filters': [['name', 'in', [
             'Branch-company',
             'Journal Entry-branch',
-            'Sales Invoice-gym_membership',
+            'Sales Invoice-gym_subscription',
         ]]]
     },
 ]

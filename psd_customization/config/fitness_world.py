@@ -15,8 +15,8 @@ def get_data():
                 },
                 {
                     "type": "doctype",
-                    "name": "Gym Membership",
-                    "label": "Membership",
+                    "name": "Gym Subscription",
+                    "label": "Subscription",
                 },
             ]
         },
@@ -25,8 +25,8 @@ def get_data():
             "items": [
                 {
                     "type": "doctype",
-                    "name": "Gym Membership Plan",
-                    "label": "Membership Plan",
+                    "name": "Gym Subscription Plan",
+                    "label": "Subscription Plan",
                 },
                 {
                     "type": "doctype",
@@ -46,8 +46,8 @@ def get_data():
                 {
                     "type": "report",
                     "is_query_report": True,
-                    "name": "Gym Membership Status",
-                    "label": "Membership Status",
+                    "name": "Gym Subscription Status",
+                    "label": "Subscription Status",
                 },
             ]
         },
