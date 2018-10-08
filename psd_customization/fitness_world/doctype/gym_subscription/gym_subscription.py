@@ -105,6 +105,7 @@ class GymSubscription(Document):
         si = make_sales_invoice(self.name)
         si.set_posting_time = 1
         si.posting_date = self.posting_date
+        si.due_date = None
         si.payment_terms_template = frappe.db.get_value(
             'Gym Settings', None, 'default_payment_template'
         )
