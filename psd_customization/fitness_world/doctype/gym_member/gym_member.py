@@ -7,12 +7,10 @@ import frappe
 from frappe.model.document import Document
 from frappe.contacts.address_and_contact \
     import load_address_and_contact, delete_contact_and_address
-from frappe.contacts.doctype.address.address import get_default_address
-from frappe.contacts.doctype.contact.contact import get_default_contact
 from frappe.utils import today
 import operator
 from functools import reduce
-from toolz import merge, count, pluck
+from toolz import count, pluck
 
 from psd_customization.utils.fp import pick
 
@@ -41,12 +39,17 @@ class GymMember(Document):
 
     def on_update(self):
         if self.flags.is_new_doc:
-            self.fetch_and_link_doc('Address', get_default_address)
-            self.notification_contact = \
-                self.fetch_and_link_doc('Contact', get_default_contact)
-            self.save()
+            self.make_contact_and_address(
+                pick([
+                    'email_id', 'mobile_no',
+                    'address_line1', 'address_line2',
+                    'city', 'state', 'pincode', 'country',
+                ], self)
+            )
 
     def on_trash(self):
+        # clears notification_contact for LinkExistsException
+        self.db_set('notification_contact', None)
         delete_contact_and_address('Gym Member', self.name)
 
     def after_delete(self):
@@ -114,22 +117,49 @@ class GymMember(Document):
             doc.save()
         return docname
 
+    def make_contact_and_address(self, args, is_primary_contact=1):
+        if any(field in args.keys() for field in ['email_id', 'mobile_no']):
+            contact = frappe.get_doc({
+                'doctype': 'Contact',
+                'first_name': self.member_name,
+                'email_id': args.get('email_id'),
+                'mobile_no': args.get('mobile_no'),
+                'is_primary_contact': is_primary_contact,
+                'links': [{
+                    'link_doctype': 'Gym Member',
+                    'link_name': self.name,
+                }],
+            }).insert()
+            # sets notification_contact and number
+            self.db_set('notification_contact', contact.name)
+            self.db_set('notification_number', contact.mobile_no)
+        if all(field in args.keys() for field in ['address_line1', 'city']):
+            frappe.get_doc({
+                'doctype': 'Address',
+                'address_title': self.member_name,
+                'address_type': 'Personal',
+                'address_line1': args.get('address_line1'),
+                'address_line2': args.get('address_line2'),
+                'city': args.get('city'),
+                'state': args.get('state'),
+                'pincode': args.get('pincode'),
+                'country': args.get('country'),
+                'links': [{
+                    'link_doctype': 'Gym Member',
+                    'link_name': self.name,
+                }],
+            }).insert()
+        print('done')
+
     def create_customer(self):
-        field_kwargs = pick([
-            'email_id', 'mobile_no',
-            'address_line1', 'address_line2',
-            'city', 'state', 'pincode', 'country',
-        ], self)
         customer_group = frappe.get_value(
             'Gym Settings', None, 'default_customer_group'
         )
-        customer = frappe.get_doc(
-            merge({
-                'doctype': 'Customer',
-                'customer_name': self.member_name,
-                'customer_type': 'Individual',
-                'customer_group': customer_group or 'All Customer Groups',
-                'territory': 'All Territories',
-            }, field_kwargs)
-        ).insert()
+        customer = frappe.get_doc({
+            'doctype': 'Customer',
+            'customer_name': self.member_name,
+            'customer_type': 'Individual',
+            'customer_group': customer_group or 'All Customer Groups',
+            'territory': 'All Territories',
+        }).insert()
         return customer.name
