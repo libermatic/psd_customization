@@ -109,7 +109,7 @@ def get_to_date(from_date, frequency):
     )
     freq_map = {
         'Monthly': 1,
-        'Quaterly': 3,
+        'Quarterly': 3,
         'Half-Yearly': 6,
         'Yearly': 12,
     }
