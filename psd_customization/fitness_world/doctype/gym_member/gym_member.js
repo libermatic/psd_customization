@@ -27,7 +27,7 @@ frappe.ui.form.on('Gym Member', {
     frm.toggle_enable('customer', frm.doc.__islocal);
     if (!frm.doc.__islocal) {
       frm.trigger('render_address_and_contact');
-      frm.trigger('render_membership_details');
+      frm.trigger('render_subscription_details');
       frm.trigger('add_actions');
     } else {
       frappe.contacts.clear_address_and_contact(frm);
@@ -91,17 +91,14 @@ frappe.ui.form.on('Gym Member', {
       .find('.btn-contact')
       .unbind('click')
       .on('click', function() {
-        frappe.new_doc('Contact', {
-          first_name: frm.doc['first_name'],
-          last_name: frm.doc['last_name'],
-        });
+        frappe.new_doc('Contact');
       })
       .after($link_btn_contact);
   },
-  render_membership_details: function(frm) {
-    if (frm.doc.__onload && frm.doc.__onload['membership_details']) {
+  render_subscription_details: function(frm) {
+    if (frm.doc.__onload && frm.doc.__onload['subscription_details']) {
       const { total_invoices, unpaid_invoices, outstanding } = frm.doc.__onload[
-        'membership_details'
+        'subscription_details'
       ];
       const { auto_renew, member_type } = frm.doc;
       frm.dashboard.add_section(
@@ -142,14 +139,12 @@ frappe.ui.form.on('Gym Member', {
     }
     if (
       frm.doc.__onload &&
-      frm.doc.__onload['membership_items'] &&
-      frm.doc.__onload['membership_items'].length > 0
+      frm.doc.__onload['subscription_items'] &&
+      frm.doc.__onload['subscription_items'].length > 0
     ) {
-      console.log(frm.doc.__onload['membership_items']);
-
       frm.dashboard.add_section(
         frappe.render_template('gym_member_dashboard_items', {
-          items: frm.doc.__onload['membership_items'].map(item =>
+          items: frm.doc.__onload['subscription_items'].map(item =>
             Object.assign({}, item, { color: get_color(item) })
           ),
         })
@@ -161,13 +156,13 @@ frappe.ui.form.on('Gym Member', {
     function get_status_props(status) {
       if (status === 'Active') {
         return {
-          label: 'Stop Membership',
+          label: 'Stop Subscription',
           method: 'psd_customization.fitness_world.api.gym_member.stop',
         };
       }
       if (status === 'Stopped' || status === 'Expired') {
         return {
-          label: 'Resume Membership',
+          label: 'Resume Subscription',
           method: 'psd_customization.fitness_world.api.gym_member.resume',
         };
       }
@@ -208,7 +203,7 @@ frappe.ui.form.on('Gym Member', {
       );
     }
     const renew_props = get_renew_props(frm.doc['auto_renew']);
-    if (frm.doc['member_type' !== 'Lifetime']) {
+    if (frm.doc['member_type'] !== 'Lifetime') {
       frm.add_custom_button(
         renew_props.label,
         async function() {

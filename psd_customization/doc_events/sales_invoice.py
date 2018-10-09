@@ -4,30 +4,30 @@ import frappe
 
 
 def validate(doc, method):
-    if doc.gym_membership:
+    if doc.gym_subscription:
         reference_invoice = frappe.db.get_value(
-            'Gym Membership', doc.gym_membership, 'reference_invoice',
+            'Gym Subscription', doc.gym_subscription, 'reference_invoice',
         )
         if reference_invoice:
             frappe.throw(
-                'Membership {membership} is already connected to another '
+                'Subscription {subscription} is already connected to another '
                 'Sales Invoice: {sales_invoice}'.format(
-                    membership=doc.gym_membership,
+                    subscription=doc.gym_subscription,
                     sales_invoice=reference_invoice,
                 )
             )
 
 
 def on_submit(doc, method):
-    if doc.gym_membership:
-        membership = frappe.get_doc('Gym Membership', doc.gym_membership)
-        membership.reference_invoice = doc.name
-        membership.status = 'Paid' if doc.status == 'Paid' else 'Unpaid'
-        membership.save()
+    if doc.gym_subscription:
+        subscription = frappe.get_doc('Gym Subscription', doc.gym_subscription)
+        subscription.reference_invoice = doc.name
+        subscription.status = 'Paid' if doc.status == 'Paid' else 'Unpaid'
+        subscription.save()
 
 
 def on_cancel(doc, method):
-    if doc.gym_membership:
-        membership = frappe.get_doc('Gym Membership', doc.gym_membership)
-        if membership and membership.docstatus == 1:
-            membership.cancel()
+    if doc.gym_subscription:
+        subscription = frappe.get_doc('Gym Subscription', doc.gym_subscription)
+        if subscription and subscription.docstatus == 1:
+            subscription.cancel()

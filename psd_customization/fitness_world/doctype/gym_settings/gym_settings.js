@@ -6,7 +6,12 @@ frappe.ui.form.on('Gym Settings', {
     frm.trigger('set_queries');
   },
   set_queries: async function(frm) {
-    ['sms_invoiced', 'sms_overdue', 'sms_receipt'].forEach(field => {
+    [
+      'sms_before_expiry',
+      'sms_on_expiry',
+      'sms_invoiced',
+      'sms_receipt',
+    ].forEach(field => {
       frm.set_query(field, () => ({ filters: { type: 'Transactional' } }));
     });
   },

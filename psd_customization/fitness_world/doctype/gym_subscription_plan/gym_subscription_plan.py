@@ -3,8 +3,9 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
 from frappe.model.document import Document
 
-class GymMembershipItem(Document):
-	pass
+
+class GymSubscriptionPlan(Document):
+    def autoname(self):
+        self.name = '{} - {}'.format(self.plan_name, self.frequency)

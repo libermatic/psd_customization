@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports['Gym Membership Status'] = {
+frappe.query_reports['Gym Subscription Status'] = {
   filters: [
     {
       fieldname: 'member',
@@ -17,8 +17,8 @@ frappe.query_reports['Gym Membership Status'] = {
       options: '\nActive\nStopped',
     },
     {
-      fieldname: 'membership_item',
-      label: 'Membership Item',
+      fieldname: 'subscription_item',
+      label: 'Subscription Item',
       fieldtype: 'Link',
       options: 'Item',
       get_query: function() {
@@ -35,7 +35,7 @@ frappe.query_reports['Gym Membership Status'] = {
       },
     },
     {
-      fieldname: 'membership_status',
+      fieldname: 'subscription_status',
       label: 'Invoice Status',
       fieldtype: 'Select',
       options: '\nPaid\nUnpaid',

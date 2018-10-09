@@ -1,19 +1,19 @@
 {
  "add_total_row": 0, 
  "apply_user_permissions": 1, 
- "creation": "2018-10-08 00:26:54.443268", 
+ "creation": "2018-10-08 22:57:17.899647", 
  "disabled": 0, 
  "docstatus": 0, 
  "doctype": "Report", 
  "idx": 0, 
  "is_standard": "Yes", 
- "modified": "2018-10-08 00:26:54.443268", 
+ "modified": "2018-10-08 22:57:17.899647", 
  "modified_by": "Administrator", 
  "module": "Fitness World", 
- "name": "Gym Membership Status", 
+ "name": "Gym Subscription Status", 
  "owner": "Administrator", 
  "ref_doctype": "Gym Member", 
- "report_name": "Gym Membership Status", 
+ "report_name": "Gym Subscription Status", 
  "report_type": "Script Report", 
  "roles": [
   {

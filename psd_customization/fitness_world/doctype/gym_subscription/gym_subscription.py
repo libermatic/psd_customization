@@ -9,12 +9,12 @@ from frappe.model.document import Document
 from functools import reduce, partial
 from toolz import compose
 
-from psd_customization.fitness_world.api.gym_membership import (
-    get_items, dispatch_sms
+from psd_customization.fitness_world.api.gym_subscription import (
+    get_items, dispatch_sms, make_sales_invoice
 )
 
 
-class GymMembership(Document):
+class GymSubscription(Document):
     def onload(self):
         if self.reference_invoice and self.docstatus == 1:
             rounded_total, status = frappe.db.get_value(
@@ -40,7 +40,7 @@ class GymMembership(Document):
         if not self.items:
             map(
                 lambda item: self.append('items', item),
-                get_items(self.membership, self.duration),
+                get_items(self.subscription, self.duration),
             )
         self.from_date = compose(min, pick_date('start_date'))(self.items)
         self.to_date = compose(max, pick_date('end_date'))(self.items)
@@ -51,7 +51,7 @@ class GymMembership(Document):
         self.status = 'Unpaid'
 
     def on_submit(self):
-        if not self.no_invoice:
+        if not cint(self.no_invoice):
             self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
@@ -70,7 +70,7 @@ class GymMembership(Document):
         )
         if date_diff(self.from_date, enrollment_date) < 0:
             return frappe.throw(
-                'Membership cannot start before enrollment date {}.'.format(
+                'Subscription cannot start before enrollment date {}.'.format(
                     formatdate(enrollment_date)
                 )
             )
@@ -79,8 +79,8 @@ class GymMembership(Document):
                 """
                     SELECT EXISTS(
                         SELECT 1 FROM
-                            `tabGym Membership Item` AS mi,
-                            `tabGym Membership` as ms
+                            `tabGym Subscription Item` AS mi,
+                            `tabGym Subscription` as ms
                         WHERE
                             mi.item_code = '{item_code}' AND
                             mi.parent = ms.name AND
@@ -97,48 +97,18 @@ class GymMembership(Document):
                 ),
             )[0][0]:
                 return frappe.throw(
-                    'Another Membership for {item_code} already exists during'
-                    ' this time frame.'.format(item_code=item.item_name)
+                    'Another Subscription for {item_code} already exists '
+                    'during this time frame.'.format(item_code=item.item_name)
                 )
 
     def create_sales_invoice(self):
-        si = frappe.new_doc('Sales Invoice')
+        si = make_sales_invoice(self.name)
         si.set_posting_time = 1
         si.posting_date = self.posting_date
-        si.customer = frappe.db.get_value(
-            'Gym Member', self.member, 'customer'
+        si.due_date = None
+        si.payment_terms_template = frappe.db.get_value(
+            'Gym Settings', None, 'default_payment_template'
         )
-
-        def get_description(item):
-            if not item.start_date:
-                return item.item_name
-            return '{item_name}: Valid from {start_date} to {end_date}'.format(
-                item_name=item.item_name,
-                start_date=item.get_formatted('start_date'),
-                end_date=item.get_formatted('end_date'),
-            )
-        for item in self.items:
-            si.append('items', {
-                'item_code': item.item_code,
-                'description': get_description(item),
-                'qty': item.qty,
-                'rate': item.rate,
-            })
-
-        settings = frappe.get_single('Gym Settings')
-        si.company = settings.default_company
-        si.cost_center = frappe.db.get_value(
-            'Company', settings.default_company, 'cost_center',
-        )
-        si.naming_series = settings.naming_series
-        si.taxes_and_charges = settings.default_tax_template
-        si.set_taxes()
-        si.append('payment_schedule', {
-            'due_date': max(
-                getdate(self.to_date), getdate(self.posting_date)
-            ),
-            'invoice_portion': 100,
-        })
-        si.save()
+        si.insert()
         si.submit()
         return si.name
