@@ -168,7 +168,7 @@ def get_items(member, subscription_plan, transaction_date=None):
 def get_item_price(
     item_code,
     member=None,
-    company=None,
+    qty=0,
     transaction_date=None,
     price_list='Standard Selling',
     no_pricing_rule=1
@@ -182,17 +182,19 @@ def get_item_price(
     price_list_rate = prices[0][0] if prices else 0
     if cint(no_pricing_rule):
         return price_list_rate
-    if not member:
-        return frappe.throw('Cannot fetch price without Member')
     applied_pricing_rule = get_pricing_rule_for_item(frappe._dict({
-        'item_code': item_code,
+        'doctype': 'Gym Subscription Item',
         'transaction_type': 'selling',
+        'transaction_date': transaction_date or today(),
+        'qty': qty,
+        'item_code': item_code,
         'customer': frappe.db.get_value('Gym Member', member, 'customer'),
         'price_list': price_list,
-        'company': company or frappe.db.get_value(
+        'conversion_factor': 1,
+        'conversion_rate': 1.0,
+        'company': frappe.db.get_value(
             'Gym Settings', None, 'default_company'
         ) or frappe.defaults.get_user_default('company'),
-        'transaction_date': transaction_date or today(),
     }))
     return applied_pricing_rule.get('price_list_rate') or \
         price_list_rate * (1 - flt(

@@ -35,35 +35,39 @@ frappe.ui.form.on('Gym Subscription', {
   refresh: function(frm) {
     frappe.ui.form.on('Gym Subscription Item', {
       item_code: async function(frm, cdt, cdn) {
-        const { member, posting_date: transaction_date } = frm.doc;
         const { item_code } = frappe.get_doc(cdt, cdn) || {};
         if (item_code) {
-          const [
-            { message: price },
-            { message: start_date },
-          ] = await Promise.all([
-            frappe.call({
-              method:
-                'psd_customization.fitness_world.api.gym_subscription.get_item_price',
-              args: { item_code, member, transaction_date, no_pricing_rule: 0 },
-            }),
-            frappe.call({
-              method:
-                'psd_customization.fitness_world.api.gym_subscription.get_next_from_date',
-              args: { member, item_code },
-            }),
-          ]);
-          frappe.model.set_value(cdt, cdn, 'rate', price);
+          const { message: start_date } = await frappe.call({
+            method:
+              'psd_customization.fitness_world.api.gym_subscription.get_next_from_date',
+            args: { member: frm.doc['member'], item_code },
+          });
           frappe.model.set_value(cdt, cdn, 'qty', 1);
           frappe.model.set_value(cdt, cdn, 'start_date', start_date);
         } else {
-          frappe.model.set_value(cdt, cdn, 'rate', 0);
+          frappe.model.set_value(cdt, cdn, 'qty', 0);
           frappe.model.set_value(cdt, cdn, 'start_date', null);
         }
       },
-      qty: function(frm, cdt, cdn) {
-        const { qty = 0, rate = 0, start_date } =
-          frappe.get_doc(cdt, cdn) || {};
+      qty: async function(frm, cdt, cdn) {
+        const { item_code, qty = 0, rate = 0 } = frappe.get_doc(cdt, cdn) || {};
+        if (qty) {
+          const { member, posting_date: transaction_date } = frm.doc;
+          const { message: price } = await frappe.call({
+            method:
+              'psd_customization.fitness_world.api.gym_subscription.get_item_price',
+            args: {
+              item_code,
+              qty,
+              member,
+              transaction_date,
+              no_pricing_rule: 0,
+            },
+          });
+          frappe.model.set_value(cdt, cdn, 'rate', price);
+        } else {
+          frappe.model.set_value(cdt, cdn, 'rate', 0);
+        }
         frappe.model.set_value(cdt, cdn, 'amount', qty * rate);
         _update_item_end_date(cdn);
       },
