@@ -4,7 +4,8 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import add_days, add_months, getdate, cint, today, flt
+from frappe.utils \
+    import add_days, add_months, getdate, cint, today, flt, date_diff
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from erpnext.accounts.doctype.pricing_rule.pricing_rule \
@@ -12,7 +13,7 @@ from erpnext.accounts.doctype.pricing_rule.pricing_rule \
 from functools import partial
 from toolz import pluck, compose, get, first, merge
 
-from psd_customization.utils.fp import pick
+from psd_customization.utils.fp import pick, compact
 from sms_extras.api.sms import get_sms_text, request_sms
 
 
@@ -119,7 +120,7 @@ def get_to_date(from_date, frequency):
 @frappe.whitelist()
 def get_items(member, subscription_plan, transaction_date=None):
     plan = frappe.get_doc('Gym Subscription Plan', subscription_plan)
-    existing_subscriptions = _existing_subscription(member)
+    existing_subs = _existing_subscription(member)
 
     def update_amounts(item):
         price = get_item_price(
@@ -158,7 +159,7 @@ def get_items(member, subscription_plan, transaction_date=None):
 
     make_items = compose(
         partial(map, pick_fields),
-        partial(filter, lambda x: not existing_subscriptions or not x.one_time),
+        partial(filter, lambda x: not existing_subs or not x.one_time),
     )
     return make_items(plan.items) if plan else None
 
@@ -266,3 +267,103 @@ def generate_new_subscriptions_on(posting_date=today()):
                 )
             )
             dispatch_sms(subscription.name, 'sms_invoiced')
+
+
+def send_reminders(posting_date=today()):
+    settings = frappe.get_single('Gym Settings')
+    if not settings.sms_before_expiry and not settings.sms_on_expiry:
+        return None
+    days_before_expiry = compose(
+        tuple,
+        partial(map, lambda x: add_days(posting_date, cint(x))),
+        compact,
+    )(settings.days_before_expiry.split('\n'))
+    members_sub_query = """
+        SELECT name FROM `tabGym Member`
+        WHERE status != 'Stopped' AND IFNULL(notification_number, '') != ''
+    """
+
+    items_sub_query = """
+        SELECT
+            si.item_code AS item_code,
+            si.item_name AS item_name,
+            si.end_date AS expiry_date,
+            s.name AS subscription,
+            s.member AS member,
+            m.notification_number AS mobile_no
+        FROM
+            `tabGym Subscription Item` AS si,
+            `tabGym Subscription` AS s,
+            `tabGym Member` AS m
+        WHERE
+            s.docstatus = 1 AND
+            s.name = si.parent AND
+            m.name = s.member AND
+            si.one_time != 1 AND
+            s.member IN ({members_sub_query})
+    """.format(members_sub_query=members_sub_query)
+    items_grp_sub_query = """
+        SELECT
+            si.item_code AS item_code,
+            MAX(si.end_date) AS expiry_date,
+            s.member AS member
+        FROM
+            `tabGym Subscription Item` AS si,
+            `tabGym Subscription` AS s
+        WHERE
+            s.docstatus = 1 AND
+            s.name = si.parent AND
+            si.one_time != 1
+        GROUP BY si.item_code, s.member
+    """
+    query = frappe.db.sql(
+        """
+            SELECT
+                il.item_code AS item_code,
+                il.item_name AS item_name,
+                il.member AS member,
+                il.mobile_no AS mobile_no,
+                ig.expiry_date AS expiry_date,
+                il.subscription AS subscription
+            FROM
+                ({items_grp_sub_query}) AS ig,
+                ({items_sub_query}) AS il
+            WHERE
+                ig.item_code = il.item_code AND
+                ig.member = il.member AND
+                ig.expiry_date = il.expiry_date AND (
+                    ig.expiry_date < %s OR ig.expiry_date IN %s
+                )
+        """.format(
+            items_grp_sub_query=items_grp_sub_query,
+            items_sub_query=items_sub_query,
+        ),
+        values=(
+            posting_date,
+            days_before_expiry,
+        ),
+        as_dict=1,
+    )
+    for item in query:
+        template = settings.sms_on_expiry \
+            if date_diff(item.get('expiry_date'), posting_date) < 0 else \
+            settings.sms_before_expiry
+        try:
+            content = get_sms_text(template, item)
+            subject = 'SMS: {} for {}'.format(template, item.get('member'))
+            if content:
+                request_sms(
+                    item.get('mobile_no'),
+                    content,
+                    communication={
+                        'subject': subject,
+                        'reference_doctype': 'Gym Subscription',
+                        'reference_name': item.get('subscription'),
+                        'timeline_doctype': 'Gym Member',
+                        'timeline_name': item.get('member'),
+                    }
+                )
+            pass
+        except TypeError:
+            pass
+    return None
