@@ -222,7 +222,7 @@
    "report_hide": 0, 
    "reqd": 0, 
    "search_index": 0, 
-   "set_only_once": 1, 
+   "set_only_once": 0, 
    "unique": 0
   }, 
   {
@@ -782,7 +782,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-10-09 01:33:41.659304", 
+ "modified": "2018-10-11 01:36:41.517017", 
  "modified_by": "Administrator", 
  "module": "Fitness World", 
  "name": "Gym Member", 

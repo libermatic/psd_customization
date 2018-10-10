@@ -26,8 +26,6 @@ class GymMember(Document):
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
-        if self.is_new() and not self.enrollment_date:
-            self.enrollment_date = today()
         if not self.status:
             self.status = 'Active'
         if not self.auto_renew:
