@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import getdate, date_diff, formatdate, cint
+from frappe.utils import getdate, date_diff, formatdate, cint, flt
 from frappe.model.document import Document
 from functools import reduce, partial
 from toolz import compose
@@ -36,19 +36,29 @@ class GymSubscription(Document):
                 partial(filter, lambda x: x),
                 partial(map, lambda x: x.get(key)),
                 partial(map, lambda x: x.as_dict()),
+                partial(filter, lambda x: not cint(x.one_time)),
             )
         if not self.items:
             map(
                 lambda item: self.append('items', item),
                 get_items(self.subscription, self.duration),
             )
+
+        def remove_date(item):
+            if cint(item.one_time):
+                item.start_date = item.end_date = None
+            return item
+        self.items = map(remove_date, self.items)
         self.from_date = compose(min, pick_date('start_date'))(self.items)
         self.to_date = compose(max, pick_date('end_date'))(self.items)
         self.validate_dates()
-        self.total_amount = reduce(lambda a, x: a + x.amount, self.items, 0)
+        self.total_amount = reduce(
+            lambda a, x: a + flt(x.amount), self.items, 0
+        )
 
     def before_submit(self):
-        self.status = 'Unpaid'
+        if not self.status:
+            self.status = 'Unpaid'
 
     def on_submit(self):
         if not cint(self.no_invoice):
