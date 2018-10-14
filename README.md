@@ -25,6 +25,8 @@ They are auto-selected based on **Company** by creating **Naming Series** entry 
 
 ### Item
 
+`is_base_membership_item` is used while invoicing **Gym Memberships**.
+
 `gym_parent_items` added to hold info about **Item** heirarchy. This heirarchy will be used to check for existence of parent items before creating new **Gym Subscription**
 
 #### License

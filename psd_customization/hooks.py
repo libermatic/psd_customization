@@ -38,6 +38,7 @@ fixtures = [
             'Journal Entry-branch',
             'Sales Invoice-gym_subscription',
             'Item-gym_section',
+            'Item-is_base_gym_membership_item',
             'Item-gym_parent_items',
         ]]]
     },

@@ -20,7 +20,7 @@ frappe.ui.form.on('Item', {
       'default_item_group'
     );
     frm.toggle_display(
-      ['gym_section', 'gym_parent_items'],
+      ['gym_section', 'is_base_gym_membership_item', 'gym_parent_items'],
       settings['default_item_group'] === frm.doc['item_group']
     );
     if (settings['default_item_group']) {
