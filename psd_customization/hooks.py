@@ -37,6 +37,8 @@ fixtures = [
             'Branch-company',
             'Journal Entry-branch',
             'Sales Invoice-gym_subscription',
+            'Item-gym_section',
+            'Item-gym_parent_items',
         ]]]
     },
 ]
@@ -63,7 +65,10 @@ app_include_js = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {'Journal Entry': 'public/js/journal_entry.js'}
+doctype_js = {
+    'Journal Entry': 'public/js/journal_entry.js',
+    'Item': 'public/js/item.js',
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
