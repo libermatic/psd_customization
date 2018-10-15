@@ -99,7 +99,20 @@ def get_next_from_date(member, item_code=None):
             partial(get, 'to_date'),
             first,
         )(existing_subscriptions)
+    membership = _get_uninvoiced_membership(member)
+    if membership:
+        return membership.start_date
     return frappe.db.get_value('Gym Member', member, 'enrollment_date')
+
+
+@frappe.whitelist()
+def get_next_period(member, item_code=None):
+    next_start = get_next_from_date(member, item_code)
+    next_end = get_to_date(next_start, 'Monthly')
+    return {
+        'from_date': next_start,
+        'to_date': next_end,
+    }
 
 
 def get_to_date(from_date, frequency):
@@ -117,51 +130,81 @@ def get_to_date(from_date, frequency):
     return make_end_of_freq(freq_map[frequency])
 
 
-@frappe.whitelist()
-def get_items(member, subscription_plan, transaction_date=None):
-    plan = frappe.get_doc('Gym Subscription Plan', subscription_plan)
-    existing_subs = _existing_subscription(member)
+def _get_uninvoiced_membership(member):
+    uninvoiced_memberships = frappe.db.sql(
+        """
+            SELECT name FROM `tabGym Membership`
+            WHERE docstatus = 1 AND IFNULL(status, '') = ''
+            AND member = %(member)s
+            LIMIT 1
+        """,
+        values={'member': member},
+        as_dict=1,
+    )
+    if not uninvoiced_memberships:
+        return None
+    return compose(
+        lambda x: frappe.get_doc('Gym Membership', x) if x else None,
+        first,
+        partial(pluck, 'name'),
+    )(uninvoiced_memberships)
 
+
+def _get_base_membership_items():
+    default_item_group = frappe.db.get_value(
+        'Gym Settings', None, 'default_item_group'
+    )
+    return pluck(
+        'name',
+        frappe.get_all(
+            'Item',
+            filters={
+                'item_group': default_item_group,
+                'disabled': 0,
+                'is_base_gym_membership_item': 1,
+            }
+        ),
+    ) if default_item_group else []
+
+
+def _make_item(member, transaction_date):
     def update_amounts(item):
         price = get_item_price(
             item.get('item_code'),
             member=member,
-            transaction_date=transaction_date,
+            transaction_date=transaction_date or today(),
             no_pricing_rule=0,
         )
         return merge(
+            {'qty': 1},
             item,
-            {'rate': price, 'amount': price * item.get('qty', 0)}
+            {'rate': price, 'amount': price * item.get('qty', 1)},
         )
+    pick_fields = partial(pick, [
+        'item_code', 'item_name',
+        'qty', 'uom', 'rate', 'amount',
+    ])
+    return compose(pick_fields, update_amounts)
 
-    def update_dates(item):
-        if cint(item.get('one_time')):
-            return item
-        next_date = get_next_from_date(member, item.get('item_code'))
-        return merge(
-            item,
-            {
-                'start_date': next_date,
-                'end_date': get_to_date(next_date, plan.frequency),
-            }
-        )
 
-    pick_fields = compose(
-        partial(pick, [
-            'item_code', 'item_name',
-            'qty', 'rate', 'amount', 'one_time',
-            'start_date', 'end_date',
-        ]),
-        update_dates,
-        update_amounts,
-        lambda x: x.as_dict()
+@frappe.whitelist()
+def get_membership_items(member, transaction_date=None):
+    make_membership_items = compose(
+        partial(
+            map,
+            lambda x: merge(x, {'qty': 1, 'uom': x.get('stock_uom')}),
+        ),
+        partial(
+            map,
+            lambda x: frappe.get_value(
+                'Item', x, ['item_code', 'item_name', 'stock_uom'], as_dict=1
+            )
+        ),
+        _get_base_membership_items,
     )
-
-    make_items = compose(
-        partial(map, pick_fields),
-        partial(filter, lambda x: not existing_subs or not x.one_time),
-    )
-    return make_items(plan.items) if plan else None
+    make_items_list = partial(map, _make_item(member, transaction_date))
+    return compose(make_items_list, make_membership_items)() \
+        if _get_uninvoiced_membership(member) else None
 
 
 @frappe.whitelist()
