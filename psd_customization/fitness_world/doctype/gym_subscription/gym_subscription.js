@@ -8,14 +8,30 @@ frappe.ui.form.on('Gym Subscription', {
     }
   },
   set_queries: async function(frm) {
+    frm.set_query('item_code', 'membership_items', () => ({
+      filters: { is_gym_membership_item: 1 },
+    }));
+    frm.set_query('item_code', 'service_items', () => ({
+      filters: { is_gym_subscription_item: 1 },
+    }));
+    // set_query done again with item_group to handle latency
     const { message: settings = {} } = await frappe.db.get_value(
       'Gym Settings',
       null,
       'default_item_group'
     );
     if (settings['default_item_group']) {
+      frm.set_query('item_code', 'membership_items', () => ({
+        filters: {
+          item_group: settings['default_item_group'],
+          is_gym_membership_item: 1,
+        },
+      }));
       frm.set_query('item_code', 'service_items', () => ({
-        filters: { item_group: settings['default_item_group'] },
+        filters: {
+          item_group: settings['default_item_group'],
+          is_gym_subscription_item: 1,
+        },
       }));
     }
   },

@@ -150,7 +150,7 @@ def _get_uninvoiced_membership(member):
     )(uninvoiced_memberships)
 
 
-def _get_base_membership_items():
+def _get_membership_items():
     default_item_group = frappe.db.get_value(
         'Gym Settings', None, 'default_item_group'
     )
@@ -161,7 +161,7 @@ def _get_base_membership_items():
             filters={
                 'item_group': default_item_group,
                 'disabled': 0,
-                'is_base_gym_membership_item': 1,
+                'is_gym_membership_item': 1,
             }
         ),
     ) if default_item_group else []
@@ -200,7 +200,7 @@ def get_membership_items(member, transaction_date=None):
                 'Item', x, ['item_code', 'item_name', 'stock_uom'], as_dict=1
             )
         ),
-        _get_base_membership_items,
+        _get_membership_items,
     )
     make_items_list = partial(map, _make_item(member, transaction_date))
     return compose(make_items_list, make_membership_items)() \
