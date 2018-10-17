@@ -1,0 +1,49 @@
+<div>
+  <h6>Membership</h6>
+  {% if (membership)  { %}
+  <div class="psd-subscription-item">
+    <div class="psd-subscription-title">
+      <a href="{%= encodeURI(`#Form/Gym Membership/${encodeURIComponent(membership.name)}`) %}">
+        {%= membership.name %}
+      </a>
+    </div>
+    <div class="psd-subscription-subtitle">{%= membership.type %}</div>
+    <div class="psd-subscription-date">
+      <span>{%= frappe.datetime.str_to_user(membership.start_date) %}</span>
+      {% if (membership.end_date) { %}
+      &ndash;
+      <span>{%= frappe.datetime.str_to_user(membership.end_date) %}</span>
+    </div>
+    {% } %}
+  </div>
+  {% } else { %}
+  <p>None</p>
+  {% } %}
+</div>
+
+<div>
+  <h6>Subscriptions</h6>
+  {% if (subscriptions.length > 0)  { %}
+    {% for (var i = 0; i < subscriptions.length; i++) { %}
+    <div class="psd-subscription-item">
+      <div class="psd-subscription-title">
+        <a href="{%= encodeURI(`#Form/Gym Subscription/${encodeURIComponent(subscriptions[i].subscription)}`) %}">
+          {%= subscriptions[i].item_name %}
+        </a>
+      </div>
+      {% if (subscriptions[i].is_lifetime) { %}
+      <div class="psd-subscription-subtitle">Lifetimes</div>
+      {% } %}
+      <div class="psd-subscription-date">
+        <span>{%= frappe.datetime.str_to_user(subscriptions[i].from_date) %}</span>
+        {% if (subscriptions[i].to_date) { %}
+        &ndash;
+        <span>{%= frappe.datetime.str_to_user(subscriptions[i].to_date) %}</span>
+        {% } %}
+      </div>
+    </div>
+    {% } %}
+  {% } else { %}
+  <p>None</p>
+  {% } %}
+</div>

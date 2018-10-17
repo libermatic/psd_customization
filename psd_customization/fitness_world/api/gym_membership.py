@@ -43,6 +43,13 @@ def get_membership_by(member, start_date=None, end_date=None):
     if memberships:
         return frappe.get_doc('Gym Membership', memberships[0]['name'])
     return None
+
+
+@frappe.whitelist()
+def get_current(member):
+    return get_membership_by(member)
+
+
 @frappe.whitelist()
 def get_uninvoiced_membership(member, only_name=0):
     uninvoiced_memberships = frappe.db.sql(

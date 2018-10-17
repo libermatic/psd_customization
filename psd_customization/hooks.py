@@ -49,10 +49,7 @@ fixtures = [
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = [
-    '/assets/css/psd_customization.css',
-    '/assets/psd_customization/css/dashboard.css',
-]
+app_include_css = ['/assets/css/psd_customization.css']
 app_include_js = [
     '/assets/js/psd_customization.min.js',
     '/assets/psd_customization/js/naming_series.js',

@@ -138,7 +138,6 @@ frappe.ui.form.on('Gym Subscription', {
     }
   },
   membership: async function(frm) {
-    console.log('what');
     frm.clear_table('membership_items');
     if (frm.doc['membership']) {
       const { message: items = [] } = await frappe.call({
@@ -230,5 +229,30 @@ frappe.ui.form.on('Gym Subscription', {
       frm.dashboard.show();
       frm.dashboard.add_section(html);
     }
+  },
+  render_info_html: async function(frm) {
+    frm.fields_dict['info_html'].$wrapper.html('<p>Loading... </p>');
+    const { member } = frm.doc;
+    const [
+      { message: membership },
+      { message: subscriptions = [] },
+    ] = await Promise.all([
+      frappe.call({
+        method:
+          'psd_customization.fitness_world.api.gym_membership.get_current',
+        args: { member },
+      }),
+      frappe.call({
+        method:
+          'psd_customization.fitness_world.api.gym_subscription.get_current',
+        args: { member },
+      }),
+    ]);
+    frm.fields_dict['info_html'].$wrapper.html(
+      frappe.render_template('gym_subscription_info', {
+        membership,
+        subscriptions,
+      })
+    );
   },
 });

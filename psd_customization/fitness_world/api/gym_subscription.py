@@ -115,7 +115,7 @@ def _existing_subscription(
         )
     return frappe.db.sql(
         """
-            SELECT to_date FROM `tabGym Subscription`
+            SELECT name, from_date, to_date FROM `tabGym Subscription`
             WHERE docstatus = 1 AND member = '{member}'
             ORDER BY to_date DESC
             LIMIT 1
@@ -428,6 +428,49 @@ def send_reminders(posting_date=today()):
         except TypeError:
             pass
     return None
+
+
+@frappe.whitelist()
+def get_current(member):
+    subscription_items = frappe.get_all(
+        'Item',
+        filters={
+            'item_group': frappe.db.get_value(
+                'Gym Settings', None, 'default_item_group',
+            ),
+            'is_gym_subscription_item': 1,
+        }
+    )
+    subscriptions = []
+    for item in pluck('name', subscription_items):
+        existing = frappe.db.sql(
+            """
+                SELECT
+                    s.name AS subscription,
+                    si.item_code AS item_code,
+                    si.item_name AS item_name,
+                    s.from_date AS from_date,
+                    s.to_date AS to_date
+                FROM
+                    `tabGym Subscription` AS s,
+                    `tabGym Subscription Item` AS si
+                WHERE
+                    s.name = si.parent AND
+                    si.parentfield = 'service_items' AND
+                    s.docstatus = 1 AND
+                    s.status = 'Paid' AND
+                    si.item_code = '{item_code}' AND
+                    s.member = '{member}'
+                ORDER BY to_date DESC
+                LIMIT 1
+            """.format(member=member, item_code=item),
+            as_dict=True,
+        )
+        if existing:
+            subscriptions.append(existing[0])
+    return subscriptions
+
+
 def get_existing_subscription(member, item_code, start_date, end_date):
     try:
         return _existing_subscription(
