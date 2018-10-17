@@ -25,8 +25,9 @@ def get_membership_by(member, start_date=None, end_date=None):
             .format(start_date)
     if start_date and end_date:
         more_args = \
-            "AND start_date <= '{end_date}' AND end_date >= '{start_date}'" \
-            .format(start_date, end_date)
+            "AND start_date <= '{end_date}' AND \
+            (end_date >= '{start_date}' OR type = 'Lifetime')" \
+            .format(start_date=start_date, end_date=end_date)
     memberships = frappe.db.sql(
         """
             SELECT name FROM `tabGym Membership`

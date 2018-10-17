@@ -60,22 +60,34 @@ def make_sales_invoice(source_name):
     return si
 
 
-def _existing_subscription(member, item_code=None):
-    if item_code:
+def _existing_subscription(
+    member, item_code=None, start_date=None, end_date=None
+):
+    if item_code and start_date and end_date:
         return frappe.db.sql(
             """
-                SELECT mi.end_date AS to_date
+                SELECT
+                    s.name AS subscription,
+                    s.from_date AS from_date,
+                    s.to_date AS to_date
                 FROM
-                    `tabGym Subscription Item` AS mi,
-                    `tabGym Subscription` AS ms
+                    `tabGym Subscription Item` AS si,
+                    `tabGym Subscription` AS s
                 WHERE
-                    mi.parent = ms.name AND
-                    mi.item_code = '{item_code}' AND
-                    ms.docstatus = 1 AND
-                    ms.member = '{member}'
-                ORDER BY mi.end_date DESC
+                    si.item_code = '{item_code}' AND
+                    si.parentfield = 'service_items' AND
+                    si.parent = s.name AND
+                    s.docstatus = 1 AND
+                    s.member = '{member}' AND
+                    s.from_date <= '{end_date}' AND
+                    s.to_date >= '{start_date}'
                 LIMIT 1
-            """.format(member=member, item_code=item_code),
+            """.format(
+                member=member,
+                item_code=item_code,
+                start_date=start_date,
+                end_date=end_date,
+            ),
             as_dict=True,
         )
     return frappe.db.sql(
@@ -412,3 +424,46 @@ def send_reminders(posting_date=today()):
         except TypeError:
             pass
     return None
+def get_existing_subscription(member, item_code, start_date, end_date):
+    try:
+        return _existing_subscription(
+            member, item_code, start_date, end_date
+        )[0]
+    except IndexError:
+        return None
+
+
+def has_valid_subscription(member, item_code, start_date, end_date):
+    periods = frappe.db.sql(
+        """
+            SELECT
+                s.from_date AS from_date,
+                s.to_date AS to_date
+            FROM
+                `tabGym Subscription Item` AS si,
+                `tabGym Subscription` AS s
+            WHERE
+                si.item_code = '{item_code}' AND
+                si.parentfield = 'service_items' AND
+                si.parent = s.name AND
+                s.docstatus = 1 AND
+                s.member = '{member}' AND
+                s.from_date <= '{end_date}' AND
+                s.to_date >= '{start_date}'
+            ORDER BY s.from_date
+        """.format(
+            member=member,
+            item_code=item_code,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+        as_dict=True,
+    )
+    try:
+        for interval in merge_intervals(periods):
+            if interval.get('from_date') <= getdate(start_date) \
+                    and getdate(interval.get('to_date')) >= getdate(end_date):
+                return True
+    except IndexError:
+        pass
+    return False

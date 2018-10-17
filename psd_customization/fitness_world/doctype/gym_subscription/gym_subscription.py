@@ -4,13 +4,17 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import getdate, date_diff, formatdate, cint, flt
+from frappe.utils import cint, flt
 from frappe.model.document import Document
 from functools import reduce, partial
-from toolz import compose
+from toolz import pluck
 
+from psd_customization.fitness_world.api.gym_membership import (
+    get_membership_by,
+)
 from psd_customization.fitness_world.api.gym_subscription import (
-    get_items, dispatch_sms, make_sales_invoice
+    dispatch_sms, make_sales_invoice,
+    get_existing_subscription, has_valid_subscription,
 )
 
 
@@ -26,39 +30,64 @@ class GymSubscription(Document):
             self.set_onload('si_status', status)
 
     def validate(self):
-        if not self.items:
-            frappe.throw('Services cannot be empty.')
+        if not self.membership_items and not self.service_items:
+            frappe.throw('Cannot create Subscription without any items')
+        if not self.membership_items and \
+                not get_membership_by(
+                    self.member, self.from_date, self.to_date
+                ):
+            frappe.throw('Cannot create Subscription without Membership')
+        if self.service_items:
+            self.validate_service_dependencies()
+
+    def validate_service_dependencies(self):
+        subscription_exists = partial(
+            get_existing_subscription,
+            member=self.member,
+            start_date=self.from_date,
+            end_date=self.to_date,
+        )
+        dependency_exists = partial(
+            has_valid_subscription,
+            member=self.member,
+            start_date=self.from_date,
+            end_date=self.to_date,
+        )
+        for item in self.service_items:
+            existing = subscription_exists(item_code=item.item_code)
+            if existing:
+                frappe.throw(
+                    'Another Subscription - {subscription}, for {item_code}'
+                    ' already exists during this time frame.'.format(
+                        subscription=existing.get('subscription'),
+                        item_code=item.item_name
+                    )
+                )
+            for p in pluck(
+                'item',
+                frappe.get_all(
+                    'Gym Item Parent',
+                    fields=['item'],
+                    filters={
+                        'parent': item.item_code,
+                        'parentfield': 'gym_parent_items',
+                        'parenttype': 'Item',
+                    }
+                ),
+            ):
+                if p not in map(lambda x: x.item_code, self.service_items) \
+                        and not dependency_exists(item_code=p):
+                    p_name = frappe.db.get_value('Item', p, 'item_name')
+                    frappe.throw(
+                        'Required dependency {} not fulfiled.'.format(p_name)
+                    )
 
     def before_save(self):
-        def pick_date(key):
-            return compose(
-                partial(map, lambda x: getdate(x)),
-                partial(filter, lambda x: x),
-                partial(map, lambda x: x.get(key)),
-                partial(map, lambda x: x.as_dict()),
-                partial(filter, lambda x: not cint(x.one_time)),
-            )
-        if not self.items:
-            map(
-                lambda item: self.append('items', item),
-                get_items(self.subscription, self.duration),
-            )
-
-        def remove_date(item):
-            if cint(item.one_time):
-                item.start_date = item.end_date = None
-            return item
-        self.items = map(remove_date, self.items)
-        self.from_date = compose(min, pick_date('start_date'))(self.items)
-        self.to_date = compose(max, pick_date('end_date'))(self.items)
-        self.validate_dates()
         self.total_amount = reduce(
-            lambda a, x: a + flt(x.amount), self.items, 0
+            lambda a, x: a + flt(x.amount),
+            self.membership_items + self.service_items,
+            0
         )
-
-    def before_submit(self):
-        if not self.status:
-            self.status = 'Unpaid'
 
     def on_submit(self):
         if not cint(self.no_invoice):
@@ -73,43 +102,6 @@ class GymSubscription(Document):
             si = frappe.get_doc('Sales Invoice', self.reference_invoice)
             if si.docstatus == 1:
                 si.cancel()
-
-    def validate_dates(self):
-        enrollment_date = frappe.db.get_value(
-            'Gym Member', self.member, 'enrollment_date'
-        )
-        if date_diff(self.from_date, enrollment_date) < 0:
-            return frappe.throw(
-                'Subscription cannot start before enrollment date {}.'.format(
-                    formatdate(enrollment_date)
-                )
-            )
-        for item in filter(lambda x: not cint(x.one_time), self.items):
-            if frappe.db.sql(
-                """
-                    SELECT EXISTS(
-                        SELECT 1 FROM
-                            `tabGym Subscription Item` AS mi,
-                            `tabGym Subscription` as ms
-                        WHERE
-                            mi.item_code = '{item_code}' AND
-                            mi.parent = ms.name AND
-                            ms.docstatus = 1 AND
-                            ms.member = '{member}' AND
-                            mi.start_date <= '{end_date}' AND
-                            mi.end_date >= '{start_date}'
-                    )
-                """.format(
-                    member=self.member,
-                    item_code=item.item_code,
-                    start_date=item.start_date,
-                    end_date=item.end_date,
-                ),
-            )[0][0]:
-                return frappe.throw(
-                    'Another Subscription for {item_code} already exists '
-                    'during this time frame.'.format(item_code=item.item_name)
-                )
 
     def create_sales_invoice(self):
         si = make_sales_invoice(self.name)
