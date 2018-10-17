@@ -90,14 +90,30 @@ class GymSubscription(Document):
         )
 
     def on_submit(self):
+        if self.membership:
+            membership = frappe.get_doc('Gym Membership', self.membership)
+            if membership:
+                membership.reference_doc = self.name
+                membership.save()
         if not cint(self.no_invoice):
             self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
         if self.status == 'Paid':
             dispatch_sms(self.name, 'sms_receipt')
+        if self.membership:
+            membership = frappe.get_doc('Gym Membership', self.membership)
+            if membership:
+                membership.status = 'Active' if self.status == 'Paid' else None
+                membership.save()
 
     def on_cancel(self):
+        if self.membership:
+            membership = frappe.get_doc('Gym Membership', self.membership)
+            if membership:
+                membership.reference_doc = None
+                membership.status = None
+                membership.save()
         if self.reference_invoice:
             si = frappe.get_doc('Sales Invoice', self.reference_invoice)
             if si.docstatus == 1:

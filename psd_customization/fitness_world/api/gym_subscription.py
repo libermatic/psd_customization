@@ -28,24 +28,44 @@ def make_payment_entry(source_name):
 @frappe.whitelist()
 def make_sales_invoice(source_name):
     subscription = frappe.get_doc('Gym Subscription', source_name)
+    membership = frappe.get_doc('Gym Membership', subscription.membership) \
+        if subscription.membership else None
     si = frappe.new_doc('Sales Invoice')
     si.gym_subscription = source_name
     si.customer = frappe.db.get_value(
         'Gym Member', subscription.member, 'customer'
     )
 
-    def get_description(item):
-        if not item.start_date:
-            return item.item_name
+    def get_membership_description(item):
+        if not membership:
+            return item.iten_name
+        desc = '{item_name}: Valid from {start_date}'.format(
+            item_name=item.item_name,
+            start_date=membership.get_formatted('start_date'),
+        )
+        if membership.end_date:
+            desc += ' to {end_date}'.format(membership.end_date)
+        return desc
+
+    def get_subscription_description(item):
         return '{item_name}: Valid from {start_date} to {end_date}'.format(
             item_name=item.item_name,
-            start_date=item.get_formatted('start_date'),
-            end_date=item.get_formatted('end_date'),
+            start_date=subscription.get_formatted('from_date'),
+            end_date=subscription.get_formatted('to_date'),
         )
-    for item in subscription.items:
+
+    for item in subscription.membership_items:
         si.append('items', {
             'item_code': item.item_code,
-            'description': get_description(item),
+            'description': get_membership_description(item),
+            'qty': item.qty,
+            'rate': item.rate,
+        })
+
+    for item in subscription.service_items:
+        si.append('items', {
+            'item_code': item.item_code,
+            'description': get_subscription_description(item),
             'qty': item.qty,
             'rate': item.rate,
         })
