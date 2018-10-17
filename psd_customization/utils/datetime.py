@@ -40,3 +40,17 @@ def month_diff(d1, d2, as_dec=0):
         days_in_month = date_diff(next_start_date, cur_start_date)
         return cur_months + flt(rem_days) / flt(days_in_month)
     return cur_months, rem_days
+
+
+def merge_intervals(intervals):
+    reduced = [intervals[0]]
+    if not reduced[0].get('from_date') or not reduced[0].get('to_date'):
+        raise KeyError()
+    for interval in intervals[1:]:
+        from_date, to_date = interval['from_date'], interval['to_date']
+        if add_days(reduced[-1]['to_date'], 1) == from_date:
+            reduced[-1]['to_date'] = to_date
+        else:
+            reduced.append(interval)
+
+    return reduced
