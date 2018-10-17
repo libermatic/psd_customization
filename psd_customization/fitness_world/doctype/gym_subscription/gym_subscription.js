@@ -45,6 +45,10 @@ frappe.ui.form.on('Gym Subscription', {
     }
   },
   refresh: function(frm) {
+    if (frm.doc.__islocal && frm.doc['amended_from']) {
+      frm.set_value('reference_invoice', null);
+      frm.set_value('status', null);
+    }
     frm.trigger('set_membership_query');
     frappe.ui.form.on('Gym Subscription Item', {
       item_code: function(frm, cdt, cdn) {

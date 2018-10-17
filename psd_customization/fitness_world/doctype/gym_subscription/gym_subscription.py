@@ -107,6 +107,12 @@ class GymSubscription(Document):
                 membership.status = 'Active' if self.status == 'Paid' else None
                 membership.save()
 
+    def before_cancel(self):
+        if self.reference_invoice:
+            si = frappe.get_doc('Sales Invoice', self.reference_invoice)
+            if si and si.docstatus == 1:
+                si.cancel()
+
     def on_cancel(self):
         if self.membership:
             membership = frappe.get_doc('Gym Membership', self.membership)
@@ -114,10 +120,6 @@ class GymSubscription(Document):
                 membership.reference_doc = None
                 membership.status = None
                 membership.save()
-        if self.reference_invoice:
-            si = frappe.get_doc('Sales Invoice', self.reference_invoice)
-            if si.docstatus == 1:
-                si.cancel()
 
     def create_sales_invoice(self):
         si = make_sales_invoice(self.name)
