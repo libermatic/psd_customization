@@ -4,6 +4,9 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import cint
+from functools import partial
+from toolz import pluck, compose, first
 
 
 @frappe.whitelist()
@@ -39,3 +42,24 @@ def get_membership_by(member, start_date=None, end_date=None):
     if memberships:
         return frappe.get_doc('Gym Membership', memberships[0]['name'])
     return None
+@frappe.whitelist()
+def get_uninvoiced_membership(member, only_name=0):
+    uninvoiced_memberships = frappe.db.sql(
+        """
+            SELECT name FROM `tabGym Membership`
+            WHERE docstatus = 1
+            AND member = %(member)s
+            AND IFNULL(status, '') = ''
+            AND IFNULL(reference_doc, '') = ''
+            LIMIT 1
+        """,
+        values={'member': member},
+        as_dict=1,
+    )
+    if not uninvoiced_memberships:
+        return None
+    membership = compose(first, partial(pluck, 'name'))(uninvoiced_memberships)
+    if cint(only_name):
+        return membership
+    return frappe.get_doc('Gym Membership', membership) \
+        if membership else None
