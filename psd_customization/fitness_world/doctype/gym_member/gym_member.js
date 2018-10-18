@@ -4,11 +4,11 @@
 frappe.ui.form.on('Gym Member', {
   setup: function(frm) {
     frm.trigger('set_queries');
+  },
+  refresh: function(frm) {
     if (frm.doc.__islocal) {
       frm.set_value('enrollment_date', frappe.datetime.get_today());
     }
-  },
-  refresh: function(frm) {
     frappe.dynamic_link = {
       doc: frm.doc,
       fieldname: 'name',
@@ -167,21 +167,6 @@ frappe.ui.form.on('Gym Member', {
   },
 
   add_actions: function(frm) {
-    function get_status_props(status) {
-      if (status === 'Active') {
-        return {
-          label: 'Stop Subscription',
-          method: 'psd_customization.fitness_world.api.gym_member.stop',
-        };
-      }
-      if (status === 'Stopped' || status === 'Expired') {
-        return {
-          label: 'Resume Subscription',
-          method: 'psd_customization.fitness_world.api.gym_member.resume',
-        };
-      }
-      return null;
-    }
     function get_renew_props(auto_renew) {
       return {
         label:
@@ -202,33 +187,17 @@ frappe.ui.form.on('Gym Member', {
         'btn-primary',
         frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
       );
-    const status_props = get_status_props(frm.doc['status']);
-    if (status_props) {
-      frm.add_custom_button(
-        status_props.label,
-        async function() {
-          await frappe.call({
-            method: status_props.method,
-            args: { name: frm.doc['name'] },
-          });
-          frm.reload_doc();
-        },
-        'Manage'
-      );
-    }
     const renew_props = get_renew_props(frm.doc['auto_renew']);
-    if (frm.doc['member_type'] !== 'Lifetime') {
-      frm.add_custom_button(
-        renew_props.label,
-        async function() {
-          await frappe.call({
-            method: renew_props.method,
-            args: { name: frm.doc['name'], ...renew_props.args },
-          });
-          frm.reload_doc();
-        },
-        'Manage'
-      );
-    }
+    frm.add_custom_button(
+      renew_props.label,
+      async function() {
+        await frappe.call({
+          method: renew_props.method,
+          args: { name: frm.doc['name'], ...renew_props.args },
+        });
+        frm.reload_doc();
+      },
+      'Manage'
+    );
   },
 });

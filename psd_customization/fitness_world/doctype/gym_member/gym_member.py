@@ -22,13 +22,11 @@ class GymMember(Document):
         self.load_subscription_details()
 
     def validate(self):
-        if not self.is_new() and not self.enrollment_date:
+        if not self.enrollment_date:
             frappe.throw('Enrollment Date cannot be empty.')
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
-        if not self.status:
-            self.status = 'Active'
         if not self.auto_renew:
             self.auto_renew = 'No'
         if not self.customer:
