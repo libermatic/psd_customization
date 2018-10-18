@@ -30,11 +30,6 @@ def get_data():
             "items": [
                 {
                     "type": "doctype",
-                    "name": "Gym Subscription Plan",
-                    "label": "Subscription Plan",
-                },
-                {
-                    "type": "doctype",
                     "name": "SMS Template",
                     "label": "SMS Template",
                 },
