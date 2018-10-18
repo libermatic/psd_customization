@@ -6,11 +6,16 @@
       <div>
         <span class="indicator {%= items[i].color %}" />
         <a href="#Form/Gym Subscription/{%= encodeURIComponent(items[i].subscription) %}">
-          {%= items[i].item_name %} ends
-          <span class="psd-text-strong">
-            {%= frappe.datetime.str_to_user(items[i].expiry_date) %}
-          </span>
+          {%= items[i].item_name %}
         </a>
+        {% if (items[i].lifetime) { %}
+        <span class="psd-subscription-subtitle">Lifetime</span>
+        {% } else { %}
+        ends
+        <span class="psd-text-strong">
+          {%= frappe.datetime.str_to_user(items[i].to_date) %}
+        </span>
+        {% } %}
       </div>
       {% } %}
     </div>

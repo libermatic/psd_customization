@@ -14,6 +14,8 @@ from toolz import count, pluck
 from psd_customization.utils.fp import pick
 from psd_customization.fitness_world.api.gym_membership \
     import get_membership_by_member
+from psd_customization.fitness_world.api.gym_subscription \
+    import get_current
 
 
 class GymMember(Document):
@@ -81,29 +83,10 @@ class GymMember(Document):
             'outstanding': outstanding,
             'membership_status': membership.status if membership else None,
         })
-
-        all_subscription_items = frappe.db.sql(
-            """
-                SELECT
-                    mi.item_code AS item_code,
-                    mi.item_name AS item_name,
-                    MAX(mi.end_date) AS expiry_date,
-                    ms.name AS subscription,
-                    ms.status AS status
-                FROM
-                    `tabGym Subscription Item` AS mi,
-                    `tabGym Subscription` AS ms
-                WHERE
-                    mi.one_time != 1 AND
-                    ms.member = '{member}' AND
-                    ms.docstatus = 1 AND
-                    ms.name = mi.parent
-                GROUP BY
-                    mi.item_code
-            """.format(member=self.name),
-            as_dict=1,
+        self.set_onload(
+            'subscription_items',
+            get_current(self.name, paid=False)
         )
-        self.set_onload('subscription_items', all_subscription_items)
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)

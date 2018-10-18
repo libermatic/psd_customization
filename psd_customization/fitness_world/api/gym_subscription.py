@@ -371,7 +371,7 @@ def send_reminders(posting_date=today()):
 
 
 @frappe.whitelist()
-def get_current(member):
+def get_current(member, paid=1):
     subscription_items = frappe.get_all(
         'Item',
         filters={
@@ -381,6 +381,9 @@ def get_current(member):
             'is_gym_subscription_item': 1,
         }
     )
+    more_args = ''
+    if paid:
+        more_args += "AND s.status = 'Paid'"
     subscriptions = []
     for item in pluck('name', subscription_items):
         existing = frappe.db.sql(
@@ -391,7 +394,8 @@ def get_current(member):
                     si.item_name AS item_name,
                     s.from_date AS from_date,
                     s.to_date AS to_date,
-                    s.is_lifetime AS lifetime
+                    s.is_lifetime AS lifetime,
+                    s.status AS status
                 FROM
                     `tabGym Subscription` AS s,
                     `tabGym Subscription Item` AS si
@@ -399,12 +403,16 @@ def get_current(member):
                     s.name = si.parent AND
                     si.parentfield = 'service_items' AND
                     s.docstatus = 1 AND
-                    s.status = 'Paid' AND
                     si.item_code = '{item_code}' AND
                     s.member = '{member}'
+                    {more_args}
                 ORDER BY from_date DESC
                 LIMIT 1
-            """.format(member=member, item_code=item),
+            """.format(
+                member=member,
+                item_code=item,
+                more_args=more_args,
+            ),
             as_dict=True,
         )
         if existing:
