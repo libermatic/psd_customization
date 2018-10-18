@@ -83,36 +83,7 @@ def make_sales_invoice(source_name):
     return si
 
 
-def _existing_subscription(
-    member, item_code=None, start_date=None, end_date=None
-):
-    if item_code and start_date and end_date:
-        return frappe.db.sql(
-            """
-                SELECT
-                    s.name AS subscription,
-                    s.from_date AS from_date,
-                    s.to_date AS to_date
-                FROM
-                    `tabGym Subscription Item` AS si,
-                    `tabGym Subscription` AS s
-                WHERE
-                    si.item_code = '{item_code}' AND
-                    si.parentfield = 'service_items' AND
-                    si.parent = s.name AND
-                    s.docstatus = 1 AND
-                    s.member = '{member}' AND
-                    s.from_date <= '{end_date}' AND
-                    s.to_date >= '{start_date}'
-                LIMIT 1
-            """.format(
-                member=member,
-                item_code=item_code,
-                start_date=start_date,
-                end_date=end_date,
-            ),
-            as_dict=True,
-        )
+def _existing_subscription(member):
     return frappe.db.sql(
         """
             SELECT name, from_date, to_date FROM `tabGym Subscription`
@@ -125,8 +96,8 @@ def _existing_subscription(
 
 
 @frappe.whitelist()
-def get_next_from_date(member, item_code=None):
-    existing_subscriptions = _existing_subscription(member, item_code)
+def get_next_from_date(member):
+    existing_subscriptions = _existing_subscription(member)
     if existing_subscriptions:
         return compose(
             partial(add_days, days=1),
@@ -141,8 +112,8 @@ def get_next_from_date(member, item_code=None):
 
 
 @frappe.whitelist()
-def get_next_period(member, item_code=None):
-    next_start = get_next_from_date(member, item_code)
+def get_next_period(member):
+    next_start = get_next_from_date(member)
     next_end = get_to_date(next_start, 'Monthly')
     return {
         'from_date': next_start,
@@ -471,19 +442,13 @@ def get_current(member):
     return subscriptions
 
 
-def get_existing_subscription(member, item_code, start_date, end_date):
-    try:
-        return _existing_subscription(
-            member, item_code, start_date, end_date
-        )[0]
-    except IndexError:
-        return None
-
-
-def has_valid_subscription(member, item_code, start_date, end_date):
-    periods = frappe.db.sql(
+def _existing_subscription_by_item(
+    member, item_code, start_date, end_date, lifetime, limit=0
+):
+    return frappe.db.sql(
         """
             SELECT
+                s.name AS subscription,
                 s.from_date AS from_date,
                 s.to_date AS to_date
             FROM
@@ -498,13 +463,34 @@ def has_valid_subscription(member, item_code, start_date, end_date):
                 s.from_date <= '{end_date}' AND
                 s.to_date >= '{start_date}'
             ORDER BY s.from_date
+            {limit}
         """.format(
             member=member,
             item_code=item_code,
             start_date=start_date,
             end_date=end_date,
+            limit='LIMIT 1' if limit else '',
         ),
         as_dict=True,
+    )
+
+
+def get_existing_subscription(
+    member, item_code, start_date, end_date, lifetime=0
+):
+    try:
+        return _existing_subscription_by_item(
+            member, item_code, start_date, end_date, lifetime, limit=1
+        )[0]
+    except IndexError:
+        return None
+
+
+def has_valid_subscription(
+    member, item_code, start_date, end_date, lifetime=0
+):
+    periods = _existing_subscription_by_item(
+        member, item_code, start_date, end_date, lifetime
     )
     try:
         for interval in merge_intervals(periods):
