@@ -18,6 +18,13 @@ def set_status(name, status):
     membership.save()
 
 
+def _get_membership_doc(query_result):
+    try:
+        return frappe.get_doc('Gym Membership', query_result[0]['name'])
+    except IndexError:
+        return None
+
+
 def get_membership_by(member, start_date=None, end_date=None):
     more_args = ''
     if start_date and not end_date:
@@ -40,9 +47,20 @@ def get_membership_by(member, start_date=None, end_date=None):
         },
         as_dict=1,
     )
-    if memberships:
-        return frappe.get_doc('Gym Membership', memberships[0]['name'])
-    return None
+    return _get_membership_doc(memberships)
+
+
+def get_membership_by_member(member):
+    memberships = frappe.db.sql(
+        """
+            SELECT name FROM `tabGym Membership`
+            WHERE docstatus = 1 AND member = %(member)s
+            ORDER BY start_date DESC
+            LIMIT 1
+        """ % {'member': "'{}'".format(member)},
+        as_dict=1,
+    )
+    return _get_membership_doc(memberships)
 
 
 @frappe.whitelist()

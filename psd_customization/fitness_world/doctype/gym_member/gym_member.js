@@ -97,12 +97,26 @@ frappe.ui.form.on('Gym Member', {
   },
   render_subscription_details: function(frm) {
     if (frm.doc.__onload && frm.doc.__onload['subscription_details']) {
-      const { total_invoices, unpaid_invoices, outstanding } = frm.doc.__onload[
-        'subscription_details'
-      ];
+      const {
+        total_invoices,
+        unpaid_invoices,
+        outstanding,
+        membership_status,
+      } = frm.doc.__onload['subscription_details'];
       const { auto_renew, member_type } = frm.doc;
       frm.dashboard.add_section(
         frappe.render_template('gym_member_dashboard', {
+          membership: {
+            color:
+              membership_status === 'Active'
+                ? 'green'
+                : membership_status === 'Stopped'
+                  ? 'orange'
+                  : membership_status === 'Expired'
+                    ? 'red'
+                    : 'darkgrey',
+            text: membership_status || 'Inactive',
+          },
           invoices: {
             color: unpaid_invoices ? 'orange' : 'green',
             total: total_invoices || '-',

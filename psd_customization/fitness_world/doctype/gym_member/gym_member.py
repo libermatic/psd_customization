@@ -7,12 +7,13 @@ import frappe
 from frappe.model.document import Document
 from frappe.contacts.address_and_contact \
     import load_address_and_contact, delete_contact_and_address
-from frappe.utils import today
 import operator
 from functools import reduce
 from toolz import count, pluck
 
 from psd_customization.utils.fp import pick
+from psd_customization.fitness_world.api.gym_membership \
+    import get_membership_by_member
 
 
 class GymMember(Document):
@@ -70,15 +71,17 @@ class GymMember(Document):
             as_dict=True,
         )
         unpaid_subscriptions = filter(
-            lambda x: x.get('status') == 'Unpaid', all_subscriptions
+            lambda x: x.get('status') != 'Paid', all_subscriptions
         )
         outstanding = reduce(
             operator.add, pluck('amount', unpaid_subscriptions), 0
         )
+        membership = get_membership_by_member(self.name)
         self.set_onload('subscription_details', {
             'total_invoices': count(all_subscriptions),
             'unpaid_invoices': count(unpaid_subscriptions),
             'outstanding': outstanding,
+            'membership_status': membership.status if membership else None,
         })
 
         all_subscription_items = frappe.db.sql(
