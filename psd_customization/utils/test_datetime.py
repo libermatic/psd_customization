@@ -3,8 +3,11 @@
 # See license.txt
 from __future__ import unicode_literals
 import unittest
+from frappe.utils import getdate
 
-from psd_customization.utils.datetime import month_diff, merge_intervals
+from psd_customization.utils.datetime import (
+    month_diff, merge_intervals, pretty_date
+)
 
 
 class TestMonthDiff(unittest.TestCase):
@@ -70,3 +73,59 @@ class TestMergeIntervals(unittest.TestCase):
             {'from_date': '2018-06-15', 'to_date': '2018-07-30'},
         ]
         self.assertEqual(actual, expected)
+
+
+class TestPrettyDate(unittest.TestCase):
+    def test_pretty_date_today(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-08-19'), getdate('2018-08-19')),
+            'today'
+        )
+
+    def test_pretty_date_tomorrow(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-08-20'), getdate('2018-08-19')),
+            'tomorrow'
+        )
+
+    def test_pretty_date_days(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-08-25'), getdate('2018-08-19')),
+            'in 6 days'
+        )
+
+    def test_pretty_date_week(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-08-29'), getdate('2018-08-19')),
+            'in a week'
+        )
+
+    def test_pretty_date_weeks(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-09-05'), getdate('2018-08-19')),
+            'in 2 weeks'
+        )
+
+    def test_pretty_date_month(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-09-25'), getdate('2018-08-19')),
+            'in a month'
+        )
+
+    def test_pretty_date_months(self):
+        self.assertEqual(
+            pretty_date(getdate('2018-10-25'), getdate('2018-08-19')),
+            'in 2 months'
+        )
+
+    def test_pretty_date_year(self):
+        self.assertEqual(
+            pretty_date(getdate('2019-10-25'), getdate('2018-08-19')),
+            'in a year'
+        )
+
+    def test_pretty_date_years(self):
+        self.assertEqual(
+            pretty_date(getdate('2020-10-25'), getdate('2018-08-19')),
+            'in 2 years'
+        )
