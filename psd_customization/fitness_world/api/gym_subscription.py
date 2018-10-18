@@ -15,7 +15,7 @@ from toolz import pluck, compose, get, first, merge
 
 from psd_customization.fitness_world.api.gym_membership \
     import get_uninvoiced_membership
-from psd_customization.utils.datetime import merge_intervals
+from psd_customization.utils.datetime import merge_intervals, pretty_date
 from psd_customization.utils.fp import pick, compact
 from sms_extras.api.sms import get_sms_text, request_sms
 
@@ -310,92 +310,61 @@ def send_reminders(posting_date=today()):
         partial(map, lambda x: add_days(posting_date, cint(x))),
         compact,
     )(settings.days_before_expiry.split('\n'))
-    members_sub_query = """
-        SELECT name FROM `tabGym Member`
-        WHERE status != 'Stopped' AND IFNULL(notification_number, '') != ''
-    """
-
-    items_sub_query = """
-        SELECT
-            si.item_code AS item_code,
-            si.item_name AS item_name,
-            si.end_date AS expiry_date,
-            s.name AS subscription,
-            s.member AS member,
-            m.notification_number AS mobile_no
-        FROM
-            `tabGym Subscription Item` AS si,
-            `tabGym Subscription` AS s,
-            `tabGym Member` AS m
-        WHERE
-            s.docstatus = 1 AND
-            s.name = si.parent AND
-            m.name = s.member AND
-            si.one_time != 1 AND
-            s.member IN ({members_sub_query})
-    """.format(members_sub_query=members_sub_query)
-    items_grp_sub_query = """
-        SELECT
-            si.item_code AS item_code,
-            MAX(si.end_date) AS expiry_date,
-            s.member AS member
-        FROM
-            `tabGym Subscription Item` AS si,
-            `tabGym Subscription` AS s
-        WHERE
-            s.docstatus = 1 AND
-            s.name = si.parent AND
-            si.one_time != 1
-        GROUP BY si.item_code, s.member
-    """
-    query = frappe.db.sql(
+    subscriptions = frappe.db.sql(
         """
             SELECT
-                il.item_code AS item_code,
-                il.item_name AS item_name,
-                il.member AS member,
-                il.mobile_no AS mobile_no,
-                ig.expiry_date AS expiry_date,
-                il.subscription AS subscription
+                s.name AS name,
+                m.name AS member,
+                m.member_name AS member_name,
+                s.posting_date AS posting_date,
+                s.from_date AS from_date,
+                s.to_date AS to_date,
+                m.notification_number AS mobile_no
             FROM
-                ({items_grp_sub_query}) AS ig,
-                ({items_sub_query}) AS il
+                `tabGym Subscription` AS s,
+                `tabGym Member` AS m
             WHERE
-                ig.item_code = il.item_code AND
-                ig.member = il.member AND
-                ig.expiry_date = il.expiry_date AND (
-                    ig.expiry_date < %s OR ig.expiry_date IN %s
+                s.docstatus = 1 AND
+                s.status = 'Paid' AND
+                s.member = m.name AND
+                IFNULL(m.notification_number, '') != '' AND (
+                    s.to_date < %(posting_date)s OR
+                    s.to_date IN %(days_before_expiry)s
                 )
-        """.format(
-            items_grp_sub_query=items_grp_sub_query,
-            items_sub_query=items_sub_query,
-        ),
-        values=(
-            posting_date,
-            days_before_expiry,
-        ),
+        """,
+        values={
+            'posting_date': posting_date,
+            'days_before_expiry': days_before_expiry,
+        },
         as_dict=1,
     )
-    for item in query:
+    for sub in subscriptions:
         template = settings.sms_on_expiry \
-            if date_diff(item.get('expiry_date'), posting_date) < 0 else \
-            settings.sms_before_expiry
+            if date_diff(sub.get('to_date'), posting_date) < 0 \
+            else settings.sms_before_expiry
         try:
-            content = get_sms_text(template, item)
-            subject = 'SMS: {} for {}'.format(template, item.get('member'))
+            content = get_sms_text(
+                template,
+                merge(sub, {
+                    'eta': pretty_date(
+                        getdate(sub.get('to_date')),
+                        ref_date=getdate(posting_date)
+                    )
+                }),
+            )
+            subject = 'SMS: {} for {}'.format(template, sub.get('member'))
             if content:
                 request_sms(
-                    item.get('mobile_no'),
+                    sub.get('mobile_no'),
                     content,
                     communication={
                         'subject': subject,
                         'reference_doctype': 'Gym Subscription',
-                        'reference_name': item.get('subscription'),
+                        'reference_name': sub.get('name'),
                         'timeline_doctype': 'Gym Member',
-                        'timeline_name': item.get('member'),
+                        'timeline_name': sub.get('member'),
                     }
                 )
-            pass
         except TypeError:
             pass
     return None
