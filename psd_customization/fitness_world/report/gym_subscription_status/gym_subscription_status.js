@@ -11,12 +11,6 @@ frappe.query_reports['Gym Subscription Status'] = {
       options: 'Gym Member',
     },
     {
-      fieldname: 'member_status',
-      label: 'Member Activity',
-      fieldtype: 'Select',
-      options: '\nActive\nStopped',
-    },
-    {
       fieldname: 'subscription_item',
       label: 'Subscription Item',
       fieldtype: 'Link',
@@ -31,11 +25,14 @@ frappe.query_reports['Gym Subscription Status'] = {
             item_group = message['default_item_group'];
           },
         });
-        return { doctype: 'Item', filters: { item_group } };
+        return {
+          doctype: 'Item',
+          filters: { item_group, is_gym_subscription_item: 1 },
+        };
       },
     },
     {
-      fieldname: 'subscription_status',
+      fieldname: 'status',
       label: 'Invoice Status',
       fieldtype: 'Select',
       options: '\nPaid\nUnpaid',

@@ -21,13 +21,16 @@ def validate(doc, method):
 def on_submit(doc, method):
     if doc.gym_subscription:
         subscription = frappe.get_doc('Gym Subscription', doc.gym_subscription)
-        subscription.reference_invoice = doc.name
-        subscription.status = 'Paid' if doc.status == 'Paid' else 'Unpaid'
-        subscription.save()
+        if subscription:
+            subscription.reference_invoice = doc.name
+            subscription.status = 'Paid' if doc.status == 'Paid' else 'Unpaid'
+            subscription.save()
 
 
 def on_cancel(doc, method):
     if doc.gym_subscription:
         subscription = frappe.get_doc('Gym Subscription', doc.gym_subscription)
-        if subscription and subscription.docstatus == 1:
-            subscription.cancel()
+        if subscription:
+            subscription.reference_invoice = None
+            subscription.status = None
+            subscription.save()

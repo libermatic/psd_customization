@@ -37,6 +37,11 @@ fixtures = [
             'Branch-company',
             'Journal Entry-branch',
             'Sales Invoice-gym_subscription',
+            'Item-gym_section',
+            'Item-is_gym_membership_item',
+            'Item-is_gym_subscription_item',
+            'Item-can_be_lifetime',
+            'Item-gym_parent_items',
         ]]]
     },
 ]
@@ -45,10 +50,7 @@ fixtures = [
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = [
-    '/assets/css/psd_customization.css',
-    '/assets/psd_customization/css/dashboard.css',
-]
+app_include_css = ['/assets/css/psd_customization.css']
 app_include_js = [
     '/assets/js/psd_customization.min.js',
     '/assets/psd_customization/js/naming_series.js',
@@ -63,7 +65,10 @@ app_include_js = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {'Journal Entry': 'public/js/journal_entry.js'}
+doctype_js = {
+    'Journal Entry': 'public/js/journal_entry.js',
+    'Item': 'public/js/item.js',
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

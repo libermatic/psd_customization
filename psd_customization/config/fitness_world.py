@@ -15,6 +15,11 @@ def get_data():
                 },
                 {
                     "type": "doctype",
+                    "name": "Gym Membership",
+                    "label": "Membership",
+                },
+                {
+                    "type": "doctype",
                     "name": "Gym Subscription",
                     "label": "Subscription",
                 },
@@ -23,11 +28,6 @@ def get_data():
         {
             "label": _("Setup"),
             "items": [
-                {
-                    "type": "doctype",
-                    "name": "Gym Subscription Plan",
-                    "label": "Subscription Plan",
-                },
                 {
                     "type": "doctype",
                     "name": "SMS Template",

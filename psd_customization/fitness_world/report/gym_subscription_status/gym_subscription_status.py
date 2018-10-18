@@ -7,11 +7,13 @@ from frappe import _
 from toolz import compose
 
 
+# TODO: make this work for lifetime subscriptions
+
 def execute(filters=None):
     conditions = make_conditions(filters)
     return get_columns(), map(
         compose(make_row, inject_cols),
-        query_data(conditions)
+        query_data(conditions),
     )
 
 
@@ -19,11 +21,11 @@ def get_columns():
     columns = [
         _('Member ID') + ':Link/Gym Member:120',
         _('Member Name') + '::180',
-        _('Activity') + '::90',
         _('Item Code') + '::90',
         _('Subscription Item Name') + '::150',
         _('Expires On') + ':Date:90',
-        _('Expiry (In Days)') + ':Int:90',
+        _('Expiry (In Days)') + ':Int:60',
+        _('Lifetime') + '::60',
         _('Ref Subscription') + ':Link/Gym Subscription:120',
         _('Status') + '::90',
     ]
@@ -34,48 +36,68 @@ def make_conditions(filters={}):
     conds = []
     if filters.get('member'):
         conds.append(
-            "m.name = '{}'".format(filters.get('member'))
-        )
-    if filters.get('member_status'):
-        conds.append(
-            "m.status = '{}'".format(filters.get('member_status'))
+            "s.member = '{}'".format(filters.get('member'))
         )
     if filters.get('subscription_item'):
         conds.append(
-            "mi.item_code = '{}'".format(filters.get('subscription_item'))
+            "si.item_code = '{}'".format(filters.get('subscription_item'))
         )
     if filters.get('subscription_status'):
         conds.append(
-            "ms.status = '{}'".format(filters.get('subscription_status'))
+            "s.status = '{}'".format(filters.get('status'))
         )
     return conds
 
 
 def query_data(conditions):
+    items_grp = """
+        SELECT
+            s.member AS member,
+            si.item_code AS item_code,
+            MAX(s.to_date) AS to_date
+        FROM
+            `tabGym Subscription Item` AS si,
+            `tabGym Subscription` AS s
+        WHERE
+            {conditions}
+            s.docstatus = 1 AND
+            s.name = si.parent AND
+            si.parentfield = 'service_items'
+        GROUP BY s.member, si.item_code
+    """.format(
+        conditions=' AND '.join(conditions) + ' AND '
+        if conditions else '',
+    )
     return frappe.db.sql(
         """
             SELECT
-                m.name AS member_id,
-                m.member_name AS member_name,
-                m.status AS member_status,
-                mi.item_code AS item_code,
-                mi.item_name AS item_name,
-                MAX(mi.end_date) AS expiry_date,
-                ms.name AS subscription,
-                ms.status AS subscription_status
+                g.member AS member_id,
+                s.member_name AS member_name,
+                g.item_code AS item_code,
+                si.item_name AS item_name,
+                g.to_date AS expiry_date,
+                s.is_lifetime AS is_lifetime,
+                s.name AS subscription,
+                s.status AS status
             FROM
-                `tabGym Member` AS m,
-                `tabGym Subscription` AS ms,
-                `tabGym Subscription Item` AS mi
+                `tabGym Subscription Item` AS si,
+                `tabGym Subscription` AS s,
+                ({grouped}) AS g
             WHERE
-                %s
-                m.name = ms.member AND
-                ms.name = mi.parent
-            GROUP BY m.name, mi.item_code
-        """ % (
-            ' AND '.join(conditions) + ' AND ' if conditions else '',
+                {conditions}
+                g.member = s.member AND
+                g.to_date = s.to_date AND
+                g.item_code = si.item_code AND
+                s.docstatus = 1 AND
+                s.name = si.parent AND
+                si.parentfield = 'service_items'
+        """.format(
+            grouped=items_grp,
+            conditions=' AND '.join(conditions) + ' AND '
+            if conditions else '',
         ),
         as_dict=1,
+        debug=1,
     )
 
 
@@ -85,13 +107,16 @@ def inject_cols(row):
         row_dict.expiry_status = (
             row_dict.expiry_date - frappe.utils.datetime.date.today()
         ).days
+    if row_dict.is_lifetime:
+        row_dict.lifetime = 'Yes'
     return row_dict
 
 
 def make_row(row):
     keys = [
-        'member_id', 'member_name', 'member_status',
-        'item_code', 'item_name', 'expiry_date', 'expiry_status',
-        'subscription', 'subscription_status',
+        'member_id', 'member_name',
+        'item_code', 'item_name',
+        'expiry_date', 'expiry_status', 'lifetime',
+        'subscription', 'status',
     ]
     return map(lambda x: row.get(x), keys)

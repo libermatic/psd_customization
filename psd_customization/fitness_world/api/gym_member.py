@@ -4,7 +4,6 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import today
 from functools import partial
 from erpnext.accounts.party import get_party_account
 from erpnext.accounts.doctype.payment_entry.payment_entry \
@@ -87,28 +86,6 @@ def make_payment_entry(source_name):
 def get_members_by_customer(customer):
     members = frappe.get_all('Gym Member', filters={'customer': customer})
     return map(lambda x: x.get('name'), members)
-
-
-@frappe.whitelist()
-def stop(name, end_date=None):
-    try:
-        member = frappe.get_doc('Gym Member', name)
-        member.status = 'Stopped'
-        member.end_date = end_date or today()
-        member.save()
-    except AttributeError:
-        pass
-
-
-@frappe.whitelist()
-def resume(name):
-    try:
-        member = frappe.get_doc('Gym Member', name)
-        member.status = 'Active'
-        member.end_date = None
-        member.save()
-    except AttributeError:
-        pass
 
 
 @frappe.whitelist()

@@ -4,15 +4,19 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import datetime
 from frappe.model.document import Document
 from frappe.contacts.address_and_contact \
     import load_address_and_contact, delete_contact_and_address
-from frappe.utils import today
 import operator
 from functools import reduce
 from toolz import count, pluck
 
 from psd_customization.utils.fp import pick
+from psd_customization.fitness_world.api.gym_membership \
+    import get_membership_by_member
+from psd_customization.fitness_world.api.gym_subscription \
+    import get_current
 
 
 class GymMember(Document):
@@ -21,15 +25,11 @@ class GymMember(Document):
         self.load_subscription_details()
 
     def validate(self):
-        if not self.is_new() and not self.enrollment_date:
+        if not self.enrollment_date:
             frappe.throw('Enrollment Date cannot be empty.')
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
-        if self.is_new() and not self.enrollment_date:
-            self.enrollment_date = today()
-        if not self.status:
-            self.status = 'Active'
         if not self.auto_renew:
             self.auto_renew = 'No'
         if not self.customer:
@@ -72,39 +72,31 @@ class GymMember(Document):
             as_dict=True,
         )
         unpaid_subscriptions = filter(
-            lambda x: x.get('status') == 'Unpaid', all_subscriptions
+            lambda x: x.get('status') != 'Paid', all_subscriptions
         )
         outstanding = reduce(
             operator.add, pluck('amount', unpaid_subscriptions), 0
         )
+
+        def make_membership_status():
+            m = get_membership_by_member(self.name)
+            if not m:
+                return None
+            if m.type != 'Lifetime' and m.status == 'Active':
+                return 'Expired' if datetime.date.today() < m.end_date \
+                    else m.status
+            return m.status or 'Inactive'
+
         self.set_onload('subscription_details', {
             'total_invoices': count(all_subscriptions),
             'unpaid_invoices': count(unpaid_subscriptions),
             'outstanding': outstanding,
+            'membership_status': make_membership_status(),
         })
-
-        all_subscription_items = frappe.db.sql(
-            """
-                SELECT
-                    mi.item_code AS item_code,
-                    mi.item_name AS item_name,
-                    MAX(mi.end_date) AS expiry_date,
-                    ms.name AS subscription,
-                    ms.status AS status
-                FROM
-                    `tabGym Subscription Item` AS mi,
-                    `tabGym Subscription` AS ms
-                WHERE
-                    mi.one_time != 1 AND
-                    ms.member = '{member}' AND
-                    ms.docstatus = 1 AND
-                    ms.name = mi.parent
-                GROUP BY
-                    mi.item_code
-            """.format(member=self.name),
-            as_dict=1,
+        self.set_onload(
+            'subscription_items',
+            get_current(self.name, paid=False)
         )
-        self.set_onload('subscription_items', all_subscription_items)
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn('Customer', self.customer)

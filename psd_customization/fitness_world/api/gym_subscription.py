@@ -13,6 +13,9 @@ from erpnext.accounts.doctype.pricing_rule.pricing_rule \
 from functools import partial
 from toolz import pluck, compose, get, first, merge
 
+from psd_customization.fitness_world.api.gym_membership \
+    import get_uninvoiced_membership
+from psd_customization.utils.datetime import merge_intervals, pretty_date
 from psd_customization.utils.fp import pick, compact
 from sms_extras.api.sms import get_sms_text, request_sms
 
@@ -28,24 +31,44 @@ def make_payment_entry(source_name):
 @frappe.whitelist()
 def make_sales_invoice(source_name):
     subscription = frappe.get_doc('Gym Subscription', source_name)
+    membership = frappe.get_doc('Gym Membership', subscription.membership) \
+        if subscription.membership else None
     si = frappe.new_doc('Sales Invoice')
     si.gym_subscription = source_name
     si.customer = frappe.db.get_value(
         'Gym Member', subscription.member, 'customer'
     )
 
-    def get_description(item):
-        if not item.start_date:
-            return item.item_name
+    def get_membership_description(item):
+        if not membership:
+            return item.iten_name
+        desc = '{item_name}: Valid from {start_date}'.format(
+            item_name=item.item_name,
+            start_date=membership.get_formatted('start_date'),
+        )
+        if membership.end_date:
+            desc += ' to {end_date}'.format(membership.end_date)
+        return desc
+
+    def get_subscription_description(item):
         return '{item_name}: Valid from {start_date} to {end_date}'.format(
             item_name=item.item_name,
-            start_date=item.get_formatted('start_date'),
-            end_date=item.get_formatted('end_date'),
+            start_date=subscription.get_formatted('from_date'),
+            end_date=subscription.get_formatted('to_date'),
         )
-    for item in subscription.items:
+
+    for item in subscription.membership_items:
         si.append('items', {
             'item_code': item.item_code,
-            'description': get_description(item),
+            'description': get_membership_description(item),
+            'qty': item.qty,
+            'rate': item.rate,
+        })
+
+    for item in subscription.service_items:
+        si.append('items', {
+            'item_code': item.item_code,
+            'description': get_subscription_description(item),
             'qty': item.qty,
             'rate': item.rate,
         })
@@ -60,27 +83,10 @@ def make_sales_invoice(source_name):
     return si
 
 
-def _existing_subscription(member, item_code=None):
-    if item_code:
-        return frappe.db.sql(
-            """
-                SELECT mi.end_date AS to_date
-                FROM
-                    `tabGym Subscription Item` AS mi,
-                    `tabGym Subscription` AS ms
-                WHERE
-                    mi.parent = ms.name AND
-                    mi.item_code = '{item_code}' AND
-                    ms.docstatus = 1 AND
-                    ms.member = '{member}'
-                ORDER BY mi.end_date DESC
-                LIMIT 1
-            """.format(member=member, item_code=item_code),
-            as_dict=True,
-        )
+def _existing_subscription(member):
     return frappe.db.sql(
         """
-            SELECT to_date FROM `tabGym Subscription`
+            SELECT name, from_date, to_date FROM `tabGym Subscription`
             WHERE docstatus = 1 AND member = '{member}'
             ORDER BY to_date DESC
             LIMIT 1
@@ -90,8 +96,8 @@ def _existing_subscription(member, item_code=None):
 
 
 @frappe.whitelist()
-def get_next_from_date(member, item_code=None):
-    existing_subscriptions = _existing_subscription(member, item_code)
+def get_next_from_date(member):
+    existing_subscriptions = _existing_subscription(member)
     if existing_subscriptions:
         return compose(
             partial(add_days, days=1),
@@ -99,7 +105,20 @@ def get_next_from_date(member, item_code=None):
             partial(get, 'to_date'),
             first,
         )(existing_subscriptions)
+    membership = get_uninvoiced_membership(member)
+    if membership:
+        return membership.start_date
     return frappe.db.get_value('Gym Member', member, 'enrollment_date')
+
+
+@frappe.whitelist()
+def get_next_period(member):
+    next_start = get_next_from_date(member)
+    next_end = get_to_date(next_start, 'Monthly')
+    return {
+        'from_date': next_start,
+        'to_date': next_end,
+    }
 
 
 def get_to_date(from_date, frequency):
@@ -117,51 +136,61 @@ def get_to_date(from_date, frequency):
     return make_end_of_freq(freq_map[frequency])
 
 
-@frappe.whitelist()
-def get_items(member, subscription_plan, transaction_date=None):
-    plan = frappe.get_doc('Gym Subscription Plan', subscription_plan)
-    existing_subs = _existing_subscription(member)
+def _get_membership_items():
+    default_item_group = frappe.db.get_value(
+        'Gym Settings', None, 'default_item_group'
+    )
+    return pluck(
+        'name',
+        frappe.get_all(
+            'Item',
+            filters={
+                'item_group': default_item_group,
+                'disabled': 0,
+                'is_gym_membership_item': 1,
+            }
+        ),
+    ) if default_item_group else []
 
+
+def _make_item(member, transaction_date):
     def update_amounts(item):
         price = get_item_price(
             item.get('item_code'),
             member=member,
-            transaction_date=transaction_date,
+            transaction_date=transaction_date or today(),
             no_pricing_rule=0,
         )
         return merge(
+            {'qty': 1},
             item,
-            {'rate': price, 'amount': price * item.get('qty', 0)}
+            {'rate': price, 'amount': price * item.get('qty', 1)},
         )
+    pick_fields = partial(pick, [
+        'item_code', 'item_name',
+        'qty', 'uom', 'rate', 'amount',
+    ])
+    return compose(pick_fields, update_amounts)
 
-    def update_dates(item):
-        if cint(item.get('one_time')):
-            return item
-        next_date = get_next_from_date(member, item.get('item_code'))
-        return merge(
-            item,
-            {
-                'start_date': next_date,
-                'end_date': get_to_date(next_date, plan.frequency),
-            }
-        )
 
-    pick_fields = compose(
-        partial(pick, [
-            'item_code', 'item_name',
-            'qty', 'rate', 'amount', 'one_time',
-            'start_date', 'end_date',
-        ]),
-        update_dates,
-        update_amounts,
-        lambda x: x.as_dict()
+@frappe.whitelist()
+def get_membership_items(member, transaction_date=None):
+    make_membership_items = compose(
+        partial(
+            map,
+            lambda x: merge(x, {'qty': 1, 'uom': x.get('stock_uom')}),
+        ),
+        partial(
+            map,
+            lambda x: frappe.get_value(
+                'Item', x, ['item_code', 'item_name', 'stock_uom'], as_dict=1
+            )
+        ),
+        _get_membership_items,
     )
-
-    make_items = compose(
-        partial(map, pick_fields),
-        partial(filter, lambda x: not existing_subs or not x.one_time),
-    )
-    return make_items(plan.items) if plan else None
+    make_items_list = partial(map, _make_item(member, transaction_date))
+    return compose(make_items_list, make_membership_items)() \
+        if get_uninvoiced_membership(member) else None
 
 
 @frappe.whitelist()
@@ -179,7 +208,8 @@ def get_item_price(
             WHERE price_list = '{price_list}' AND item_code = '{item_code}'
         """.format(item_code=item_code, price_list=price_list)
     )
-    price_list_rate = prices[0][0] if prices else 0
+    price_list_rate = prices[0][0] if prices \
+        else (frappe.db.get_value('Item', item_code, 'standard_rate') or 0)
     if cint(no_pricing_rule):
         return price_list_rate
     applied_pricing_rule = get_pricing_rule_for_item(frappe._dict({
@@ -280,92 +310,178 @@ def send_reminders(posting_date=today()):
         partial(map, lambda x: add_days(posting_date, cint(x))),
         compact,
     )(settings.days_before_expiry.split('\n'))
-    members_sub_query = """
-        SELECT name FROM `tabGym Member`
-        WHERE status != 'Stopped' AND IFNULL(notification_number, '') != ''
-    """
-
-    items_sub_query = """
-        SELECT
-            si.item_code AS item_code,
-            si.item_name AS item_name,
-            si.end_date AS expiry_date,
-            s.name AS subscription,
-            s.member AS member,
-            m.notification_number AS mobile_no
-        FROM
-            `tabGym Subscription Item` AS si,
-            `tabGym Subscription` AS s,
-            `tabGym Member` AS m
-        WHERE
-            s.docstatus = 1 AND
-            s.name = si.parent AND
-            m.name = s.member AND
-            si.one_time != 1 AND
-            s.member IN ({members_sub_query})
-    """.format(members_sub_query=members_sub_query)
-    items_grp_sub_query = """
-        SELECT
-            si.item_code AS item_code,
-            MAX(si.end_date) AS expiry_date,
-            s.member AS member
-        FROM
-            `tabGym Subscription Item` AS si,
-            `tabGym Subscription` AS s
-        WHERE
-            s.docstatus = 1 AND
-            s.name = si.parent AND
-            si.one_time != 1
-        GROUP BY si.item_code, s.member
-    """
-    query = frappe.db.sql(
+    subscriptions = frappe.db.sql(
         """
             SELECT
-                il.item_code AS item_code,
-                il.item_name AS item_name,
-                il.member AS member,
-                il.mobile_no AS mobile_no,
-                ig.expiry_date AS expiry_date,
-                il.subscription AS subscription
+                s.name AS name,
+                m.name AS member,
+                m.member_name AS member_name,
+                s.posting_date AS posting_date,
+                s.from_date AS from_date,
+                s.to_date AS to_date,
+                m.notification_number AS mobile_no
             FROM
-                ({items_grp_sub_query}) AS ig,
-                ({items_sub_query}) AS il
+                `tabGym Subscription` AS s,
+                `tabGym Member` AS m
             WHERE
-                ig.item_code = il.item_code AND
-                ig.member = il.member AND
-                ig.expiry_date = il.expiry_date AND (
-                    ig.expiry_date < %s OR ig.expiry_date IN %s
+                s.docstatus = 1 AND
+                s.status = 'Paid' AND
+                s.member = m.name AND
+                IFNULL(m.notification_number, '') != '' AND (
+                    s.to_date < %(posting_date)s OR
+                    s.to_date IN %(days_before_expiry)s
                 )
-        """.format(
-            items_grp_sub_query=items_grp_sub_query,
-            items_sub_query=items_sub_query,
-        ),
-        values=(
-            posting_date,
-            days_before_expiry,
-        ),
+        """,
+        values={
+            'posting_date': posting_date,
+            'days_before_expiry': days_before_expiry,
+        },
         as_dict=1,
     )
-    for item in query:
+    for sub in subscriptions:
         template = settings.sms_on_expiry \
-            if date_diff(item.get('expiry_date'), posting_date) < 0 else \
-            settings.sms_before_expiry
+            if date_diff(sub.get('to_date'), posting_date) < 0 \
+            else settings.sms_before_expiry
         try:
-            content = get_sms_text(template, item)
-            subject = 'SMS: {} for {}'.format(template, item.get('member'))
+            content = get_sms_text(
+                template,
+                merge(sub, {
+                    'eta': pretty_date(
+                        getdate(sub.get('to_date')),
+                        ref_date=getdate(posting_date)
+                    )
+                }),
+            )
+            subject = 'SMS: {} for {}'.format(template, sub.get('member'))
             if content:
                 request_sms(
-                    item.get('mobile_no'),
+                    sub.get('mobile_no'),
                     content,
                     communication={
                         'subject': subject,
                         'reference_doctype': 'Gym Subscription',
-                        'reference_name': item.get('subscription'),
+                        'reference_name': sub.get('name'),
                         'timeline_doctype': 'Gym Member',
-                        'timeline_name': item.get('member'),
+                        'timeline_name': sub.get('member'),
                     }
                 )
-            pass
         except TypeError:
             pass
     return None
+
+
+@frappe.whitelist()
+def get_current(member, paid=1):
+    subscription_items = frappe.get_all(
+        'Item',
+        filters={
+            'item_group': frappe.db.get_value(
+                'Gym Settings', None, 'default_item_group',
+            ),
+            'is_gym_subscription_item': 1,
+        }
+    )
+    more_args = ''
+    if paid:
+        more_args += "AND s.status = 'Paid'"
+    subscriptions = []
+    for item in pluck('name', subscription_items):
+        existing = frappe.db.sql(
+            """
+                SELECT
+                    s.name AS subscription,
+                    si.item_code AS item_code,
+                    si.item_name AS item_name,
+                    s.from_date AS from_date,
+                    s.to_date AS to_date,
+                    s.is_lifetime AS lifetime,
+                    s.status AS status
+                FROM
+                    `tabGym Subscription` AS s,
+                    `tabGym Subscription Item` AS si
+                WHERE
+                    s.name = si.parent AND
+                    si.parentfield = 'service_items' AND
+                    s.docstatus = 1 AND
+                    si.item_code = '{item_code}' AND
+                    s.member = '{member}'
+                    {more_args}
+                ORDER BY from_date DESC
+                LIMIT 1
+            """.format(
+                member=member,
+                item_code=item,
+                more_args=more_args,
+            ),
+            as_dict=True,
+        )
+        if existing:
+            subscriptions.append(existing[0])
+    return subscriptions
+
+
+def _existing_subscription_by_item(
+    member, item_code, start_date, end_date, lifetime, limit=0
+):
+    filters = [
+        "(s.to_date >= '{}' OR s.is_lifetime = 1)".format(start_date)
+    ]
+    if not lifetime and end_date:
+        filters.append("s.from_date <= '{}'".format(end_date))
+    return frappe.db.sql(
+        """
+            SELECT
+                s.name AS subscription,
+                s.from_date AS from_date,
+                s.to_date AS to_date
+            FROM
+                `tabGym Subscription Item` AS si,
+                `tabGym Subscription` AS s
+            WHERE
+                si.item_code = %(item_code)s AND
+                si.parentfield = 'service_items' AND
+                si.parent = s.name AND
+                s.docstatus = 1 AND
+                s.member = %(member)s AND
+                {filters}
+            ORDER BY s.from_date
+            {limit}
+        """.format(
+            filters=" AND ".join(filters),
+            limit='LIMIT 1' if limit else '',
+        ),
+        values={
+            'member': member,
+            'item_code': item_code,
+            'start_date': start_date,
+            'end_date': end_date,
+        },
+        as_dict=True,
+    )
+
+
+def get_existing_subscription(
+    member, item_code, start_date, end_date, lifetime
+):
+    try:
+        return _existing_subscription_by_item(
+            member, item_code, start_date, end_date, lifetime, limit=1
+        )[0]
+    except IndexError:
+        return None
+
+
+def has_valid_subscription(
+    member, item_code, start_date, end_date, lifetime
+):
+    periods = _existing_subscription_by_item(
+        member, item_code, start_date, end_date, lifetime
+    )
+    try:
+        for interval in merge_intervals(periods):
+            if interval.get('from_date') <= getdate(start_date) \
+                    and getdate(interval.get('to_date')) >= getdate(end_date):
+                return True
+    except IndexError:
+        pass
+    return False

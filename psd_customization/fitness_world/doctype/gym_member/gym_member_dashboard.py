@@ -9,7 +9,7 @@ def get_data():
         'transactions': [
             {
                 'label': 'Transactions',
-                'items': ['Gym Subscription'],
+                'items': ['Gym Membership', 'Gym Subscription'],
             },
         ],
     }
