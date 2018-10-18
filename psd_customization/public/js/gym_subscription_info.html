@@ -7,14 +7,14 @@
         {%= membership.name %}
       </a>
     </div>
-    <div class="psd-subscription-subtitle">{%= membership.type %}</div>
     <div class="psd-subscription-date">
       <span>{%= frappe.datetime.str_to_user(membership.start_date) %}</span>
       {% if (membership.end_date) { %}
       &ndash;
       <span>{%= frappe.datetime.str_to_user(membership.end_date) %}</span>
+      {% } %}
     </div>
-    {% } %}
+    <div class="psd-subscription-subtitle">{%= membership.type %}</div>
   </div>
   {% } else { %}
   <p>None</p>
@@ -31,9 +31,6 @@
           {%= subscriptions[i].item_name %}
         </a>
       </div>
-      {% if (subscriptions[i].is_lifetime) { %}
-      <div class="psd-subscription-subtitle">Lifetimes</div>
-      {% } %}
       <div class="psd-subscription-date">
         <span>{%= frappe.datetime.str_to_user(subscriptions[i].from_date) %}</span>
         {% if (subscriptions[i].to_date) { %}
@@ -41,6 +38,9 @@
         <span>{%= frappe.datetime.str_to_user(subscriptions[i].to_date) %}</span>
         {% } %}
       </div>
+      {% if (subscriptions[i].lifetime) { %}
+      <div class="psd-subscription-subtitle">Lifetime</div>
+      {% } %}
     </div>
     {% } %}
   {% } else { %}

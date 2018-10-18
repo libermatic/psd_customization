@@ -40,7 +40,11 @@ frappe.ui.form.on('Gym Subscription', {
     frm.toggle_display('membership_section', !!member);
     if (member) {
       frm.set_query('membership', () => ({
-        filters: { member, docstatus: 1, status: null },
+        filters: [
+          ['member', '=', member],
+          ['docstatus', '=', 1],
+          ['status', '=', ''],
+        ],
       }));
     }
   },
@@ -159,6 +163,12 @@ frappe.ui.form.on('Gym Subscription', {
   },
   to_date: function(frm) {
     frm.trigger('set_subscription_item_qtys');
+  },
+  is_lifetime: function(frm) {
+    frm.toggle_display('to_date', !frm.doc['is_lifetime']);
+    if (frm.doc['is_lifetime']) {
+      frm.set_value('to_date', null);
+    }
   },
   set_subscription_item_qtys: function(frm) {
     const { from_date, to_date } = frm.doc;

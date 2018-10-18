@@ -421,7 +421,8 @@ def get_current(member):
                     si.item_code AS item_code,
                     si.item_name AS item_name,
                     s.from_date AS from_date,
-                    s.to_date AS to_date
+                    s.to_date AS to_date,
+                    s.is_lifetime AS lifetime
                 FROM
                     `tabGym Subscription` AS s,
                     `tabGym Subscription Item` AS si
@@ -432,7 +433,7 @@ def get_current(member):
                     s.status = 'Paid' AND
                     si.item_code = '{item_code}' AND
                     s.member = '{member}'
-                ORDER BY to_date DESC
+                ORDER BY from_date DESC
                 LIMIT 1
             """.format(member=member, item_code=item),
             as_dict=True,
