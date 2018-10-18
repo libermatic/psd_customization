@@ -445,6 +445,11 @@ def get_current(member):
 def _existing_subscription_by_item(
     member, item_code, start_date, end_date, lifetime, limit=0
 ):
+    filters = [
+        "(s.to_date >= '{}' OR s.is_lifetime = 1)".format(start_date)
+    ]
+    if not lifetime and end_date:
+        filters.append("s.from_date <= '{}'".format(end_date))
     return frappe.db.sql(
         """
             SELECT
@@ -455,28 +460,30 @@ def _existing_subscription_by_item(
                 `tabGym Subscription Item` AS si,
                 `tabGym Subscription` AS s
             WHERE
-                si.item_code = '{item_code}' AND
+                si.item_code = %(item_code)s AND
                 si.parentfield = 'service_items' AND
                 si.parent = s.name AND
                 s.docstatus = 1 AND
-                s.member = '{member}' AND
-                s.from_date <= '{end_date}' AND
-                s.to_date >= '{start_date}'
+                s.member = %(member)s AND
+                {filters}
             ORDER BY s.from_date
             {limit}
         """.format(
-            member=member,
-            item_code=item_code,
-            start_date=start_date,
-            end_date=end_date,
+            filters=" AND ".join(filters),
             limit='LIMIT 1' if limit else '',
         ),
+        values={
+            'member': member,
+            'item_code': item_code,
+            'start_date': start_date,
+            'end_date': end_date,
+        },
         as_dict=True,
     )
 
 
 def get_existing_subscription(
-    member, item_code, start_date, end_date, lifetime=0
+    member, item_code, start_date, end_date, lifetime
 ):
     try:
         return _existing_subscription_by_item(
@@ -487,7 +494,7 @@ def get_existing_subscription(
 
 
 def has_valid_subscription(
-    member, item_code, start_date, end_date, lifetime=0
+    member, item_code, start_date, end_date, lifetime
 ):
     periods = _existing_subscription_by_item(
         member, item_code, start_date, end_date, lifetime

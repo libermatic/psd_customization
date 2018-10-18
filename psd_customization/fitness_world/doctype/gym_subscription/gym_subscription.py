@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, getdate
 from frappe.model.document import Document
 from functools import reduce, partial
 from toolz import pluck
@@ -37,8 +37,37 @@ class GymSubscription(Document):
                     self.member, self.from_date, self.to_date
                 ):
             frappe.throw('Cannot create Subscription without Membership')
+        self.validate_dates()
+        self.validate_lifetime_items()
         if self.service_items:
             self.validate_service_dependencies()
+
+    def validate_dates(self):
+        if cint(self.is_lifetime):
+            if not self.from_date:
+                frappe.throw('Start Date cannot be empty')
+        elif not self.from_date or not self.to_date:
+            frappe.throw('Both dates are required')
+        elif getdate(self.from_date) >= getdate(self.to_date):
+            frappe.throw('From date cannot be the same or after to date')
+
+    def validate_lifetime_items(self):
+        if cint(self.is_lifetime):
+            lifetime_items = frappe.get_all(
+                'Item',
+                filters={
+                    'item_group': frappe.db.get_value(
+                        'Gym Settings', None, 'default_item_group',
+                    ),
+                    'is_gym_subscription_item': 1,
+                    'can_be_lifetime': 1,
+                }
+            )
+            for item in self.service_items:
+                if item.item_code not in pluck('name', lifetime_items):
+                    frappe.throw(
+                        'Subscription cannot be created for non lifetime items'
+                    )
 
     def validate_service_dependencies(self):
         subscription_exists = partial(
@@ -46,12 +75,14 @@ class GymSubscription(Document):
             member=self.member,
             start_date=self.from_date,
             end_date=self.to_date,
+            lifetime=cint(self.is_lifetime),
         )
         dependency_exists = partial(
             has_valid_subscription,
             member=self.member,
             start_date=self.from_date,
             end_date=self.to_date,
+            lifetime=cint(self.is_lifetime),
         )
         for item in self.service_items:
             existing = subscription_exists(item_code=item.item_code)

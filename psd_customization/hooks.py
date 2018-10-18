@@ -40,6 +40,7 @@ fixtures = [
             'Item-gym_section',
             'Item-is_gym_membership_item',
             'Item-is_gym_subscription_item',
+            'Item-can_be_lifetime',
             'Item-gym_parent_items',
         ]]]
     },
