@@ -115,7 +115,7 @@ frappe.ui.form.on('Gym Member', {
                   : membership_status === 'Expired'
                     ? 'red'
                     : 'darkgrey',
-            text: membership_status || 'Inactive',
+            text: membership_status || 'None',
           },
           invoices: {
             color: unpaid_invoices ? 'orange' : 'green',

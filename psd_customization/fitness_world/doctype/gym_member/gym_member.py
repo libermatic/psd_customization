@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import datetime
 from frappe.model.document import Document
 from frappe.contacts.address_and_contact \
     import load_address_and_contact, delete_contact_and_address
@@ -76,12 +77,21 @@ class GymMember(Document):
         outstanding = reduce(
             operator.add, pluck('amount', unpaid_subscriptions), 0
         )
-        membership = get_membership_by_member(self.name)
+
+        def make_membership_status():
+            m = get_membership_by_member(self.name)
+            if not m:
+                return None
+            if m.type != 'Lifetime' and m.status == 'Active':
+                return 'Expired' if datetime.date.today() < m.end_date \
+                    else m.status
+            return m.status or 'Inactive'
+
         self.set_onload('subscription_details', {
             'total_invoices': count(all_subscriptions),
             'unpaid_invoices': count(unpaid_subscriptions),
             'outstanding': outstanding,
-            'membership_status': membership.status if membership else None,
+            'membership_status': make_membership_status(),
         })
         self.set_onload(
             'subscription_items',
