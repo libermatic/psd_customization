@@ -27,10 +27,9 @@ function _get_eta(lifetime, to_date) {
   if (lifetime) {
     return null;
   }
-  if (moment().isAfter(to_date)) {
-    return `Expired ${moment(to_date).fromNow()}`;
-  }
-  return `Expires ${moment(to_date).toNow()}`;
+  return `${moment().isAfter(to_date) ? 'Expired' : 'Expires'} ${moment(
+    to_date
+  ).fromNow()}`;
 }
 
 psd_customization.dashboard.make_subscription_info = function(sub) {
