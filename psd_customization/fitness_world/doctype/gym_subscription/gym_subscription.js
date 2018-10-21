@@ -50,6 +50,7 @@ frappe.ui.form.on('Gym Subscription', {
   },
   refresh: function(frm) {
     frm.toggle_display('member_name', frm.doc.__islocal);
+    frm.set_df_property('member_name', 'read_only', 1);
     if (frm.doc.__islocal && frm.doc['amended_from']) {
       frm.set_value('reference_invoice', null);
       frm.set_value('status', null);
