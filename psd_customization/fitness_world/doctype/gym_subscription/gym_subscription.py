@@ -4,10 +4,10 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import cint, flt, getdate
+from frappe.utils import cint, flt, getdate, add_months, add_days
 from frappe.model.document import Document
 from functools import reduce, partial
-from toolz import pluck
+from toolz import pluck, compose, get
 
 from psd_customization.fitness_world.api.gym_membership import (
     get_membership_by,
@@ -16,6 +16,13 @@ from psd_customization.fitness_world.api.gym_subscription import (
     dispatch_sms, make_sales_invoice,
     get_existing_subscription, has_valid_subscription,
 )
+
+months = {
+    'Monthly': 1,
+    'Quarterly': 3,
+    'Half-Yearly': 6,
+    'Yearly': 12,
+}
 
 
 class GymSubscription(Document):
@@ -119,6 +126,14 @@ class GymSubscription(Document):
             self.membership_items + self.service_items,
             0
         )
+        get_to_date = compose(
+            getdate,
+            partial(add_days, days=-1),
+            partial(add_months, self.from_date),
+            partial(get, seq=months, default=0),
+        )
+        if getdate(self.to_date) != get_to_date(self.frequency):
+            self.frequency = None
 
     def on_submit(self):
         if self.membership:

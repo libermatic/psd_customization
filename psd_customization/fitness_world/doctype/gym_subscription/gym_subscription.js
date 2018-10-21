@@ -134,7 +134,7 @@ frappe.ui.form.on('Gym Subscription', {
       ]);
       frm.set_value('membership', membership);
       frm.set_value('from_date', dates.from_date);
-      frm.set_value('to_date', dates.to_date);
+      frm.set_value('frequency', 'Monthly');
       frm.trigger('render_info_html');
     } else {
       frm.set_value('membership', null);
@@ -161,14 +161,36 @@ frappe.ui.form.on('Gym Subscription', {
     }
   },
   from_date: function(frm) {
-    frm.trigger('set_subscription_item_qtys');
+    frm.trigger('set_to_date');
+  },
+  frequency: function(frm) {
+    frm.trigger('set_to_date');
   },
   to_date: function(frm) {
     frm.trigger('set_subscription_item_qtys');
   },
+  set_to_date: function(frm) {
+    const { from_date, frequency } = frm.doc;
+    const months = {
+      Monthly: 1,
+      Quarterly: 3,
+      'Half-Yearly': 6,
+      Yearly: 12,
+    };
+    if (from_date && frequency) {
+      frm.set_value(
+        'to_date',
+        frappe.datetime.add_days(
+          frappe.datetime.add_months(from_date, months[frequency]),
+          -1
+        )
+      );
+    }
+  },
   is_lifetime: function(frm) {
-    frm.toggle_display('to_date', !frm.doc['is_lifetime']);
+    frm.toggle_display(['frequency', 'to_date'], !frm.doc['is_lifetime']);
     if (frm.doc['is_lifetime']) {
+      frm.set_value('frequency', null);
       frm.set_value('to_date', null);
     }
   },
