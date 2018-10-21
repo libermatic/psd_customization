@@ -6,6 +6,8 @@ frappe.ui.form.on('Gym Member', {
     frm.trigger('set_queries');
   },
   refresh: function(frm) {
+    frm.toggle_display('member_id', frm.doc.__islocal);
+    frm.toggle_enable('enrollment_date', frm.doc.__islocal);
     if (frm.doc.__islocal) {
       frm.set_value('enrollment_date', frappe.datetime.get_today());
     }

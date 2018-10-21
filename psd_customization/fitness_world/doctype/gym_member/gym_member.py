@@ -6,11 +6,12 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import datetime
 from frappe.model.document import Document
+from frappe.model.naming import make_autoname
 from frappe.contacts.address_and_contact \
     import load_address_and_contact, delete_contact_and_address
 import operator
-from functools import reduce
-from toolz import count, pluck
+from functools import reduce, partial
+from toolz import count, pluck, compose
 
 from psd_customization.utils.fp import pick
 from psd_customization.fitness_world.api.gym_membership \
@@ -24,9 +25,31 @@ class GymMember(Document):
         load_address_and_contact(self)
         self.load_subscription_details()
 
+    def autoname(self):
+        if not self.member_id:
+            key = frappe.get_meta(self.doctype).autoname or ''
+            self.member_id = make_autoname(key)
+        self.name = self.member_id
+
     def validate(self):
+        self.validate_member_id()
         if not self.enrollment_date:
             frappe.throw('Enrollment Date cannot be empty.')
+
+    def validate_member_id(self):
+        key = frappe.get_meta(self.doctype).autoname or ''
+        rules = ['YY', 'YYYY', 'MM', 'DD', 'FY']
+        get_parts = compose(
+            partial(filter, lambda x: not x.startswith('#')),
+            partial(filter, lambda x: x not in rules),
+            lambda x: x.split('.'),
+        )
+        for part in get_parts(key):
+            if part not in self.member_id:
+                frappe.throw(
+                    'Member ID should follow this pattern: '
+                    '<strong>{}</strong>'.format(key.replace('.', ''))
+                )
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()

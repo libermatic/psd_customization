@@ -15,7 +15,7 @@ frappe.ui.form.GymMemberQuickEntryForm = frappe.ui.form.QuickEntryForm.extend({
         collapsible: 1,
       },
       {
-        label: __('Email Id'),
+        label: __('Email ID'),
         fieldname: 'email_id',
         fieldtype: 'Data',
       },
