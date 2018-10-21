@@ -432,6 +432,7 @@ def _existing_subscription_by_item(
         """
             SELECT
                 s.name AS subscription,
+                s.is_lifetime AS is_lifetime,
                 s.from_date AS from_date,
                 s.to_date AS to_date
             FROM
@@ -481,6 +482,10 @@ def has_valid_subscription(
         for interval in merge_intervals(periods):
             if interval.get('from_date') <= getdate(start_date) \
                     and getdate(interval.get('to_date')) >= getdate(end_date):
+                return True
+    except KeyError:
+        for period in periods:
+            if period.get('is_lifetime'):
                 return True
     except IndexError:
         pass

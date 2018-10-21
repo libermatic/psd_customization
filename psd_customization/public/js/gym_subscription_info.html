@@ -1,49 +1,36 @@
+{% sections.forEach(({ title, items } = {}) => { %}
 <div>
-  <h6>Membership</h6>
-  {% if (membership)  { %}
-  <div class="psd-subscription-item">
-    <div class="psd-subscription-title">
-      <a href="{%= encodeURI(`#Form/Gym Membership/${encodeURIComponent(membership.name)}`) %}">
-        {%= membership.name %}
-      </a>
-    </div>
-    <div class="psd-subscription-date">
-      <span>{%= frappe.datetime.str_to_user(membership.start_date) %}</span>
-      {% if (membership.end_date) { %}
-      &ndash;
-      <span>{%= frappe.datetime.str_to_user(membership.end_date) %}</span>
-      {% } %}
-    </div>
-    <div class="psd-subscription-subtitle">{%= membership.type %}</div>
-  </div>
-  {% } else { %}
-  <p>None</p>
+  {% if (title) { %}
+  <h6>{%= title %}</h6>
   {% } %}
-</div>
-
-<div>
-  <h6>Subscriptions</h6>
-  {% if (subscriptions.length > 0)  { %}
-    {% for (var i = 0; i < subscriptions.length; i++) { %}
-    <div class="psd-subscription-item">
-      <div class="psd-subscription-title">
-        <a href="{%= encodeURI(`#Form/Gym Subscription/${encodeURIComponent(subscriptions[i].subscription)}`) %}">
-          {%= subscriptions[i].item_name %}
-        </a>
-      </div>
-      <div class="psd-subscription-date">
-        <span>{%= frappe.datetime.str_to_user(subscriptions[i].from_date) %}</span>
-        {% if (subscriptions[i].to_date) { %}
-        &ndash;
-        <span>{%= frappe.datetime.str_to_user(subscriptions[i].to_date) %}</span>
+  {% if (items.length > 0) { %}
+    {% items.forEach(({ item_name, from_date, to_date, lifetime, link, color, eta } = {}) => { %}
+    <div class="row psd-info_item">
+      <div class="col-sm-5 psd-info-item-description">
+        <span class="indicator {{ color }}" />
+        <span class="psd-info_item-title">
+          <a href="{%= encodeURI(`#Form/Gym Subscription/${encodeURIComponent(link)}`) %}">
+            {%= item_name %}
+          </a>
+        </span>
+        {% if (lifetime) { %}
+        <span class="psd-info_item-subtitle">Lifetime</span>
         {% } %}
       </div>
-      {% if (subscriptions[i].lifetime) { %}
-      <div class="psd-subscription-subtitle">Lifetime</div>
-      {% } %}
+      <div class="col-sm-4 psd-info_item-date">
+        <span>{%= from_date %}</span>
+        {% if (to_date) { %}
+        &ndash;
+        <span>{%= to_date %}</span>
+        {% } %}
+      </div>
+      <div class="col-sm-3">
+        {%= eta %}
+      </div>
     </div>
-    {% } %}
+    {% }) %}
   {% } else { %}
   <p>None</p>
   {% } %}
 </div>
+{% }) %}
