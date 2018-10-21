@@ -262,8 +262,20 @@ frappe.ui.form.on('Gym Subscription', {
     ]);
     frm.fields_dict['info_html'].$wrapper.html(
       frappe.render_template('gym_subscription_info', {
-        membership,
-        subscriptions,
+        sections: [
+          {
+            title: 'Membership',
+            items: !!membership
+              ? [psd_customization.dashboard.make_membership_info(membership)]
+              : [],
+          },
+          {
+            title: 'Subscriptions',
+            items: subscriptions.map(
+              psd_customization.dashboard.make_subscription_info
+            ),
+          },
+        ],
       })
     );
   },

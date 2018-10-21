@@ -1,19 +1,17 @@
-.psd-subscription-title {
-  margin-right: 8px;
+.psd-info_item {
+  margin-bottom: 8px;
 }
-.psd-subscription-subtitle {
+@media (min-width: 768px) {
+  .psd-info_item {
+    margin-bottom: 0;
+  }
+}
+.psd-info_item-subtitle {
   font-variant: all-small-caps;
   padding: 0 4px;
-  margin: 0 8px;
   background-color: #d1d8dd;
 }
-.psd-subscription-item {
-  display: flex;
-  flex-flow: row wrap;
-  align-items: center;
-}
-.psd-subscription-date {
+.psd-info_item-date {
   font-size: 0.9em;
   font-weight: bold;
-  margin: 0 8px;
 }
