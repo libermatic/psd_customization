@@ -45,7 +45,7 @@ class GymSubscription(Document):
                 ):
             frappe.throw('Cannot create Subscription without Membership')
         self.validate_dates()
-        self.validate_lifetime_items()
+        self.validate_items()
         if self.service_items:
             self.validate_service_dependencies()
 
@@ -58,23 +58,47 @@ class GymSubscription(Document):
         elif getdate(self.from_date) >= getdate(self.to_date):
             frappe.throw('From date cannot be the same or after to date')
 
-    def validate_lifetime_items(self):
-        if cint(self.is_lifetime):
-            lifetime_items = frappe.get_all(
-                'Item',
-                filters={
-                    'item_group': frappe.db.get_value(
-                        'Gym Settings', None, 'default_item_group',
-                    ),
-                    'is_gym_subscription_item': 1,
-                    'can_be_lifetime': 1,
-                }
+    def validate_items(self):
+        items = frappe.get_all(
+            'Item',
+            filters={
+                'item_group': frappe.db.get_value(
+                    'Gym Settings', None, 'default_item_group',
+                ),
+            },
+            fields=[
+                'name',
+                'is_gym_membership_item',
+                'is_gym_subscription_item',
+                'can_be_lifetime'
+            ]
+        )
+
+        def filter_and_get(key):
+            return compose(
+                partial(pluck, 'name'),
+                partial(filter, lambda x: x.get(key))
             )
-            for item in self.service_items:
-                if item.item_code not in pluck('name', lifetime_items):
-                    frappe.throw(
-                        'Subscription cannot be created for non lifetime items'
-                    )
+
+        for item in self.membership_items:
+            if item.item_code \
+                    not in filter_and_get('is_gym_membership_item')(items):
+                frappe.throw(
+                    'Invalid item(s) in Membership Item table. Please remove '
+                    'them and try again.'
+                )
+        for item in self.service_items:
+            if item.item_code \
+                    not in filter_and_get('is_gym_subscription_item')(items):
+                frappe.throw(
+                    'Invalid item(s) in Subscription Item table. Please '
+                    'remove them and try again.'
+                )
+            if cint(self.is_lifetime) and item.item_code \
+                    not in filter_and_get('can_be_lifetime')(items):
+                frappe.throw(
+                    'Subscription cannot be created for non lifetime items.'
+                )
 
     def validate_service_dependencies(self):
         subscription_exists = partial(
