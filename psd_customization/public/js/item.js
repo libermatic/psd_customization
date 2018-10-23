@@ -24,9 +24,9 @@ frappe.ui.form.on('Item', {
       settings['default_item_group'] === frm.doc['item_group']
     );
     if (settings['default_item_group']) {
-      frm.set_query('item', 'gym_parent_items', () => ({
+      frm.set_query('item', 'gym_parent_items', {
         filters: { item_group: settings['default_item_group'] },
-      }));
+      });
     }
   },
 });

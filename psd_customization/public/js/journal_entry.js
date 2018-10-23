@@ -15,6 +15,6 @@ frappe.ui.form.on('Journal Entry', {
   set_queries: function(frm) {
     const { company } = frm.doc;
     frm.toggle_display('branch', !!company);
-    frm.set_query('branch', () => ({ filters: { company } }));
+    frm.set_query('branch', { filters: { company } });
   },
 });

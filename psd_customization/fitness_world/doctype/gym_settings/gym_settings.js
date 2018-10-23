@@ -12,7 +12,7 @@ frappe.ui.form.on('Gym Settings', {
       'sms_invoiced',
       'sms_receipt',
     ].forEach(field => {
-      frm.set_query(field, () => ({ filters: { type: 'Transactional' } }));
+      frm.set_query(field, { filters: { type: 'Transactional' } });
     });
   },
   refresh: async function(frm) {
