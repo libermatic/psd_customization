@@ -33,8 +33,10 @@ function _get_eta(lifetime, to_date) {
 }
 
 psd_customization.dashboard.make_subscription_info = function(sub) {
-  const { from_date, to_date, lifetime, subscription: link } = sub;
+  const { from_date, to_date, lifetime, status, subscription: link } = sub;
   return Object.assign({}, sub, {
+    info: lifetime && 'Lifetime',
+    warning: status !== 'Paid' && 'Unpaid',
     from_date: frappe.datetime.str_to_user(from_date),
     to_date: frappe.datetime.str_to_user(to_date),
     color: _get_color(lifetime, to_date),
@@ -48,7 +50,7 @@ psd_customization.dashboard.make_membership_info = function(mem) {
   const lifetime = type === 'Lifetime';
   return Object.assign({}, mem, {
     item_name,
-    lifetime,
+    info: lifetime && 'Lifetime',
     from_date: frappe.datetime.str_to_user(start_date),
     to_date: frappe.datetime.str_to_user(end_date),
     color: _get_color(lifetime, end_date),

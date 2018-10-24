@@ -269,7 +269,7 @@ frappe.ui.form.on('Gym Subscription', {
       frappe.call({
         method:
           'psd_customization.fitness_world.api.gym_subscription.get_current',
-        args: { member },
+        args: { member, paid: 0 },
       }),
     ]);
     frm.fields_dict['info_html'].$wrapper.html(

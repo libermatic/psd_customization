@@ -4,7 +4,7 @@
   <h6>{%= title %}</h6>
   {% } %}
   {% if (items.length > 0) { %}
-    {% items.forEach(({ item_name, from_date, to_date, lifetime, link, color, eta } = {}) => { %}
+    {% items.forEach(({ item_name, from_date, to_date, info, warning, link, color, eta } = {}) => { %}
     <div class="row psd-info_item">
       <div class="col-sm-5 psd-info-item-description">
         <span class="indicator {{ color }}" />
@@ -13,8 +13,11 @@
             {%= item_name %}
           </a>
         </span>
-        {% if (lifetime) { %}
-        <span class="psd-info_item-subtitle">Lifetime</span>
+        {% if (info) { %}
+        <span class="badge psd-info_item-badge-info">{%= info %}</span>
+        {% } %}
+        {% if (warning) { %}
+        <span class="badge psd-info_item-badge-warning">{%= warning %}</span>
         {% } %}
       </div>
       <div class="col-sm-4 psd-info_item-date">

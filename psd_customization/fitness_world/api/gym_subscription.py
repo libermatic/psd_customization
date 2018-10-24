@@ -382,7 +382,7 @@ def get_current(member, paid=1):
         }
     )
     more_args = ''
-    if paid:
+    if cint(paid):
         more_args += "AND s.status = 'Paid'"
     subscriptions = []
     for item in pluck('name', subscription_items):
