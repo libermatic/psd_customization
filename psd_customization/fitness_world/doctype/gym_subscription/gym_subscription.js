@@ -3,17 +3,17 @@
 
 frappe.ui.form.on('Gym Subscription', {
   setup: function(frm) {
-    if (frm.doc.docstatus !== 1) {
+    if (frm.doc.docstatus < 1) {
       frm.trigger('set_queries');
     }
   },
   set_queries: async function(frm) {
-    frm.set_query('item_code', 'membership_items', () => ({
+    frm.set_query('item_code', 'membership_items', {
       filters: { is_gym_membership_item: 1 },
-    }));
-    frm.set_query('item_code', 'service_items', () => ({
+    });
+    frm.set_query('item_code', 'service_items', {
       filters: { is_gym_subscription_item: 1 },
-    }));
+    });
     // set_query done again with item_group to handle latency
     const { message: settings = {} } = await frappe.db.get_value(
       'Gym Settings',
@@ -21,31 +21,31 @@ frappe.ui.form.on('Gym Subscription', {
       'default_item_group'
     );
     if (settings['default_item_group']) {
-      frm.set_query('item_code', 'membership_items', () => ({
+      frm.set_query('item_code', 'membership_items', {
         filters: {
           item_group: settings['default_item_group'],
           is_gym_membership_item: 1,
         },
-      }));
-      frm.set_query('item_code', 'service_items', () => ({
+      });
+      frm.set_query('item_code', 'service_items', {
         filters: {
           item_group: settings['default_item_group'],
           is_gym_subscription_item: 1,
         },
-      }));
+      });
     }
   },
   set_membership_query: function(frm) {
     const { member } = frm.doc;
     frm.toggle_display('membership_section', !!member);
     if (member) {
-      frm.set_query('membership', () => ({
+      frm.set_query('membership', {
         filters: [
           ['member', '=', member],
           ['docstatus', '=', 1],
           ['status', '=', ''],
         ],
-      }));
+      });
     }
   },
   refresh: function(frm) {
