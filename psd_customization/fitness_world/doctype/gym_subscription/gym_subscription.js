@@ -77,7 +77,7 @@ frappe.ui.form.on('Gym Subscription', {
       },
       qty: async function(frm, cdt, cdn) {
         const { item_code, qty = 0, rate = 0 } = frappe.get_doc(cdt, cdn) || {};
-        if (qty) {
+        if (item_code && qty) {
           const { member, posting_date: transaction_date } = frm.doc;
           const { message: price } = await frappe.call({
             method:
@@ -116,25 +116,15 @@ frappe.ui.form.on('Gym Subscription', {
   },
   member: async function(frm) {
     frm.trigger('set_membership_query');
+    frm.set_value('from_date', frappe.datetime.get_today());
+    frm.set_value('frequency', 'Monthly');
     if (frm.doc['member']) {
-      const [
-        { message: membership },
-        { message: dates = {} },
-      ] = await Promise.all([
-        frappe.call({
-          method:
-            'psd_customization.fitness_world.api.gym_membership.get_uninvoiced_membership',
-          args: { member: frm.doc['member'], only_name: 1 },
-        }),
-        frappe.call({
-          method:
-            'psd_customization.fitness_world.api.gym_subscription.get_next_period',
-          args: { member: frm.doc['member'] },
-        }),
-      ]);
+      const { message: membership } = await frappe.call({
+        method:
+          'psd_customization.fitness_world.api.gym_membership.get_uninvoiced_membership',
+        args: { member: frm.doc['member'], only_name: 1 },
+      });
       frm.set_value('membership', membership);
-      frm.set_value('from_date', dates.from_date);
-      frm.set_value('frequency', 'Monthly');
       frm.trigger('render_info_html');
     } else {
       frm.set_value('membership', null);
