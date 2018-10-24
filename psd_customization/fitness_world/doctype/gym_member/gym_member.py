@@ -82,7 +82,7 @@ class GymMember(Document):
         all_subscriptions = frappe.db.sql(
             """
                 SELECT
-                    si.rounded_total AS amount,
+                    si.outstanding_amount AS amount,
                     ms.status AS status,
                     ms.to_date AS end_date
                 FROM `tabGym Subscription` AS ms, `tabSales Invoice` AS si
