@@ -35,7 +35,7 @@ psd_customization.ultimate_art.handle_parse_serial_dialog = function(
           prev_serial_no.split('\n')
         );
       frappe.model.set_value(cdt, cdn, 'serial_no', `${serials.join('\n')}`);
-    } catch {
+    } catch (e) {
       console.warn('Invalid serial format detected: serial_no not set');
     }
     dialog.hide();
