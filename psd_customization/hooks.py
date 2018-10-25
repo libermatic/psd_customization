@@ -68,6 +68,8 @@ app_include_js = [
 doctype_js = {
     'Journal Entry': 'public/js/journal_entry.js',
     'Item': 'public/js/item.js',
+    'Purchase Receipt': 'public/js/serial_reader.js',
+    'Purchase Invoice': 'public/js/serial_reader.js',
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
