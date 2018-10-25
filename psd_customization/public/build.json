@@ -4,6 +4,7 @@
     "public/css/subscription.css"
   ],
   "js/psd_customization.min.js": [
+    "public/js/ultimate_art.js",
     "public/js/utils.js",
     "public/js/dashboard.js",
     "public/js/gym_member_dashboard.html",
