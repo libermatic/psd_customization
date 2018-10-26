@@ -42,6 +42,8 @@ fixtures = [
             'Item-is_gym_subscription_item',
             'Item-can_be_lifetime',
             'Item-gym_parent_items',
+            'Purchase Receipt Item-parse_serial',
+            'Purchase Invoice Item-parse_serial',
         ]]]
     },
 ]
