@@ -2,3 +2,4 @@ frappe
 erpnext
 sms_extras
 toolz==0.9.0
+imgkit==1.0.1
