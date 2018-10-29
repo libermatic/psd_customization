@@ -8,6 +8,7 @@
 
 frappe.ui.form.on('Item', {
   refresh: function(frm) {
+    frm.trigger('add_menu_item');
     frm.trigger('render_barcode_details');
     frm.trigger('enable_fields');
   },
@@ -27,6 +28,34 @@ frappe.ui.form.on('Item', {
     if (settings['default_item_group']) {
       frm.set_query('item', 'gym_parent_items', {
         filters: { item_group: settings['default_item_group'] },
+      });
+    }
+  },
+  add_menu_item: function(frm) {
+    if (!frm.doc.__islocal) {
+      function hash(str) {
+        const hashint =
+          str
+            .split('')
+            .reduce((a, x) => ((a << 5) - a + x.charCodeAt(0)) | 0, 0) >>> 0;
+        const hashstr = hashint.toString();
+        return `90${hashstr.slice(0, 10).padStart(10, '0')}`;
+      }
+      function checkdigit(code) {
+        const mod = code
+          .split('')
+          .reverse()
+          .reduce(
+            (a, x, i) => (i % 2 ? parseInt(x) + a : parseInt(x) * 3 + a) % 10,
+            0
+          );
+        return ((10 - mod) % 10).toString();
+      }
+      frm.page.add_menu_item('Generate New Barcode', async function() {
+        const code = hash(frm.doc['item_code']);
+        const check = checkdigit(code);
+        await frm.set_value('barcode', code + check);
+        frm.save();
       });
     }
   },
