@@ -39,7 +39,7 @@ frappe.ui.form.on('Item', {
             .split('')
             .reduce((a, x) => ((a << 5) - a + x.charCodeAt(0)) | 0, 0) >>> 0;
         const hashstr = hashint.toString();
-        return `90${hashstr.padStart(10, '0')}`;
+        return `90${hashstr.slice(0, 10).padStart(10, '0')}`;
       }
       function checkdigit(code) {
         const mod = code
