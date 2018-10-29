@@ -55,7 +55,6 @@ frappe.ui.form.on('Item', {
         const code = hash(frm.doc['item_code']);
         const check = checkdigit(code);
         await frm.set_value('barcode', code + check);
-        frm.save();
       });
     }
   },
