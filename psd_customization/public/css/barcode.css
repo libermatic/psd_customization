@@ -1,6 +1,15 @@
+.psd-dashboard-section {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-end;
+}
+.psd-dashboard-section > button {
+  margin-left: 10px;
+}
 .psd-barcode-label-container {
   border: 1px solid #d1d8dd;
   width: fit-content;
+  overflow: hidden;
 }
 .psd-barcode-label {
   background-color: #ffffff;
@@ -10,35 +19,39 @@
   width: 64mm;
   padding: 1.5mm;
   display: grid;
-  grid-template-columns: 8mm 1fr 8mm;
-  grid-template-rows: auto;
-  grid-template-areas: 'header header footer' 'title title footer' 'barcode barcode footer';
+  grid-template-columns: 1fr 6mm;
+  grid-template-rows: 4mm 1fr 17.5mm;
+  grid-template-areas: 'header footer' 'text footer' 'barcode footer';
   font-family: monospace;
   font-size: 8pt;
-  line-height: 1.3;
+  line-height: 1.2;
+  text-align: center;
 }
 .psd-barcode-rotated {
-  line-height: 8mm;
-  text-align: center;
-  transform: translate(calc(-11.5mm), calc(11.5mm)) rotate(-90deg);
+  line-height: 6mm;
+  transform: translate(calc(-12.5mm), 0) rotate(-90deg);
   transform-origin: center center;
-  height: 8mm;
+  height: 6mm;
   width: calc(31mm);
 }
 .psd-barcode-header {
   grid-area: header;
-  text-align: center;
   text-transform: uppercase;
 }
-.psd-barcode-title {
-  grid-area: title;
+.psd-barcode-text {
+  grid-area: text;
+  height: calc(28.8pt);
+  overflow-y: hidden;
+  align-self: center;
 }
 .psd-barcode-area {
   grid-area: barcode;
+  align-self: center;
 }
 .psd-barcode-foot {
   grid-area: footer;
-  font-size: 1.5em;
+  font-size: 1.4em;
+  align-self: center;
 }
 .psd-barcode-strong {
   font-weight: bold;

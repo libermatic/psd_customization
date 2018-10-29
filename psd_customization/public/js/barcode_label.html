@@ -1,13 +1,16 @@
-<div class="psd-barcode-label-container">
-  <div id="barcode-label" class="psd-barcode-label">
-    <div class="psd-barcode-header">{{ doc.company }}</div>
-    <div class="psd-barcode-title">
-      <span class="psd-barcode-strong">{{ doc.item_code }}</span>:
-      <span>{{ doc.item_name }}</span>
-    </div>
-    <div class="psd-barcode-area">NO_DATA</div>
-    <div class="psd-barcode-foot psd-barcode-strong psd-barcode-rotated">
-      {{ doc.price_formatted }}
+<div class="psd-dashboard-section">
+  <div class="psd-barcode-label-container">
+    <div id="barcode-label" class="psd-barcode-label">
+      <div class="psd-barcode-header">{{ doc.company }}</div>
+      <div class="psd-barcode-text">
+        <span class="psd-barcode-strong">{{ doc.item_code }}</span>:
+        <span>{{ doc.item_name }}  {{ doc.item_name }} {{ doc.item_name }} {{ doc.item_name }}</span>
+      </div>
+      <div class="psd-barcode-area">NO_DATA</div>
+      <div class="psd-barcode-foot psd-barcode-strong psd-barcode-rotated">
+        {{ doc.price_formatted }}
+      </div>
     </div>
   </div>
+  <button type="button" class="download_image btn btn-sm">Download as PNG</button>
 </div>

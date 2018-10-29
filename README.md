@@ -25,6 +25,8 @@ They are auto-selected based on **Company** by creating **Naming Series** entry 
 
 ### Item
 
+Add a menu item to generate EAN13 barcodes with a Dashboard section to render and download a barcoded item label.
+
 `is_membership_item` and `is_subscription_item` specify **Items** used by **Gym Memberships** and **Gym Subscriptions** respectively. Both these fields are used by **Gym Subscription**.
 
 `can_be_lifetime` flags **Items** that can have lifetime validity.

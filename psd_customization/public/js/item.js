@@ -1,11 +1,6 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-/**
- * Enables and sets query for gym_parent_items based default_item_group set in
- * Gym Settings
- */
-
 frappe.ui.form.on('Item', {
   refresh: function(frm) {
     frm.trigger('add_menu_item');
@@ -15,6 +10,11 @@ frappe.ui.form.on('Item', {
   item_group: function(frm) {
     frm.trigger('enable_fields');
   },
+
+  /**
+   * Enables and sets query for gym_parent_items based default_item_group set in
+   * Gym Settings
+   */
   enable_fields: async function(frm) {
     if (frappe.user_roles.includes('Gym Manager')) {
       const { message: settings = {} } = await frappe.db.get_value(
@@ -33,6 +33,9 @@ frappe.ui.form.on('Item', {
       }
     }
   },
+  /**
+   * Creates a EAN13 barcode by hashing item_code
+   */
   add_menu_item: function(frm) {
     if (!frm.doc.__islocal) {
       function hash(str) {
@@ -60,6 +63,9 @@ frappe.ui.form.on('Item', {
       });
     }
   },
+  /**
+   * Renders a barcode label in Dashboard with a button to Download as PNG
+   */
   render_barcode_details: async function(frm) {
     if (!frm.doc.__islocal) {
       const { message: label_data = {} } = await frappe.call({
@@ -103,14 +109,16 @@ frappe.ui.form.on('Item', {
                     console.error('oops, something went wrong!', e);
                   }
                 }
-                $('<button style="margin-top: 12px;">Download as PNG</button>')
-                  .addClass('btn btn-sm')
-                  .click(download_label)
-                  .appendTo(dashboard_section);
+                $(dashboard_section)
+                  .find('.download_image')
+                  .click(download_label);
               }
             );
           } catch (e) {
-            barcode_area.html('<div>INVALID</div>');
+            barcode_area.text('INVALID');
+            $(dashboard_section)
+              .find('.download_image')
+              .addClass('disabled');
           }
         });
       }
