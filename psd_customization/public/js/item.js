@@ -7,10 +7,8 @@
  */
 
 frappe.ui.form.on('Item', {
-  onload: function(frm) {
-    frm.trigger('render_barcode_details');
-  },
   refresh: function(frm) {
+    frm.trigger('render_barcode_details');
     frm.trigger('enable_fields');
   },
   item_group: function(frm) {
