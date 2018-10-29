@@ -16,19 +16,21 @@ frappe.ui.form.on('Item', {
     frm.trigger('enable_fields');
   },
   enable_fields: async function(frm) {
-    const { message: settings = {} } = await frappe.db.get_value(
-      'Gym Settings',
-      null,
-      'default_item_group'
-    );
-    frm.toggle_display(
-      ['gym_section', 'is_base_gym_membership_item', 'gym_parent_items'],
-      settings['default_item_group'] === frm.doc['item_group']
-    );
-    if (settings['default_item_group']) {
-      frm.set_query('item', 'gym_parent_items', {
-        filters: { item_group: settings['default_item_group'] },
-      });
+    if (frappe.user_roles.includes('Gym Manager')) {
+      const { message: settings = {} } = await frappe.db.get_value(
+        'Gym Settings',
+        null,
+        'default_item_group'
+      );
+      frm.toggle_display(
+        ['gym_section', 'is_base_gym_membership_item', 'gym_parent_items'],
+        settings['default_item_group'] === frm.doc['item_group']
+      );
+      if (settings['default_item_group']) {
+        frm.set_query('item', 'gym_parent_items', {
+          filters: { item_group: settings['default_item_group'] },
+        });
+      }
     }
   },
   add_menu_item: function(frm) {
