@@ -66,7 +66,7 @@ frappe.ui.form.on('Gym Subscription', {
               cdt,
               cdn,
               'qty',
-              psd_customization.utils.month_diff_dec(from_date, to_date, true)
+              psd_customization.utils.month_diff_dec(from_date, to_date)
             );
           } else {
             frappe.model.set_value(cdt, cdn, 'qty', 1);
