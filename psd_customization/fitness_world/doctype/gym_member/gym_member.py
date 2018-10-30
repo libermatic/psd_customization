@@ -74,6 +74,7 @@ class GymMember(Document):
     def on_trash(self):
         # clears notification_contact for LinkExistsException
         self.db_set('notification_contact', None)
+        self.db_set('emergency_contact', None)
         delete_contact_and_address('Gym Member', self.name)
 
     def after_delete(self):
