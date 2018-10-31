@@ -38,6 +38,10 @@ class GymMember(Document):
 
     def validate_member_id(self):
         key = frappe.get_meta(self.doctype).autoname or ''
+        error_message = 'Member ID should follow this pattern: ' \
+            '<strong>{}</strong>'.format(key.replace('.', ''))
+        if len(key.replace('.', '')) != len(self.member_id):
+            frappe.throw(error_message)
         rules = ['YY', 'YYYY', 'MM', 'DD', 'FY']
         get_parts = compose(
             partial(filter, lambda x: not x.startswith('#')),
@@ -46,10 +50,7 @@ class GymMember(Document):
         )
         for part in get_parts(key):
             if part not in self.member_id:
-                frappe.throw(
-                    'Member ID should follow this pattern: '
-                    '<strong>{}</strong>'.format(key.replace('.', ''))
-                )
+                frappe.throw(error_message)
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
@@ -73,6 +74,7 @@ class GymMember(Document):
     def on_trash(self):
         # clears notification_contact for LinkExistsException
         self.db_set('notification_contact', None)
+        self.db_set('emergency_contact', None)
         delete_contact_and_address('Gym Member', self.name)
 
     def after_delete(self):

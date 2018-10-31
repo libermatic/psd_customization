@@ -8,6 +8,7 @@ from frappe.utils import cint, flt, getdate, add_months, add_days
 from frappe.model.document import Document
 from functools import reduce, partial
 from toolz import pluck, compose, get
+from copy import deepcopy
 
 from psd_customization.fitness_world.api.gym_membership import (
     get_membership_by,
@@ -16,6 +17,7 @@ from psd_customization.fitness_world.api.gym_subscription import (
     dispatch_sms, make_sales_invoice,
     get_existing_subscription, has_valid_subscription,
 )
+from psd_customization.utils.datetime import month_diff
 
 months = {
     'Monthly': 1,
@@ -23,6 +25,15 @@ months = {
     'Half-Yearly': 6,
     'Yearly': 12,
 }
+
+
+def _update_item_qty(qty):
+    def fn(item):
+        r = deepcopy(item)
+        r.qty = flt(qty)
+        r.amount = r.qty * flt(r.rate)
+        return r
+    return fn
 
 
 class GymSubscription(Document):
@@ -145,11 +156,6 @@ class GymSubscription(Document):
                     )
 
     def before_save(self):
-        self.total_amount = reduce(
-            lambda a, x: a + flt(x.amount),
-            self.membership_items + self.service_items,
-            0
-        )
         get_to_date = compose(
             getdate,
             partial(add_days, days=-1),
@@ -158,6 +164,15 @@ class GymSubscription(Document):
         )
         if getdate(self.to_date) != get_to_date(self.frequency):
             self.frequency = None
+        set_qty = compose(_update_item_qty, month_diff)(
+            self.from_date, self.to_date, as_dec=1
+        )
+        self.service_items = map(set_qty, self.service_items)
+        self.total_amount = reduce(
+            lambda a, x: a + flt(x.amount),
+            self.membership_items + self.service_items,
+            0
+        )
 
     def on_submit(self):
         if self.membership:
