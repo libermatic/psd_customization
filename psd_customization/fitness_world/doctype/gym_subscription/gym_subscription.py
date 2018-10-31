@@ -164,10 +164,16 @@ class GymSubscription(Document):
         )
         if getdate(self.to_date) != get_to_date(self.frequency):
             self.frequency = None
-        set_qty = compose(_update_item_qty, month_diff)(
-            self.from_date, self.to_date, as_dec=1
-        )
-        self.service_items = map(set_qty, self.service_items)
+
+        if frappe.flags.in_import:
+            self.membership_items = map(
+                _update_item_qty(1), self.membership_items
+            )
+            set_qty = compose(_update_item_qty, month_diff)(
+                self.from_date, self.to_date, as_dec=1
+            )
+            self.service_items = map(set_qty, self.service_items)
+
         self.total_amount = reduce(
             lambda a, x: a + flt(x.amount),
             self.membership_items + self.service_items,
@@ -180,12 +186,19 @@ class GymSubscription(Document):
             if membership:
                 membership.reference_doc = self.name
                 membership.save()
+
+        if frappe.flags.in_import:
+            self.update_membership_status()
+
         if not cint(self.no_invoice):
             self.reference_invoice = self.create_sales_invoice()
 
     def on_update_after_submit(self):
         if self.status == 'Paid':
             dispatch_sms(self.name, 'sms_receipt')
+        self.update_membership_status()
+
+    def update_membership_status(self):
         if self.membership:
             membership = frappe.get_doc('Gym Membership', self.membership)
             if membership:
