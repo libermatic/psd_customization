@@ -30,18 +30,18 @@ def _get_next_end(d):
 
 
 def month_diff(d1, d2, as_dec=0):
-    start_date = getdate(d1)
-    end_date = getdate(d2)
-    assert start_date < end_date
-    next_start_date, months = start_date, 0
-    cur_start_date, cur_months = start_date, 0
-    gen_start = _get_next_start(start_date)
-    while next_start_date < end_date:
-        cur_start_date, cur_months = next_start_date, months
-        next_start_date, months = gen_start.next()
-    rem_days = date_diff(end_date, cur_start_date)
+    first_start = getdate(d1)
+    last_start = getdate(add_days(d2, 1))
+    assert first_start < last_start
+    next_start, months = first_start, 0
+    cur_start, cur_months = first_start, 0
+    gen_start = _get_next_start(first_start)
+    while next_start <= last_start:
+        cur_start, cur_months = next_start, months
+        next_start, months = gen_start.next()
+    rem_days = date_diff(last_start, cur_start)
     if cint(as_dec):
-        days_in_month = date_diff(next_start_date, cur_start_date)
+        days_in_month = date_diff(next_start, cur_start)
         return cur_months + flt(rem_days) / flt(days_in_month)
     return cur_months, rem_days
 
