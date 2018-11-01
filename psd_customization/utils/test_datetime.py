@@ -12,7 +12,7 @@ from psd_customization.utils.datetime import (
 
 class TestMonthDiff(unittest.TestCase):
     def test_month_diff(self):
-        actual = month_diff('2018-06-15', '2018-06-30')
+        actual = month_diff('2018-06-16', '2018-06-30')
         expected = (0, 15)
         self.assertEqual(actual, expected)
 
@@ -21,17 +21,17 @@ class TestMonthDiff(unittest.TestCase):
             month_diff('2018-06-15', '2018-06-05')
 
     def test_month_diff_decimal(self):
-        actual = month_diff('2018-06-15', '2018-06-30', as_dec=1)
+        actual = month_diff('2018-06-16', '2018-06-30', as_dec=1)
         expected = 0.5
         self.assertEqual(actual, expected)
 
     def test_month_diff_whole(self):
-        actual = month_diff('2018-06-15', '2018-07-15', as_dec=1)
+        actual = month_diff('2018-06-16', '2018-07-15', as_dec=1)
         expected = 1.0
         self.assertEqual(actual, expected)
 
     def test_month_diff_fraction(self):
-        actual = month_diff('2018-05-15', '2018-06-30', as_dec=1)
+        actual = month_diff('2018-05-16', '2018-06-30', as_dec=1)
         expected = 1.5
         self.assertEqual(actual, expected)
 
