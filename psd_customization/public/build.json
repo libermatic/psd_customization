@@ -11,6 +11,7 @@
     "public/js/barcode_label.html",
     "public/js/gym_member_dashboard.html",
     "public/js/gym_subscription_info.html",
-    "public/js/gym_subscription_dashboard.html"
+    "public/js/gym_subscription_dashboard.html",
+    "public/js/psd_customization.iife.js"
   ]
 }
