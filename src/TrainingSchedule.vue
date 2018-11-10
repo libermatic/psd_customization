@@ -57,7 +57,7 @@ export default {
       if (subscription) {
         const { message } = await frappe.call({
           method:
-            'psd_customization.fitness_world.api.gym_subscription.get_training_items',
+            'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
           args: { subscription },
         });
         if (message) {

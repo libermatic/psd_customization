@@ -490,32 +490,3 @@ def has_valid_subscription(
     except IndexError:
         pass
     return False
-
-
-@frappe.whitelist()
-def get_training_items(subscription):
-    doc = frappe.get_doc('Gym Subscription', subscription)
-    if not doc:
-        frappe.throw('Gym Subscription: {} not found'.format(subscription))
-    all_training_items = frappe.get_all(
-        'Item',
-        filters={
-            'item_group': frappe.db.get_value(
-                'Gym Settings', None, 'default_item_group'
-            ),
-            'is_gym_subscription_item': 1,
-        }
-    )
-    items = compose(
-        partial(map, lambda x: x.item_name),
-        partial(
-            filter, lambda x: x.item_code in pluck('name', all_training_items)
-        ),
-    )(doc.service_items)
-    if not items:
-        return None
-    return {
-        'items': items,
-        'from_date': doc.from_date,
-        'to_date': doc.to_date,
-    }
