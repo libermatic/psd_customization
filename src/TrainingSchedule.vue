@@ -42,10 +42,23 @@
         </thead>
         <tbody>
           <tr v-for="schedule in schedules">
-            <td>{{ schedule.from }}</td>
-            <td>{{ schedule.to }}</td>
-            <td>{{ schedule.slot }}</td>
-            <td>{{ schedule.trainer }}</td>
+            <td>
+              {{ schedule.from }}
+              <button type="button"><i class="fa fa-pencil" /></button>
+            </td>
+            <td>
+              {{ schedule.to }}
+              <button type="button"><i class="fa fa-pencil" /></button>
+            </td>
+            <td>
+              {{ schedule.slot || '-' }}
+              <button type="button"><i class="fa fa-pencil" /></button>
+            </td>
+            <td>
+              {{ schedule.trainer || 'Unallocated' }}
+              <button type="button"><i class="fa fa-plus" /></button>
+              <button type="button"><i class="fa fa-remove" /></button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -108,8 +121,8 @@ export default {
         ({ from_date, to_date, training_slot, gym_trainer }) => ({
           from: frappe.datetime.str_to_user(from_date),
           to: frappe.datetime.str_to_user(to_date),
-          slot: training_slot || '-',
-          trainer: gym_trainer || 'Unassigned',
+          slot: training_slot,
+          trainer: gym_trainer,
         })
       );
     },
@@ -141,6 +154,15 @@ export default {
 }
 .info-section > div > span:last-of-type {
   font-weight: bold;
+}
+.list-section button {
+  border: none;
+  background-color: inherit;
+}
+.list-section > table th {
+  color: #8d99a6;
+}
+.list-section > table button:hover {
   color: #8d99a6;
 }
 </style>
