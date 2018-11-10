@@ -1,3 +1,10 @@
+@label-height: 34mm;
+@label-width: 64mm;
+@label-font-size: 8pt;
+@label-container-padding: 1.5mm;
+@first-row-height: 4mm;
+@last-col-width: 6mm;
+
 .psd-dashboard-section {
   display: flex;
   flex-flow: row nowrap;
@@ -15,27 +22,33 @@
   background-color: #ffffff;
   color: #000000;
   box-sizing: border-box;
-  height: 34mm;
-  width: 64mm;
-  padding: 1.5mm;
+  height: @label-height;
+  width: @label-width;
+  padding: @label-container-padding;
   display: grid;
-  grid-template-columns: 1fr 6mm;
-  grid-template-rows: 4mm 1fr 17.5mm;
+  grid-template-columns: 1fr @last-col-width;
+  grid-template-rows: @first-row-height 1fr calc(@label-height / 2);
   grid-template-areas:
     'header footer'
     'text footer'
     'barcode footer';
   font-family: monospace;
-  font-size: 8pt;
+  font-size: @label-font-size;
   line-height: 1.2;
   text-align: center;
 }
 .psd-barcode-rotated {
-  line-height: 6mm;
-  transform: translate(calc((6mm - (34mm - 1.5mm * 2)) / 2), 0) rotate(-90deg);
+  line-height: @last-col-width;
+  transform: translate(
+      calc(
+        (@last-col-width - (@label-height - @label-container-padding * 2)) / 2
+      ),
+      0
+    )
+    rotate(-90deg);
   transform-origin: center center;
-  height: 6mm;
-  width: calc(34mm - 1.5mm * 2);
+  height: @last-col-width;
+  width: calc(@label-height - @label-container-padding * 2);
 }
 .psd-barcode-header {
   grid-area: header;
@@ -43,7 +56,7 @@
 }
 .psd-barcode-text {
   grid-area: text;
-  height: calc(8pt * 1.2 * 3);
+  height: calc(@label-font-size * 1.2 * 3);
   overflow-y: hidden;
   align-self: center;
 }

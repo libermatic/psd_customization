@@ -20,7 +20,7 @@
   padding: 1.5mm;
   display: grid;
   grid-template-columns: 1fr 6mm;
-  grid-template-rows: 4mm 1fr 17.5mm;
+  grid-template-rows: 4mm 1fr calc(34mm / 2);
   grid-template-areas: 'header footer' 'text footer' 'barcode footer';
   font-family: monospace;
   font-size: 8pt;
@@ -29,10 +29,10 @@
 }
 .psd-barcode-rotated {
   line-height: 6mm;
-  transform: translate(calc(-12.5mm), 0) rotate(-90deg);
+  transform: translate(calc((6mm - (34mm - 1.5mm * 2)) / 2), 0) rotate(-90deg);
   transform-origin: center center;
   height: 6mm;
-  width: calc(31mm);
+  width: calc(34mm - 1.5mm * 2);
 }
 .psd-barcode-header {
   grid-area: header;
@@ -40,7 +40,7 @@
 }
 .psd-barcode-text {
   grid-area: text;
-  height: calc(28.8pt);
+  height: calc(8pt * 1.2 * 3);
   overflow-y: hidden;
   align-self: center;
 }
