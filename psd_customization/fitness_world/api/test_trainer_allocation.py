@@ -3,7 +3,6 @@
 # See license.txt
 from __future__ import unicode_literals
 import unittest
-from frappe.utils import getdate
 
 from psd_customization.fitness_world.api.trainer_allocation import (
     _generate_intervals
