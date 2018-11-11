@@ -44,20 +44,54 @@
           <tr v-for="schedule in schedules">
             <td>
               {{ schedule.from }}
-              <button type="button"><i class="fa fa-pencil" /></button>
+              <button
+                v-if="schedule.name"
+                type="button"
+                name="update_from_date"
+                @click="update(schedule.name, 'from_date')"
+              >
+                <i class="fa fa-pencil" />
+              </button>
             </td>
             <td>
               {{ schedule.to }}
-              <button type="button"><i class="fa fa-pencil" /></button>
+              <button
+                v-if="schedule.name"
+                type="button"
+                name="update_to_date"
+                @click="update(schedule.name, 'to_date')"
+              >
+                <i class="fa fa-pencil" />
+              </button>
             </td>
             <td>
               {{ schedule.slot || '-' }}
-              <button type="button"><i class="fa fa-pencil" /></button>
+              <button
+                v-if="schedule.name"
+                type="button"
+                name="update_slot"
+                @click="update(schedule.name, 'slot')"
+              >
+                <i class="fa fa-pencil" />
+              </button>
             </td>
             <td>
               {{ schedule.trainer || 'Unallocated' }}
-              <button type="button"><i class="fa fa-plus" /></button>
-              <button type="button"><i class="fa fa-remove" /></button>
+              <button
+                type="button"
+                name="create"
+                @click="create(schedule.from, schedule.to)"
+              >
+                <i class="fa fa-plus" />
+              </button>
+              <button
+                v-if="schedule.name"
+                type="button"
+                name="remove"
+                @click="remove(schedule.name)"
+              >
+                <i class="fa fa-remove" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -68,13 +102,41 @@
 
 <script>
 import FieldLink from './components/FieldLink.vue';
+import frappeAsync from './utils/frappe-async';
 
 const default_subscription_filter = { docstatus: 1 };
+
+function make_dialog_field(what) {
+  const field = { fieldname: 'value', reqd: 1 };
+  if (['from_date', 'to_date'].includes(what)) {
+    return [Object.assign(field, { fieldtype: 'Date', label: 'Date' })];
+  }
+  if (what === 'slot') {
+    return [
+      Object.assign(field, {
+        fieldtype: 'Link',
+        label: 'Slot',
+        options: 'Training Slot',
+      }),
+    ];
+  }
+  if (what === 'trainer') {
+    return [
+      Object.assign(field, {
+        fieldtype: 'Link',
+        label: 'Trainer',
+        options: 'Gym Trainer',
+      }),
+    ];
+  }
+  return null;
+}
 
 export default {
   data() {
     return {
       subscription_query: { filters: default_subscription_filter },
+      subscription: null,
       item_name: null,
       start_date: null,
       end_date: null,
@@ -92,6 +154,7 @@ export default {
     },
     get_subscription: async function(subscription) {
       if (subscription) {
+        this.subscription = subscription;
         const { message: trainable_items } = await frappe.call({
           method:
             'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
@@ -106,25 +169,48 @@ export default {
           this.get_schedules(subscription);
         }
       } else {
+        this.subscription = null;
         this.item_name = null;
         this.start_date = null;
         this.end_date = null;
       }
     },
-    get_schedules: async function(subscription) {
+    get_schedules: async function() {
       const { message: schedules = [] } = await frappe.call({
         method:
           'psd_customization.fitness_world.api.trainer_allocation.get_schedule',
-        args: { subscription },
+        args: { subscription: this.subscription },
       });
       this.schedules = schedules.map(
-        ({ from_date, to_date, training_slot, gym_trainer }) => ({
+        ({ name, from_date, to_date, training_slot, gym_trainer }) => ({
+          name,
           from: frappe.datetime.str_to_user(from_date),
           to: frappe.datetime.str_to_user(to_date),
           slot: training_slot,
           trainer: gym_trainer,
         })
       );
+    },
+    create: async function(start, end) {
+      const { value: trainer } = await frappeAsync.prompt(
+        make_dialog_field('trainer'),
+        'Select Trainer'
+      );
+      console.log(start, end);
+    },
+    update: async function(name, what) {
+      const field = make_dialog_field(what);
+      const { value } = await frappeAsync.prompt(
+        field,
+        field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot'
+      );
+      console.log(name, what, value);
+    },
+    remove: async function(name) {
+      const will_remove = await frappeAsync.confirm(
+        'Trainer for this period will be unassigned'
+      );
+      console.log(name, will_remove);
     },
   },
 };
@@ -158,6 +244,10 @@ export default {
 .list-section button {
   border: none;
   background-color: inherit;
+  opacity: 0;
+}
+.list-section tr:hover button {
+  opacity: 1;
 }
 .list-section > table th {
   color: #8d99a6;

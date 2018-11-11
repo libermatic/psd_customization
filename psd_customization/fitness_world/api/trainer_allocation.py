@@ -68,6 +68,41 @@ def get_schedule(subscription, item=None):
     allocations = frappe.get_all(
         'Trainer Allocation',
         filters={'gym_subscription': subscription},
-        fields={'gym_trainer', 'from_date', 'to_date', 'training_slot'}
+        fields={'name', 'gym_trainer', 'from_date', 'to_date', 'training_slot'}
     )
     return _generate_intervals(sub_start, sub_end, allocations)
+
+
+@frappe.whitelist()
+def create(subscription, trainer, from_date, to_date):
+    allocation = frappe.get_doc({
+        'doctype': 'Trainer Allocation',
+        'gym_subscription': subscription,
+        'gym_trainer': trainer,
+        'from_date': from_date,
+        'to_date': to_date,
+    }).insert()
+    return allocation
+
+
+def _get_field(key):
+    if key == 'slot':
+        return 'training_slot'
+    if key in ['from_date', 'to_date']:
+        return key
+    return None
+
+
+@frappe.whitelist()
+def update(name, key, value):
+    allocation = frappe.get_doc('Trainer Allocation', name)
+    field = _get_field(key)
+    if field:
+        allocation.set_value(field, value)
+        allocation.save()
+    return allocation
+
+
+@frappe.whitelist()
+def remove(name):
+    return frappe.delete_doc('Trainer Allocation', name)
