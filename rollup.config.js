@@ -1,7 +1,8 @@
 import resolve from 'rollup-plugin-node-resolve';
 import vue from 'rollup-plugin-vue';
 import replace from 'rollup-plugin-replace';
-import buble from 'rollup-plugin-buble';
+import commonjs from 'rollup-plugin-commonjs';
+import babel from 'rollup-plugin-babel';
 
 import pkg from './package.json';
 
@@ -18,6 +19,7 @@ export default {
       'process.env.NODE_ENV': NODE_ENV,
       'process.env.VUE_ENV': VUE_ENV,
     }),
-    buble(),
+    commonjs(),
+    babel({ exclude: 'node_modules/**' }),
   ],
 };
