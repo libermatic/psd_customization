@@ -37,11 +37,6 @@ fixtures = [
             'Branch-company',
             'Journal Entry-branch',
             'Sales Invoice-gym_subscription',
-            'Item-gym_section',
-            'Item-is_gym_membership_item',
-            'Item-is_gym_subscription_item',
-            'Item-can_be_lifetime',
-            'Item-gym_parent_items',
             'Purchase Receipt Item-parse_serial',
             'Purchase Invoice Item-parse_serial',
         ]]]
