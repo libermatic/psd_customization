@@ -21,12 +21,15 @@ They are auto-selected based on **Company** by creating **Naming Series** entry 
 
 ### Sales Invoice
 
-`gym_subscription` field added to reference **Gym Subscription**.
+`gym_member` and `gym_member_name` to invoice by **Gym Member**.
+
+#### Sales Invoice Item
+
+`reference_dt` and `reference_dn` add to reference **Gym Subscription**.
 
 ### Item
 
 Add a menu item to generate EAN13 barcodes with a Dashboard section to render and download a barcoded item label.
-
 
 #### License
 

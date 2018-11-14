@@ -36,7 +36,10 @@ fixtures = [
         'filters': [['name', 'in', [
             'Branch-company',
             'Journal Entry-branch',
-            'Sales Invoice-gym_subscription',
+            'Sales Invoice-gym_member',
+            'Sales Invoice-gym_member_name',
+            'Sales Invoice Item-reference_dt',
+            'Sales Invoice Item-reference_dn',
             'Purchase Receipt Item-parse_serial',
             'Purchase Invoice Item-parse_serial',
         ]]]
@@ -67,6 +70,7 @@ doctype_js = {
     'Item': 'public/js/item.js',
     'Purchase Receipt': 'public/js/serial_reader.js',
     'Purchase Invoice': 'public/js/serial_reader.js',
+    'Sales Invoice': 'public/js/cscripts/sales_invoice.js',
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
