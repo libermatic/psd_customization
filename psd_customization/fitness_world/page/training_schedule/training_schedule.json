@@ -1,0 +1,27 @@
+{
+ "content": null, 
+ "creation": "2018-11-06 12:36:36.949434", 
+ "docstatus": 0, 
+ "doctype": "Page", 
+ "icon": "fa fa-calendar", 
+ "idx": 0, 
+ "modified": "2018-11-06 12:48:22.220423", 
+ "modified_by": "Administrator", 
+ "module": "Fitness World", 
+ "name": "training-schedule", 
+ "owner": "Administrator", 
+ "page_name": "training-schedule", 
+ "roles": [
+  {
+   "role": "Gym User"
+  }, 
+  {
+   "role": "Gym Manager"
+  }
+ ], 
+ "script": null, 
+ "standard": "Yes", 
+ "style": null, 
+ "system_page": 0, 
+ "title": "Training Schedule"
+}
