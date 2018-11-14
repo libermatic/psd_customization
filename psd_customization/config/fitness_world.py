@@ -6,7 +6,22 @@ from frappe import _
 def get_data():
     return [
         {
-            "label": _("Gym"),
+            "label": _("Transations"),
+            "items": [
+                {
+                    "type": "doctype",
+                    "name": "Sales Invoice",
+                    "label": "Sales Invoice",
+                },
+                {
+                    "type": "doctype",
+                    "name": "Gym Subscription",
+                    "label": "Subscription",
+                },
+            ]
+        },
+        {
+            "label": _("Documents"),
             "items": [
                 {
                     "type": "doctype",
@@ -15,13 +30,8 @@ def get_data():
                 },
                 {
                     "type": "doctype",
-                    "name": "Gym Membership",
-                    "label": "Membership",
-                },
-                {
-                    "type": "doctype",
-                    "name": "Gym Subscription",
-                    "label": "Subscription",
+                    "name": "Gym Subscription Item",
+                    "label": "Subscription Item",
                 },
             ]
         },
