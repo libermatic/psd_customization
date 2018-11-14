@@ -2,11 +2,6 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Gym Subscription', {
-  setup: function(frm) {
-    if (frm.doc.docstatus < 1) {
-      frm.trigger('set_queries');
-    }
-  },
   set_queries: async function(frm) {
     frm.set_query('item_code', 'membership_items', {
       filters: { is_gym_membership_item: 1 },
@@ -115,7 +110,6 @@ frappe.ui.form.on('Gym Subscription', {
     }
   },
   member: async function(frm) {
-    frm.trigger('set_membership_query');
     frm.set_value('from_date', frappe.datetime.get_today());
     frm.set_value('frequency', 'Monthly');
     if (frm.doc['member']) {
@@ -124,10 +118,7 @@ frappe.ui.form.on('Gym Subscription', {
           'psd_customization.fitness_world.api.gym_membership.get_uninvoiced_membership',
         args: { member: frm.doc['member'], only_name: 1 },
       });
-      frm.set_value('membership', membership);
       frm.trigger('render_info_html');
-    } else {
-      frm.set_value('membership', null);
     }
     if (frm.doc.docstatus === 0) {
       frm.toggle_display('info_section', !!frm.doc['member']);
