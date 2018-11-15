@@ -11,7 +11,7 @@ from erpnext.accounts.doctype.payment_entry.payment_entry \
 from erpnext.accounts.doctype.pricing_rule.pricing_rule \
     import get_pricing_rule_for_item
 from functools import partial
-from toolz import pluck, compose, get, first, merge
+from toolz import pluck, compose, get, first, merge, concat
 
 from psd_customization.fitness_world.api.gym_membership \
     import get_uninvoiced_membership
@@ -490,3 +490,130 @@ def has_valid_subscription(
     except IndexError:
         pass
     return False
+
+
+def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
+    filters = [
+        "(to_date >= '{}' OR is_lifetime = 1)".format(from_date)
+    ]
+    if not lifetime and to_date:
+        filters.append("from_date <= '{}'".format(to_date))
+    # TODO: add docstatus = 1 in WHERE clause
+    return frappe.db.sql(
+        """
+            SELECT
+                name,
+                from_date,
+                to_date,
+                is_lifetime
+            FROM `tabGym Subscription`
+            WHERE
+                member = '{member}' AND subscription_item = '{item}'
+                AND {filters}
+            ORDER BY from_date
+            {limit}
+        """.format(
+            member=member,
+            item=item,
+            filters=" AND ".join(filters),
+            limit='LIMIT 1' if limit else '',
+        ),
+        as_dict=1,
+        debug=1,
+    )
+
+
+def _get_existing_subscription(member, item, from_date, to_date, lifetime):
+    try:
+        return _get_subscriptions(
+            member, item, from_date, to_date, lifetime, limit=1
+        )[0]
+    except IndexError:
+        return None
+
+
+def _has_valid_requirements(
+    member, item_code, from_date, to_date, lifetime, current=None
+):
+    subscriptions = concat([
+        _get_subscriptions(
+            member, item_code, from_date, to_date, lifetime
+        ),
+        current,
+    ])
+    sort_and_merge = compose(
+        merge_intervals,
+        partial(sorted, key=lambda x: getdate(x.get('from_date'))),
+    )
+    try:
+        for sub in sort_and_merge(subscriptions):
+            if getdate(sub.get('from_date')) <= getdate(from_date) \
+                    and getdate(sub.get('to_date')) >= getdate(to_date):
+                return True
+    except KeyError:
+        for sub in subscriptions:
+            if sub.get('is_lifetime'):
+                return True
+    except IndexError:
+        pass
+    return False
+
+
+def _filter_item(items):
+    def fn(item_code):
+        return filter(lambda x: x.item_code == item_code, items)
+    return fn
+
+
+def validate_dependencies(member, items):
+    subscription_exists = partial(_get_existing_subscription, member=member)
+    requirements_fulfilled = partial(_has_valid_requirements, member=member)
+
+    filter_items = _filter_item(items)
+    for item in items:
+        existing = subscription_exists(
+            item=item.item_code,
+            from_date=item.from_date,
+            to_date=item.to_date,
+            lifetime=item.is_lifetime,
+        )
+        if existing:
+            frappe.throw(
+                'Another Subscription - <strong>{subscription}</strong>, for '
+                '<strong>{item_name}</strong> already exists during this time '
+                'frame.'.format(
+                    subscription=existing.get('name'),
+                    item_name=item.item_name
+                )
+            )
+    for item in items:
+        parents = frappe.get_all(
+            'Gym Subscription Item Parent',
+            fields=['gym_subscription_item', 'item_name'],
+            filters={
+                'parent': item.item_code,
+                'parentfield': 'parents',
+                'parenttype': 'Gym Subscription Item',
+            }
+        )
+        for parent in parents:
+            item_code = frappe.db.get_value(
+                'Gym Subscription Item',
+                parent.get('gym_subscription_item'),
+                'item',
+            )
+            current = filter_items(item_code)
+            has_requirements = requirements_fulfilled(
+                item_code=parent.get('gym_subscription_item'),
+                from_date=item.from_date,
+                to_date=item.to_date,
+                lifetime=item.is_lifetime,
+                current=current,
+            )
+            if not has_requirements:
+                frappe.throw(
+                    'Required dependency <strong>{}</strong> not fulfiled for '
+                    '<strong>{}</strong>.'.format(
+                        parent.get('item_name'), item.item_name
+                    )
+                )
