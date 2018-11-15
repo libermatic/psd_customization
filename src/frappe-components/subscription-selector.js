@@ -1,8 +1,13 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+function get_to_date(date, freq) {
+  return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
+}
+
 class SubscriptionDialog {
   constructor() {
+    const today = frappe.datetime.nowdate();
     this.dialog = new frappe.ui.Dialog({
       title: 'Select Subscription Period',
       fields: [
@@ -20,13 +25,13 @@ class SubscriptionDialog {
           label: 'From Date',
           fieldname: 'from_date',
           fieldtype: 'Date',
-          default: frappe.datetime.nowdate(),
+          default: today,
         },
         {
           label: 'To Date',
           fieldname: 'to_date',
           fieldtype: 'Date',
-          default: frappe.datetime.nowdate(),
+          default: get_to_date(today, 1),
         },
       ],
     });
@@ -50,10 +55,7 @@ class SubscriptionDialog {
           this.dialog.fields_dict['to_date'].toggle(true);
           this.dialog.set_value(
             'to_date',
-            frappe.datetime.add_days(
-              frappe.datetime.add_months(from_date, months[frequency]),
-              -1
-            )
+            get_to_date(from_date, months[frequency])
           );
         }
       }
