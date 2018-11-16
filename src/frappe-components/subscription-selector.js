@@ -1,6 +1,10 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+import Vue from 'vue';
+
+import CurrentSubscriptions from '../components/CurrentSubscriptions.vue';
+
 function get_to_date(date, freq) {
   return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
 }
@@ -62,6 +66,17 @@ class SubscriptionDialog {
     };
     this.dialog.fields_dict['frequency'].$input.on('input', handle_to_date);
     this.dialog.fields_dict['from_date'].$input.on('blur', handle_to_date);
+  }
+  async load_priors(member) {
+    const { message: subscriptions = [] } = await frappe.call({
+      method:
+        'psd_customization.fitness_world.api.gym_subscription.get_currents',
+      args: { member },
+    });
+    new Vue({
+      el: this.dialog.fields_dict['ht'].wrapper,
+      render: h => h(CurrentSubscriptions, { props: { subscriptions } }),
+    });
   }
   async register(frm, cdt, cdn) {
     const row = frappe.get_doc(cdt, cdn) || {};

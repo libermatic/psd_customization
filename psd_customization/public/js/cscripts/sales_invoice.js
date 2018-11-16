@@ -8,6 +8,7 @@ frappe.ui.form.on('Sales Invoice', {
   gym_member: async function(frm) {
     const { gym_member } = frm.doc;
     if (gym_member) {
+      frm.subscription_selector.load_priors(gym_member);
       const { message: doc = {} } = await frappe.db.get_value(
         'Gym Member',
         gym_member,
