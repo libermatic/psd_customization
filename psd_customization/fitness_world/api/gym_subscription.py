@@ -539,7 +539,7 @@ def _has_valid_requirements(
         _get_subscriptions(
             member, item_code, from_date, to_date, lifetime
         ),
-        current,
+        current or [],
     ])
     sort_and_merge = compose(
         merge_intervals,
@@ -602,13 +602,12 @@ def validate_dependencies(member, items):
                 parent.get('gym_subscription_item'),
                 'item',
             )
-            current = filter_items(item_code)
             has_requirements = requirements_fulfilled(
                 item_code=parent.get('gym_subscription_item'),
                 from_date=item.from_date,
                 to_date=item.to_date,
                 lifetime=item.is_lifetime,
-                current=current,
+                current=filter_items(item_code),
             )
             if not has_requirements:
                 frappe.throw(
@@ -617,3 +616,33 @@ def validate_dependencies(member, items):
                         parent.get('item_name'), item.item_name
                     )
                 )
+
+
+@frappe.whitelist()
+def get_currents(member):
+    # TODO: add docstatus = 1 in WHERE clause
+    return frappe.db.sql(
+        """
+            SELECT
+                name,
+                subscription_item AS item,
+                subscription_name AS item_name,
+                is_lifetime,
+                from_date,
+                to_date
+            FROM (
+                SELECT
+                    name,
+                    subscription_item,
+                    subscription_name,
+                    is_lifetime,
+                    from_date,
+                    to_date
+                FROM `tabGym Subscription`
+                WHERE member=%(member)s
+                ORDER BY from_date DESC
+            ) AS _
+        """,
+        values={'member': member},
+        as_dict=1,
+    )
