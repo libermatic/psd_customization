@@ -2,8 +2,8 @@
   <div class="psd-current-sub">
     <div class="psd-current-sub-description">
       <span :class="colorClass" />
-      {{ subscription.item_name }}
-      <span v-if="subscription.is_lifetime" class="badge psd-badge-info">
+      {{ item_name }}
+      <span v-if="is_lifetime" class="badge psd-badge-info">
         Lifetime
       </span>
     </div>
@@ -18,10 +18,10 @@
 
 <script>
 export default {
-  props: ['subscription'],
+  props: ['item_name', 'is_lifetime', 'from_date', 'to_date'],
   methods: {
     get_color() {
-      const { is_lifetime, to_date } = this.subscription;
+      const { is_lifetime, to_date } = this;
       if (is_lifetime) {
         return 'green';
       }
@@ -46,7 +46,7 @@ export default {
       return `indicator ${this.get_color()}`;
     },
     interval: function() {
-      const { from_date, to_date } = this.subscription;
+      const { from_date, to_date } = this;
       if (to_date) {
         return `${frappe.datetime.str_to_user(
           from_date
@@ -55,7 +55,7 @@ export default {
       return frappe.datetime.str_to_user(from_date);
     },
     eta: function() {
-      const { from_date, to_date, is_lifetime } = this.subscription;
+      const { from_date, to_date, is_lifetime } = this;
       if (is_lifetime && !to_date) {
         return null;
       }

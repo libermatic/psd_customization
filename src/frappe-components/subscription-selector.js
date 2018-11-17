@@ -68,13 +68,18 @@ class SubscriptionDialog {
     this.dialog.fields_dict['from_date'].$input.on('blur', handle_to_date);
   }
   async load_priors(member) {
+    if (this.vm) {
+      this.vm.$destroy();
+    }
+    this.dialog.fields_dict['ht'].$wrapper.empty();
     const { message: subscriptions = [] } = await frappe.call({
       method:
         'psd_customization.fitness_world.api.gym_subscription.get_currents',
       args: { member },
     });
-    new Vue({
-      el: this.dialog.fields_dict['ht'].wrapper,
+
+    this.vm = new Vue({
+      el: $('<div />').appendTo(this.dialog.fields_dict['ht'].$wrapper)[0],
       render: h => h(CurrentSubscriptions, { props: { subscriptions } }),
     });
   }

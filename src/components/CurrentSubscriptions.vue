@@ -3,7 +3,7 @@
     <h6>Existing Subscriptions</h6>
     <div v-if="subscriptions && subscriptions.length > 0">
       <div v-for="subscription in subscriptions">
-        <current-subscription-item :subscription="subscription" />
+        <current-subscription-item v-bind="subscription" />
       </div>
     </div>
     <div v-else class="psd-no-data">
