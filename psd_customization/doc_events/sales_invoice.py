@@ -22,7 +22,10 @@ def validate(doc, method):
                 'to_date': x.gym_to_date,
                 'is_lifetime': x.gym_is_lifetime,
             }),
-            ),
+        ),
+        # this is excluded because existing Subscriptions are assumed to be
+        # already validated
+        partial(filter, lambda x: not x.gym_subscription),
         partial(filter, lambda x: cint(x.is_gym_subscription)),
     )
     if doc.gym_member:
@@ -42,12 +45,15 @@ def on_submit(doc, method):
                     )
                     if sub and not sub.reference_invoice:
                         sub.reference_invoice = doc.name
+                        sub.save(ignore_permissions=True)
                         subs.append(sub.name)
                 else:
                     sub_item = get_subscription_item(item.item_code)
                     if sub_item:
                         sub = _make_subscription(item, sub_item, doc)
+                        sub.flags.source_doc = 'Sales Invoice'
                         sub.insert(ignore_permissions=True)
+                        sub.submit()
                         frappe.db.set_value(
                             'Sales Invoice Item',
                             item.name,
@@ -55,12 +61,6 @@ def on_submit(doc, method):
                             sub.name,
                         )
                         subs.append(sub.name)
-                frappe.db.set_value(
-                    'Sales Invoice Item',
-                    item.name,
-                    'description',
-                    _get_description(item, sub_item, doc),
-                )
         if subs:
             frappe.msgprint(
                 'Gym Subscription(s) {} linked.'.format(', '.join(subs))
@@ -83,19 +83,6 @@ def _make_subscription(item, sub_item, invoice):
     })
 
 
-def _get_description(item, sub_item, invoice):
-    if item.gym_is_lifetime:
-        return '{}: Lifetime validity, starting {}'.format(
-            sub_item.item_name,
-            item.get_formatted('gym_from_date', invoice),
-        )
-    return '{}: Valid from {} to {}'.format(
-        sub_item.item_name,
-        item.get_formatted('gym_from_date', invoice),
-        item.get_formatted('gym_to_date', invoice),
-    )
-
-
 def on_cancel(doc, method):
     if doc.gym_member:
         subs = []
@@ -104,14 +91,16 @@ def on_cancel(doc, method):
                 sub = frappe.get_doc(
                     'Gym Subscription', item.gym_subscription
                 )
-                if sub:
+                if sub and sub.docstatus == 1:
                     sub.reference_invoice = None
-                    sub.status = None
                     sub.save(ignore_permissions=True)
                     subs.append(item.gym_subscription)
+                frappe.db.set_value(
+                    'Sales Invoice Item', item.name, 'gym_subscription', None,
+                )
         if subs:
             frappe.msgprint(
-                'Gym Subscription(s) {} unlinked from Sales Invoice.'.format(
+                'Gym Subscription(s) {} removed from Sales Invoice.'.format(
                     ', '.join(subs)
                 )
             )
