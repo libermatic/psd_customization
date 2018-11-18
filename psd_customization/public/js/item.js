@@ -5,34 +5,8 @@ frappe.ui.form.on('Item', {
   refresh: function(frm) {
     frm.trigger('add_menu_item');
     frm.trigger('render_barcode_details');
-    frm.trigger('enable_fields');
-  },
-  item_group: function(frm) {
-    frm.trigger('enable_fields');
   },
 
-  /**
-   * Enables and sets query for gym_parent_items based default_item_group set in
-   * Gym Settings
-   */
-  enable_fields: async function(frm) {
-    if (frappe.user_roles.includes('Gym Manager')) {
-      const { message: settings = {} } = await frappe.db.get_value(
-        'Gym Settings',
-        null,
-        'default_item_group'
-      );
-      frm.toggle_display(
-        ['gym_section', 'is_base_gym_membership_item', 'gym_parent_items'],
-        settings['default_item_group'] === frm.doc['item_group']
-      );
-      if (settings['default_item_group']) {
-        frm.set_query('item', 'gym_parent_items', {
-          filters: { item_group: settings['default_item_group'] },
-        });
-      }
-    }
-  },
   /**
    * Creates a EAN13 barcode by hashing item_code
    */

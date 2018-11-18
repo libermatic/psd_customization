@@ -6,10 +6,13 @@
 def get_data():
     return {
         'fieldname': 'member',
+        'non_standard_fieldnames': {
+            'Sales Invoice': 'gym_member',
+        },
         'transactions': [
             {
                 'label': 'Transactions',
-                'items': ['Gym Membership', 'Gym Subscription'],
+                'items': ['Sales Invoice', 'Gym Subscription'],
             },
         ],
     }

@@ -36,12 +36,14 @@ fixtures = [
         'filters': [['name', 'in', [
             'Branch-company',
             'Journal Entry-branch',
-            'Sales Invoice-gym_subscription',
-            'Item-gym_section',
-            'Item-is_gym_membership_item',
-            'Item-is_gym_subscription_item',
-            'Item-can_be_lifetime',
-            'Item-gym_parent_items',
+            'Sales Invoice-gym_member',
+            'Sales Invoice-gym_member_name',
+            'Sales Invoice Item-gym_section',
+            'Sales Invoice Item-gym_subscription',
+            'Sales Invoice Item-gym_is_lifetime',
+            'Sales Invoice Item-gym_col0',
+            'Sales Invoice Item-gym_from_date',
+            'Sales Invoice Item-gym_to_date',
             'Purchase Receipt Item-parse_serial',
             'Purchase Invoice Item-parse_serial',
         ]]]
@@ -57,6 +59,7 @@ app_include_js = [
     '/assets/js/psd_customization.min.js',
     '/assets/psd_customization/js/naming_series.js',
     '/assets/psd_customization/js/gym_member_quick_entry.js',
+    '/assets/psd_customization/js/psd_customization.iife.js',
 ]
 
 # include js, css files in header of web template
@@ -72,6 +75,7 @@ doctype_js = {
     'Item': 'public/js/item.js',
     'Purchase Receipt': 'public/js/serial_reader.js',
     'Purchase Invoice': 'public/js/serial_reader.js',
+    'Sales Invoice': 'public/js/cscripts/sales_invoice.js',
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -135,12 +139,6 @@ doc_events = {
         'validate': 'psd_customization.doc_events.sales_invoice.validate',
         'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
         'on_cancel': 'psd_customization.doc_events.sales_invoice.on_cancel',
-    },
-    'Payment Entry': {
-        'on_submit':
-            'psd_customization.doc_events.payment_entry.on_submit_or_cancel',
-        'on_cancel':
-            'psd_customization.doc_events.payment_entry.on_submit_or_cancel',
     },
 }
 

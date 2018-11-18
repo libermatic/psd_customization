@@ -21,17 +21,15 @@ They are auto-selected based on **Company** by creating **Naming Series** entry 
 
 ### Sales Invoice
 
-`gym_subscription` field added to reference **Gym Subscription**.
+`gym_member` and `gym_member_name` to invoice by **Gym Member**.
+
+#### Sales Invoice Item
+
+`reference_dt` and `reference_dn` add to reference **Gym Subscription**.
 
 ### Item
 
 Add a menu item to generate EAN13 barcodes with a Dashboard section to render and download a barcoded item label.
-
-`is_membership_item` and `is_subscription_item` specify **Items** used by **Gym Memberships** and **Gym Subscriptions** respectively. Both these fields are used by **Gym Subscription**.
-
-`can_be_lifetime` flags **Items** that can have lifetime validity.
-
-`gym_parent_items` added to hold info about **Item** heirarchy. This heirarchy will be used to check for existence of parent items before creating new **Gym Subscription**
 
 #### License
 

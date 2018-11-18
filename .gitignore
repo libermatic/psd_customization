@@ -6,3 +6,4 @@ tags
 __pycache__/
 psd_customization/docs/current
 .ropeproject
+node_modules/
