@@ -15,7 +15,8 @@ from toolz import pluck, compose, get, first, merge, concat
 
 from psd_customization.fitness_world.api.gym_membership \
     import get_uninvoiced_membership
-from psd_customization.utils.datetime import merge_intervals, pretty_date
+from psd_customization.utils.datetime \
+    import merge_intervals, pretty_date, month_diff
 from psd_customization.utils.fp import pick, compact
 from sms_extras.api.sms import get_sms_text, request_sms
 
@@ -28,55 +29,48 @@ def make_payment_entry(source_name):
     return get_payment_entry('Sales Invoice', reference_invoice)
 
 
+def _get_description(subscription):
+    if subscription.is_lifetime:
+        return '{}: Lifetime validity, starting {}'.format(
+            subscription.subscription_name,
+            subscription.get_formatted('from_date'),
+        )
+    return '{}: Valid from {} to {}'.format(
+        subscription.subscription_name,
+        subscription.get_formatted('from_date'),
+        subscription.get_formatted('to_date'),
+    )
+
+
 @frappe.whitelist()
 def make_sales_invoice(source_name):
     subscription = frappe.get_doc('Gym Subscription', source_name)
-    membership = frappe.get_doc('Gym Membership', subscription.membership) \
-        if subscription.membership else None
-    si = frappe.new_doc('Sales Invoice')
-    si.gym_subscription = source_name
-    si.customer = frappe.db.get_value(
-        'Gym Member', subscription.member, 'customer'
-    )
-
-    def get_membership_description(item):
-        if not membership:
-            return item.iten_name
-        desc = '{item_name}: Valid from {start_date}'.format(
-            item_name=item.item_name,
-            start_date=membership.get_formatted('start_date'),
-        )
-        if membership.end_date:
-            desc += ' to {end_date}'.format(membership.end_date)
-        return desc
-
-    def get_subscription_description(item):
-        return '{item_name}: Valid from {start_date} to {end_date}'.format(
-            item_name=item.item_name,
-            start_date=subscription.get_formatted('from_date'),
-            end_date=subscription.get_formatted('to_date'),
-        )
-
-    for item in subscription.membership_items:
-        si.append('items', {
-            'item_code': item.item_code,
-            'description': get_membership_description(item),
-            'qty': item.qty,
-            'rate': item.rate,
-        })
-
-    for item in subscription.service_items:
-        si.append('items', {
-            'item_code': item.item_code,
-            'description': get_subscription_description(item),
-            'qty': item.qty,
-            'rate': item.rate,
-        })
-
     settings = frappe.get_single('Gym Settings')
-    si.company = settings.default_company
-    si.naming_series = settings.naming_series
-    si.taxes_and_charges = settings.default_tax_template
+    si = frappe.new_doc('Sales Invoice')
+    args = {
+        'gym_member': subscription.member,
+        'gym_member_name': subscription.member_name,
+        'customer': frappe.db.get_value(
+            'Gym Member', subscription.member, 'customer'
+        ),
+        'company': settings.default_company,
+        'naming_series': settings.naming_series,
+        'taxes_and_charges': settings.default_tax_template,
+    }
+    for field, value in args.iteritems():
+        si.set(field, value)
+    si.append('items', {
+        'item_code': subscription.subscription_item,
+        'description': _get_description(subscription),
+        'qty': 60 if subscription.is_lifetime else month_diff(
+            subscription.from_date, subscription.to_date, as_dec=1
+        ),
+        'is_gym_subscription': 1,
+        'gym_is_lifetime': subscription.is_lifetime,
+        'gym_subscription': subscription.name,
+        'gym_from_date': subscription.from_date,
+        'gym_to_date': subscription.to_date,
+    })
     si.run_method('set_missing_values')
     si.run_method('set_taxes')
     si.run_method('calculate_taxes_and_totals')
