@@ -37,6 +37,7 @@ class GymSubscription(Document):
                     'is_lifetime': self.is_lifetime,
                 })]
             )
+        self.validate_opening()
 
     def validate_dates(self):
         if not cint(self.is_lifetime):
@@ -61,9 +62,21 @@ class GymSubscription(Document):
                     )
                 )
 
+    def validate_opening(self):
+        if cint(self.is_opening) and self.reference_invoice:
+            return frappe.throw(
+                'Opening Subscription cannot be linked to a Sales Invoice.'
+            )
+
     def before_save(self):
         if cint(self.is_lifetime):
             self.to_date = None
+        if self.flags.source_doc != 'Sales Invoice' \
+                and self.is_new() and self.reference_invoice:
+            self.reference_invoice = None
+
+    def before_update_after_submit(self):
+        self.validate_opening()
 
     def before_cancel(self):
         if self.reference_invoice:
