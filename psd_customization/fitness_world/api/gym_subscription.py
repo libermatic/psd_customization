@@ -492,7 +492,6 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
     ]
     if not lifetime and to_date:
         filters.append("from_date <= '{}'".format(to_date))
-    # TODO: add docstatus = 1 in WHERE clause
     return frappe.db.sql(
         """
             SELECT
@@ -502,8 +501,10 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
                 is_lifetime
             FROM `tabGym Subscription`
             WHERE
-                member = '{member}' AND subscription_item = '{item}'
-                AND {filters}
+                member = '{member}' AND
+                subscription_item = '{item}' AND
+                docstatus = 1 AND
+                {filters}
             ORDER BY from_date
             {limit}
         """.format(
@@ -613,28 +614,27 @@ def validate_dependencies(member, items):
 
 @frappe.whitelist()
 def get_currents(member):
-    # TODO: add docstatus = 1 in WHERE clause
     return frappe.db.sql(
         """
             SELECT
-                name,
-                subscription_item AS item,
-                subscription_name AS item_name,
-                is_lifetime,
-                from_date,
-                to_date
-            FROM (
+                a.name,
+                a.subscription_item AS item,
+                a.subscription_name AS item_name,
+                a.is_lifetime,
+                a.from_date,
+                a.to_date
+            FROM `tabGym Subscription` AS a
+            INNER JOIN (
                 SELECT
-                    name,
                     subscription_item,
-                    subscription_name,
-                    is_lifetime,
-                    from_date,
-                    to_date
+                    MAX(from_date) AS from_date
                 FROM `tabGym Subscription`
-                WHERE member=%(member)s
-                ORDER BY from_date DESC
-            ) AS _ GROUP BY subscription_item
+                WHERE member=%(member)s AND docstatus=1
+                GROUP BY subscription_item
+            ) AS b ON
+                a.subscription_item = b.subscription_item AND
+                a.from_date = b.from_date
+            WHERE a.member=%(member)s AND a.docstatus=1
         """,
         values={'member': member},
         as_dict=1,
