@@ -529,12 +529,14 @@ def _get_existing_subscription(member, item, from_date, to_date, lifetime):
 def _has_valid_requirements(
     member, item_code, from_date, to_date, lifetime, current=None
 ):
-    subscriptions = concat([
-        _get_subscriptions(
-            member, item_code, from_date, to_date, lifetime
-        ),
-        current or [],
-    ])
+    subscriptions = list(
+        concat([
+            _get_subscriptions(
+                member, item_code, from_date, to_date, lifetime
+            ),
+            current or [],
+        ])
+    )
     sort_and_merge = compose(
         merge_intervals,
         partial(sorted, key=lambda x: getdate(x.get('from_date'))),
