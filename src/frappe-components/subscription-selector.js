@@ -9,7 +9,7 @@ function get_to_date(date, freq) {
   return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
 }
 
-class SubscriptionDialog {
+export default class SubscriptionDialog {
   constructor() {
     const today = frappe.datetime.nowdate();
     this.dialog = new frappe.ui.Dialog({
@@ -119,5 +119,3 @@ class SubscriptionDialog {
     this.dialog.show();
   }
 }
-
-export default SubscriptionDialog;
