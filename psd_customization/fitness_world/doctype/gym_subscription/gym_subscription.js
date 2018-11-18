@@ -5,7 +5,6 @@ frappe.ui.form.on('Gym Subscription', {
   refresh: function(frm) {
     if (frm.doc.__islocal && frm.doc['amended_from']) {
       frm.set_value('reference_invoice', null);
-      frm.set_value('status', null);
     }
     if (frm.doc.__islocal) {
       frm.trigger('set_dates');
@@ -43,13 +42,29 @@ frappe.ui.form.on('Gym Subscription', {
             'psd_customization.fitness_world.api.gym_subscription.make_sales_invoice',
         };
       }
+      function get_button_state() {
+        const { is_opening, reference_invoice, __onload } = frm.doc;
+        if (is_opening) {
+          return true;
+        }
+        if (
+          reference_invoice &&
+          __onload &&
+          __onload.invoice &&
+          __onload.invoice.status === 'Paid'
+        ) {
+          return true;
+        }
+        return false;
+      }
+      console.log(get_button_state());
       const { label, method } = get_invoice_props();
       frm
         .add_custom_button(label, function() {
           frappe.model.open_mapped_doc({ frm, method });
         })
         .addClass('btn-primary')
-        .toggleClass('disabled', frm.doc['status'] === 'Paid');
+        .toggleClass('disabled', get_button_state());
     }
   },
   render_subscription_details: function(frm) {
