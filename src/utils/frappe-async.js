@@ -1,3 +1,6 @@
+// Copyright (c) 2018, Libermatic and contributors
+// For license information, please see license.txt
+
 export const prompt = function(fields, title, primary_label) {
   return new Promise(function(resolve, reject) {
     try {

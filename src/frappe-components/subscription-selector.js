@@ -4,9 +4,21 @@
 import Vue from 'vue';
 
 import CurrentSubscriptions from '../components/CurrentSubscriptions.vue';
+import { month_diff_dec } from '../utils/datetime';
 
 function get_to_date(date, freq) {
   return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
+}
+
+function get_description({ item_name, frequency, from_date, to_date }) {
+  if (frequency === 'Lifetime') {
+    return `${item_name}: Lifetime validity, starting ${frappe.datetime.str_to_user(
+      from_date
+    )}`;
+  }
+  return `${item_name}: Valid from ${frappe.datetime.str_to_user(
+    from_date
+  )} to ${frappe.datetime.str_to_user(to_date)}`;
 }
 
 export default class SubscriptionDialog {
@@ -102,6 +114,23 @@ export default class SubscriptionDialog {
     }
     this.dialog.set_primary_action('OK', () => {
       const { frequency, from_date, to_date } = this.dialog.get_values();
+      frappe.model.set_value(
+        cdt,
+        cdn,
+        'qty',
+        frequency === 'Lifetime' ? 60 : month_diff_dec(from_date, to_date)
+      );
+      frappe.model.set_value(
+        cdt,
+        cdn,
+        'description',
+        get_description({
+          frequency,
+          from_date,
+          to_date,
+          item_name: item_name || row.item_name,
+        })
+      );
       frappe.model.set_value(cdt, cdn, 'is_gym_subscription', 1);
       if (frequency === 'Lifetime') {
         frappe.model.set_value(cdt, cdn, 'gym_is_lifetime', 1);
