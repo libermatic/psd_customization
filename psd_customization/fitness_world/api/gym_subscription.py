@@ -519,7 +519,6 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
             limit='LIMIT 1' if limit else '',
         ),
         as_dict=1,
-        debug=1,
     )
 
 
@@ -641,7 +640,7 @@ def get_currents(member):
                 FROM `tabGym Subscription`
                 WHERE member=%(member)s
                 ORDER BY from_date DESC
-            ) AS _
+            ) AS _ GROUP BY subscription_item
         """,
         values={'member': member},
         as_dict=1,

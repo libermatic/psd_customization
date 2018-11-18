@@ -98,83 +98,20 @@ frappe.ui.form.on('Gym Member', {
       .after($link_btn_contact);
   },
   render_subscription_details: function(frm) {
-    if (frm.doc.__onload && frm.doc.__onload['subscription_details']) {
-      const {
+    if (frm.doc.__onload) {
+      const { subscriptions } = frm.doc.__onload;
+      const { total_invoices, unpaid_invoices, outstanding } =
+        frm.doc.__onload['subscription_details'] || {};
+      const node = frm.dashboard.add_section('<div />').children()[0];
+      psd.make_member_dashboard(node, {
         total_invoices,
         unpaid_invoices,
         outstanding,
-        membership_status,
-      } = frm.doc.__onload['subscription_details'];
-      const { auto_renew, member_type } = frm.doc;
-      frm.dashboard.add_section(
-        frappe.render_template('gym_member_dashboard', {
-          membership: {
-            color:
-              membership_status === 'Active'
-                ? 'green'
-                : membership_status === 'Stopped'
-                  ? 'orange'
-                  : membership_status === 'Expired'
-                    ? 'red'
-                    : 'darkgrey',
-            text: membership_status || 'None',
-          },
-          invoices: {
-            color: unpaid_invoices ? 'orange' : 'green',
-            total: total_invoices || '-',
-            unpaid: unpaid_invoices || '-',
-          },
-          outstanding: {
-            color: outstanding ? 'orange' : 'lightblue',
-            amount: outstanding
-              ? format_currency(
-                  outstanding,
-                  frappe.defaults.get_default('currency')
-                )
-              : '-',
-          },
-          renew: {
-            color:
-              member_type === 'Lifetime' || auto_renew === 'Yes'
-                ? 'lightblue'
-                : 'darkgrey',
-            text:
-              member_type === 'Lifetime'
-                ? 'N/A'
-                : { Yes: 'Auto', No: 'Manual' }[auto_renew] || '-',
-          },
-        })
-      );
-    }
-    if (
-      frm.doc.__onload &&
-      frm.doc.__onload['subscription_items'] &&
-      frm.doc.__onload['subscription_items'].length > 0
-    ) {
-      frm.dashboard.add_section(
-        frappe.render_template('gym_subscription_info', {
-          sections: [
-            {
-              title: 'Subscriptions',
-              items: frm.doc.__onload['subscription_items'].map(
-                psd_customization.dashboard.make_subscription_info
-              ),
-            },
-          ],
-        })
-      );
+        subscriptions,
+      });
     }
   },
-
   add_actions: function(frm) {
-    function get_renew_props(auto_renew) {
-      return {
-        label:
-          auto_renew === 'Yes' ? 'Disable Auto-Renew' : 'Enable Auto-Renew',
-        method: 'psd_customization.fitness_world.api.gym_member.set_auto_renew',
-        args: { auto_renew: auto_renew === 'Yes' ? 'No' : 'Yes' },
-      };
-    }
     frm
       .add_custom_button('Make Payment', function() {
         frappe.model.open_mapped_doc({
@@ -187,17 +124,5 @@ frappe.ui.form.on('Gym Member', {
         'btn-primary',
         frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
       );
-    const renew_props = get_renew_props(frm.doc['auto_renew']);
-    frm.add_custom_button(
-      renew_props.label,
-      async function() {
-        await frappe.call({
-          method: renew_props.method,
-          args: { name: frm.doc['name'], ...renew_props.args },
-        });
-        frm.reload_doc();
-      },
-      'Manage'
-    );
   },
 });

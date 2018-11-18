@@ -4,7 +4,6 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import datetime
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.contacts.address_and_contact \
@@ -14,10 +13,8 @@ from functools import reduce, partial
 from toolz import count, pluck, compose
 
 from psd_customization.utils.fp import pick
-from psd_customization.fitness_world.api.gym_membership \
-    import get_membership_by_member
 from psd_customization.fitness_world.api.gym_subscription \
-    import get_current
+    import get_currents
 
 
 class GymMember(Document):
@@ -85,14 +82,14 @@ class GymMember(Document):
             """
                 SELECT
                     si.outstanding_amount AS amount,
-                    ms.status AS status,
-                    ms.to_date AS end_date
-                FROM `tabGym Subscription` AS ms, `tabSales Invoice` AS si
+                    si.status AS status,
+                    gs.to_date AS end_date
+                FROM `tabGym Subscription` AS gs, `tabSales Invoice` AS si
                 WHERE
-                    ms.docstatus = 1 AND
-                    ms.member = '{member}' AND
-                    ms.reference_invoice = si.name
-                ORDER BY ms.to_date DESC
+                    gs.docstatus = 1 AND
+                    gs.member = '{member}' AND
+                    gs.reference_invoice = si.name
+                ORDER BY gs.from_date DESC
             """.format(member=self.name),
             as_dict=True,
         )
@@ -103,24 +100,14 @@ class GymMember(Document):
             operator.add, pluck('amount', unpaid_subscriptions), 0
         )
 
-        def make_membership_status():
-            m = get_membership_by_member(self.name)
-            if not m:
-                return None
-            if m.type != 'Lifetime' and m.status == 'Active':
-                return 'Expired' if datetime.date.today() < m.end_date \
-                    else m.status
-            return m.status or 'Inactive'
-
         self.set_onload('subscription_details', {
             'total_invoices': count(all_subscriptions),
             'unpaid_invoices': count(unpaid_subscriptions),
             'outstanding': outstanding,
-            'membership_status': make_membership_status(),
         })
         self.set_onload(
-            'subscription_items',
-            get_current(self.name, paid=False)
+            'subscriptions',
+            get_currents(self.name)
         )
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
