@@ -140,12 +140,6 @@ doc_events = {
         'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
         'on_cancel': 'psd_customization.doc_events.sales_invoice.on_cancel',
     },
-    'Payment Entry': {
-        'on_submit':
-            'psd_customization.doc_events.payment_entry.on_submit_or_cancel',
-        'on_cancel':
-            'psd_customization.doc_events.payment_entry.on_submit_or_cancel',
-    },
 }
 
 # Scheduled Tasks
