@@ -104,10 +104,6 @@ frappe.ui.form.on('Gym Subscription', {
     });
     frm.trigger('add_actions');
     frm.trigger('render_subscription_details');
-    if (frm.doc.docstatus === 0 && frm.doc['member']) {
-      frm.toggle_display('info_section', !!frm.doc['member']);
-      frm.trigger('render_info_html');
-    }
   },
   member: async function(frm) {
     frm.set_value('from_date', frappe.datetime.get_today());
@@ -220,66 +216,11 @@ frappe.ui.form.on('Gym Subscription', {
     }
   },
   render_subscription_details: function(frm) {
-    if (frm.doc.__onload && frm.doc.docstatus === 1) {
-      function get_color(status) {
-        if (status === 'Paid') {
-          return 'green';
-        }
-        if (status === 'Unpaid') {
-          return 'orange';
-        }
-        if (status === 'Overdue') {
-          return 'red';
-        }
-        return 'blue';
-      }
-      const { si_value, si_status } = frm.doc.__onload;
-      const html = frappe.render_template('gym_subscription_dashboard', {
-        amount: format_currency(
-          si_value,
-          frappe.defaults.get_default('currency')
-        ),
-        color: get_color(si_status),
-      });
+    if (frm.doc.__onload) {
+      const { invoice } = frm.doc.__onload;
+      const node = frm.dashboard.add_section('<div />').children()[0];
       frm.dashboard.show();
-      frm.dashboard.add_section(html);
+      psd.make_subscription_dashboard(node, { invoice });
     }
-  },
-  render_info_html: async function(frm) {
-    frm.fields_dict['info_html'].$wrapper.html('<p>Loading... </p>');
-    const { member } = frm.doc;
-    const [
-      { message: membership },
-      { message: subscriptions = [] },
-    ] = await Promise.all([
-      frappe.call({
-        method:
-          'psd_customization.fitness_world.api.gym_membership.get_current',
-        args: { member },
-      }),
-      frappe.call({
-        method:
-          'psd_customization.fitness_world.api.gym_subscription.get_current',
-        args: { member, paid: 0 },
-      }),
-    ]);
-    frm.fields_dict['info_html'].$wrapper.html(
-      frappe.render_template('gym_subscription_info', {
-        sections: [
-          {
-            title: 'Membership',
-            items: !!membership
-              ? [psd_customization.dashboard.make_membership_info(membership)]
-              : [],
-          },
-          {
-            title: 'Subscriptions',
-            items: subscriptions.map(
-              psd_customization.dashboard.make_subscription_info
-            ),
-          },
-        ],
-      })
-    );
   },
 });

@@ -38,14 +38,15 @@ def _update_item_qty(qty):
 
 class GymSubscription(Document):
     def onload(self):
-        if self.reference_invoice and self.docstatus == 1:
+        if self.reference_invoice:
             rounded_total, status = frappe.db.get_value(
                 'Sales Invoice',
                 self.reference_invoice,
                 ['rounded_total', 'status'],
             )
-            self.set_onload('si_value', rounded_total)
-            self.set_onload('si_status', status)
+            self.set_onload('invoice', {
+                'amount': rounded_total, 'status': status,
+            })
 
     def validate(self):
         if not self.membership_items and not self.service_items:
