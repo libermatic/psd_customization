@@ -366,12 +366,12 @@ var psd = (function () {
     /**
      * Show production mode tip message on boot?
      */
-    productionTip: "development" !== 'production',
+    productionTip: "production" !== 'production',
 
     /**
      * Whether to enable devtools
      */
-    devtools: "development" !== 'production',
+    devtools: "production" !== 'production',
 
     /**
      * Whether to record perf
@@ -570,96 +570,6 @@ var psd = (function () {
   /*  */
 
   var warn = noop;
-  var tip = noop;
-  var generateComponentTrace = (noop); // work around flow check
-  var formatComponentName = (noop);
-
-  {
-    var hasConsole = typeof console !== 'undefined';
-    var classifyRE = /(?:^|[-_])(\w)/g;
-    var classify = function (str) { return str
-      .replace(classifyRE, function (c) { return c.toUpperCase(); })
-      .replace(/[-_]/g, ''); };
-
-    warn = function (msg, vm) {
-      var trace = vm ? generateComponentTrace(vm) : '';
-
-      if (config.warnHandler) {
-        config.warnHandler.call(null, msg, vm, trace);
-      } else if (hasConsole && (!config.silent)) {
-        console.error(("[Vue warn]: " + msg + trace));
-      }
-    };
-
-    tip = function (msg, vm) {
-      if (hasConsole && (!config.silent)) {
-        console.warn("[Vue tip]: " + msg + (
-          vm ? generateComponentTrace(vm) : ''
-        ));
-      }
-    };
-
-    formatComponentName = function (vm, includeFile) {
-      if (vm.$root === vm) {
-        return '<Root>'
-      }
-      var options = typeof vm === 'function' && vm.cid != null
-        ? vm.options
-        : vm._isVue
-          ? vm.$options || vm.constructor.options
-          : vm || {};
-      var name = options.name || options._componentTag;
-      var file = options.__file;
-      if (!name && file) {
-        var match = file.match(/([^/\\]+)\.vue$/);
-        name = match && match[1];
-      }
-
-      return (
-        (name ? ("<" + (classify(name)) + ">") : "<Anonymous>") +
-        (file && includeFile !== false ? (" at " + file) : '')
-      )
-    };
-
-    var repeat = function (str, n) {
-      var res = '';
-      while (n) {
-        if (n % 2 === 1) { res += str; }
-        if (n > 1) { str += str; }
-        n >>= 1;
-      }
-      return res
-    };
-
-    generateComponentTrace = function (vm) {
-      if (vm._isVue && vm.$parent) {
-        var tree = [];
-        var currentRecursiveSequence = 0;
-        while (vm) {
-          if (tree.length > 0) {
-            var last = tree[tree.length - 1];
-            if (last.constructor === vm.constructor) {
-              currentRecursiveSequence++;
-              vm = vm.$parent;
-              continue
-            } else if (currentRecursiveSequence > 0) {
-              tree[tree.length - 1] = [last, currentRecursiveSequence];
-              currentRecursiveSequence = 0;
-            }
-          }
-          tree.push(vm);
-          vm = vm.$parent;
-        }
-        return '\n\nfound in\n\n' + tree
-          .map(function (vm, i) { return ("" + (i === 0 ? '---> ' : repeat(' ', 5 + i * 2)) + (Array.isArray(vm)
-              ? ((formatComponentName(vm[0])) + "... (" + (vm[1]) + " recursive calls)")
-              : formatComponentName(vm))); })
-          .join('\n')
-      } else {
-        return ("\n\n(found in " + (formatComponentName(vm)) + ")")
-      }
-    };
-  }
 
   /*  */
 
@@ -760,7 +670,7 @@ var psd = (function () {
   Object.defineProperties( VNode.prototype, prototypeAccessors );
 
   var createEmptyVNode = function (text) {
-    if ( text === void 0 ) { text = ''; }
+    if ( text === void 0 ) text = '';
 
     var node = new VNode();
     node.text = text;
@@ -823,10 +733,8 @@ var psd = (function () {
     // cache original method
     var original = arrayProto[method];
     def(arrayMethods, method, function mutator () {
-      var arguments$1 = arguments;
-
       var args = [], len = arguments.length;
-      while ( len-- ) { args[ len ] = arguments$1[ len ]; }
+      while ( len-- ) args[ len ] = arguments[ len ];
 
       var result = original.apply(this, args);
       var ob = this.__ob__;
@@ -1002,10 +910,6 @@ var psd = (function () {
         if (newVal === value || (newVal !== newVal && value !== value)) {
           return
         }
-        /* eslint-enable no-self-compare */
-        if (customSetter) {
-          customSetter();
-        }
         if (setter) {
           setter.call(obj, newVal);
         } else {
@@ -1023,10 +927,6 @@ var psd = (function () {
    * already exist.
    */
   function set (target, key, val) {
-    if (isUndef(target) || isPrimitive(target)
-    ) {
-      warn(("Cannot set reactive property on undefined, null, or primitive value: " + ((target))));
-    }
     if (Array.isArray(target) && isValidArrayIndex(key)) {
       target.length = Math.max(target.length, key);
       target.splice(key, 1, val);
@@ -1038,10 +938,6 @@ var psd = (function () {
     }
     var ob = (target).__ob__;
     if (target._isVue || (ob && ob.vmCount)) {
-      warn(
-        'Avoid adding reactive properties to a Vue instance or its root $data ' +
-        'at runtime - declare it upfront in the data option.'
-      );
       return val
     }
     if (!ob) {
@@ -1057,20 +953,12 @@ var psd = (function () {
    * Delete a property and trigger change if necessary.
    */
   function del (target, key) {
-    if (isUndef(target) || isPrimitive(target)
-    ) {
-      warn(("Cannot delete reactive property on undefined, null, or primitive value: " + ((target))));
-    }
     if (Array.isArray(target) && isValidArrayIndex(key)) {
       target.splice(key, 1);
       return
     }
     var ob = (target).__ob__;
     if (target._isVue || (ob && ob.vmCount)) {
-      warn(
-        'Avoid deleting properties on a Vue instance or its root $data ' +
-        '- just set it to null.'
-      );
       return
     }
     if (!hasOwn(target, key)) {
@@ -1105,21 +993,6 @@ var psd = (function () {
    * value into the final value.
    */
   var strats = config.optionMergeStrategies;
-
-  /**
-   * Options with restrictions
-   */
-  {
-    strats.el = strats.propsData = function (parent, child, vm, key) {
-      if (!vm) {
-        warn(
-          "option \"" + key + "\" can only be used during instance " +
-          'creation with the `new` keyword.'
-        );
-      }
-      return defaultStrat(parent, child)
-    };
-  }
 
   /**
    * Helper that recursively merges two data objects together.
@@ -1193,12 +1066,6 @@ var psd = (function () {
   ) {
     if (!vm) {
       if (childVal && typeof childVal !== 'function') {
-        warn(
-          'The "data" option should be a function ' +
-          'that returns a per-instance value in component ' +
-          'definitions.',
-          vm
-        );
 
         return parentVal
       }
@@ -1243,7 +1110,6 @@ var psd = (function () {
   ) {
     var res = Object.create(parentVal || null);
     if (childVal) {
-      assertObjectType(key, childVal, vm);
       return extend(res, childVal)
     } else {
       return res
@@ -1271,9 +1137,6 @@ var psd = (function () {
     if (childVal === nativeWatch) { childVal = undefined; }
     /* istanbul ignore if */
     if (!childVal) { return Object.create(parentVal || null) }
-    {
-      assertObjectType(key, childVal, vm);
-    }
     if (!parentVal) { return childVal }
     var ret = {};
     extend(ret, parentVal);
@@ -1302,7 +1165,7 @@ var psd = (function () {
     vm,
     key
   ) {
-    if (childVal && "development" !== 'production') {
+    if (childVal && "production" !== 'production') {
       assertObjectType(key, childVal, vm);
     }
     if (!parentVal) { return childVal }
@@ -1323,31 +1186,6 @@ var psd = (function () {
   };
 
   /**
-   * Validate component names
-   */
-  function checkComponents (options) {
-    for (var key in options.components) {
-      validateComponentName(key);
-    }
-  }
-
-  function validateComponentName (name) {
-    if (!/^[a-zA-Z][\w-]*$/.test(name)) {
-      warn(
-        'Invalid component name: "' + name + '". Component names ' +
-        'can only contain alphanumeric characters and the hyphen, ' +
-        'and must start with a letter.'
-      );
-    }
-    if (isBuiltInTag(name) || config.isReservedTag(name)) {
-      warn(
-        'Do not use built-in or reserved HTML elements as component ' +
-        'id: ' + name
-      );
-    }
-  }
-
-  /**
    * Ensure all props option syntax are normalized into the
    * Object-based format.
    */
@@ -1363,8 +1201,6 @@ var psd = (function () {
         if (typeof val === 'string') {
           name = camelize(val);
           res[name] = { type: null };
-        } else {
-          warn('props must be strings when using array syntax.');
         }
       }
     } else if (isPlainObject(props)) {
@@ -1375,12 +1211,6 @@ var psd = (function () {
           ? val
           : { type: val };
       }
-    } else {
-      warn(
-        "Invalid value for option \"props\": expected an Array or an Object, " +
-        "but got " + (toRawType(props)) + ".",
-        vm
-      );
     }
     options.props = res;
   }
@@ -1403,12 +1233,6 @@ var psd = (function () {
           ? extend({ from: key }, val)
           : { from: val };
       }
-    } else {
-      warn(
-        "Invalid value for option \"inject\": expected an Array or an Object, " +
-        "but got " + (toRawType(inject)) + ".",
-        vm
-      );
     }
   }
 
@@ -1446,9 +1270,6 @@ var psd = (function () {
     child,
     vm
   ) {
-    {
-      checkComponents(child);
-    }
 
     if (typeof child === 'function') {
       child = child.options;
@@ -1507,12 +1328,6 @@ var psd = (function () {
     if (hasOwn(assets, PascalCaseId)) { return assets[PascalCaseId] }
     // fallback to prototype chain
     var res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
-    if (warnMissing && !res) {
-      warn(
-        'Failed to resolve ' + type.slice(0, -1) + ': ' + id,
-        options
-      );
-    }
     return res
   }
 
@@ -1551,9 +1366,6 @@ var psd = (function () {
       observe(value);
       toggleObserving(prevShouldObserve);
     }
-    {
-      assertProp(prop, key, value, vm, absent);
-    }
     return value
   }
 
@@ -1566,15 +1378,6 @@ var psd = (function () {
       return undefined
     }
     var def = prop.default;
-    // warn against non-factory defaults for Object & Array
-    if (isObject(def)) {
-      warn(
-        'Invalid default value for prop "' + key + '": ' +
-        'Props with type Object/Array must use a factory function ' +
-        'to return the default value.',
-        vm
-      );
-    }
     // the raw prop value was also undefined from previous render,
     // return previous default value to avoid unnecessary watcher trigger
     if (vm && vm.$options.propsData &&
@@ -1588,84 +1391,6 @@ var psd = (function () {
     return typeof def === 'function' && getType(prop.type) !== 'Function'
       ? def.call(vm)
       : def
-  }
-
-  /**
-   * Assert whether a prop is valid.
-   */
-  function assertProp (
-    prop,
-    name,
-    value,
-    vm,
-    absent
-  ) {
-    if (prop.required && absent) {
-      warn(
-        'Missing required prop: "' + name + '"',
-        vm
-      );
-      return
-    }
-    if (value == null && !prop.required) {
-      return
-    }
-    var type = prop.type;
-    var valid = !type || type === true;
-    var expectedTypes = [];
-    if (type) {
-      if (!Array.isArray(type)) {
-        type = [type];
-      }
-      for (var i = 0; i < type.length && !valid; i++) {
-        var assertedType = assertType(value, type[i]);
-        expectedTypes.push(assertedType.expectedType || '');
-        valid = assertedType.valid;
-      }
-    }
-    if (!valid) {
-      warn(
-        "Invalid prop: type check failed for prop \"" + name + "\"." +
-        " Expected " + (expectedTypes.map(capitalize).join(', ')) +
-        ", got " + (toRawType(value)) + ".",
-        vm
-      );
-      return
-    }
-    var validator = prop.validator;
-    if (validator) {
-      if (!validator(value)) {
-        warn(
-          'Invalid prop: custom validator check failed for prop "' + name + '".',
-          vm
-        );
-      }
-    }
-  }
-
-  var simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
-
-  function assertType (value, type) {
-    var valid;
-    var expectedType = getType(type);
-    if (simpleCheckRE.test(expectedType)) {
-      var t = typeof value;
-      valid = t === expectedType.toLowerCase();
-      // for primitive wrapper objects
-      if (!valid && t === 'object') {
-        valid = value instanceof type;
-      }
-    } else if (expectedType === 'Object') {
-      valid = isPlainObject(value);
-    } else if (expectedType === 'Array') {
-      valid = Array.isArray(value);
-    } else {
-      valid = value instanceof type;
-    }
-    return {
-      valid: valid,
-      expectedType: expectedType
-    }
   }
 
   /**
@@ -1728,9 +1453,6 @@ var psd = (function () {
   }
 
   function logError (err, vm, info) {
-    {
-      warn(("Error in " + info + ": \"" + (err.toString()) + "\""), vm);
-    }
     /* istanbul ignore else */
     if ((inBrowser || inWeex) && typeof console !== 'undefined') {
       console.error(err);
@@ -1855,83 +1577,6 @@ var psd = (function () {
 
   /*  */
 
-  /* not type checking this file because flow doesn't play well with Proxy */
-
-  var initProxy;
-
-  {
-    var allowedGlobals = makeMap(
-      'Infinity,undefined,NaN,isFinite,isNaN,' +
-      'parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,' +
-      'Math,Number,Date,Array,Object,Boolean,String,RegExp,Map,Set,JSON,Intl,' +
-      'require' // for Webpack/Browserify
-    );
-
-    var warnNonPresent = function (target, key) {
-      warn(
-        "Property or method \"" + key + "\" is not defined on the instance but " +
-        'referenced during render. Make sure that this property is reactive, ' +
-        'either in the data option, or for class-based components, by ' +
-        'initializing the property. ' +
-        'See: https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties.',
-        target
-      );
-    };
-
-    var hasProxy =
-      typeof Proxy !== 'undefined' && isNative(Proxy);
-
-    if (hasProxy) {
-      var isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact');
-      config.keyCodes = new Proxy(config.keyCodes, {
-        set: function set (target, key, value) {
-          if (isBuiltInModifier(key)) {
-            warn(("Avoid overwriting built-in modifier in config.keyCodes: ." + key));
-            return false
-          } else {
-            target[key] = value;
-            return true
-          }
-        }
-      });
-    }
-
-    var hasHandler = {
-      has: function has (target, key) {
-        var has = key in target;
-        var isAllowed = allowedGlobals(key) || key.charAt(0) === '_';
-        if (!has && !isAllowed) {
-          warnNonPresent(target, key);
-        }
-        return has || !isAllowed
-      }
-    };
-
-    var getHandler = {
-      get: function get (target, key) {
-        if (typeof key === 'string' && !(key in target)) {
-          warnNonPresent(target, key);
-        }
-        return target[key]
-      }
-    };
-
-    initProxy = function initProxy (vm) {
-      if (hasProxy) {
-        // determine which proxy handler to use
-        var options = vm.$options;
-        var handlers = options.render && options.render._withStripped
-          ? getHandler
-          : hasHandler;
-        vm._renderProxy = new Proxy(vm, handlers);
-      } else {
-        vm._renderProxy = vm;
-      }
-    };
-  }
-
-  /*  */
-
   var seenObjects = new _Set();
 
   /**
@@ -1964,29 +1609,6 @@ var psd = (function () {
       keys = Object.keys(val);
       i = keys.length;
       while (i--) { _traverse(val[keys[i]], seen); }
-    }
-  }
-
-  var mark;
-  var measure;
-
-  {
-    var perf = inBrowser && window.performance;
-    /* istanbul ignore if */
-    if (
-      perf &&
-      perf.mark &&
-      perf.measure &&
-      perf.clearMarks &&
-      perf.clearMeasures
-    ) {
-      mark = function (tag) { return perf.mark(tag); };
-      measure = function (name, startTag, endTag) {
-        perf.measure(name, startTag, endTag);
-        perf.clearMarks(startTag);
-        perf.clearMarks(endTag);
-        perf.clearMeasures(name);
-      };
     }
   }
 
@@ -2039,12 +1661,7 @@ var psd = (function () {
       old = oldOn[name];
       event = normalizeEvent(name);
       /* istanbul ignore if */
-      if (isUndef(cur)) {
-        warn(
-          "Invalid handler for event \"" + (event.name) + "\": got " + String(cur),
-          vm
-        );
-      } else if (isUndef(old)) {
+      if (isUndef(cur)) ; else if (isUndef(old)) {
         if (isUndef(cur.fns)) {
           cur = on[name] = createFnInvoker(cur);
         }
@@ -2117,22 +1734,6 @@ var psd = (function () {
     if (isDef(attrs) || isDef(props)) {
       for (var key in propOptions) {
         var altKey = hyphenate(key);
-        {
-          var keyInLowerCase = key.toLowerCase();
-          if (
-            key !== keyInLowerCase &&
-            attrs && hasOwn(attrs, keyInLowerCase)
-          ) {
-            tip(
-              "Prop \"" + keyInLowerCase + "\" is passed to component " +
-              (formatComponentName(tag || Ctor)) + ", but the declared prop name is" +
-              " \"" + key + "\". " +
-              "Note that HTML attributes are case-insensitive and camelCased " +
-              "props need to use their kebab-case equivalents when using in-DOM " +
-              "templates. You should probably use \"" + altKey + "\" instead of \"" + key + "\"."
-            );
-          }
-        }
         checkProp(res, props, key, altKey, true) ||
         checkProp(res, attrs, key, altKey, false);
       }
@@ -2320,10 +1921,6 @@ var psd = (function () {
       });
 
       var reject = once(function (reason) {
-        warn(
-          "Failed to resolve async component: " + (String(factory)) +
-          (reason ? ("\nReason: " + reason) : '')
-        );
         if (isDef(factory.errorComp)) {
           factory.error = true;
           forceRender();
@@ -2363,7 +1960,7 @@ var psd = (function () {
             setTimeout(function () {
               if (isUndef(factory.resolved)) {
                 reject(
-                  "timeout (" + (res.timeout) + "ms)"
+                  null
                 );
               }
             }, res.timeout);
@@ -2510,18 +2107,6 @@ var psd = (function () {
 
     Vue.prototype.$emit = function (event) {
       var vm = this;
-      {
-        var lowerCaseEvent = event.toLowerCase();
-        if (lowerCaseEvent !== event && vm._events[lowerCaseEvent]) {
-          tip(
-            "Event \"" + lowerCaseEvent + "\" is emitted in component " +
-            (formatComponentName(vm)) + " but the handler is registered for \"" + event + "\". " +
-            "Note that HTML attributes are case-insensitive and you cannot use " +
-            "v-on to listen to camelCase events when using in-DOM templates. " +
-            "You should probably use \"" + (hyphenate(event)) + "\" instead of \"" + event + "\"."
-          );
-        }
-      }
       var cbs = vm._events[event];
       if (cbs) {
         cbs = cbs.length > 1 ? toArray(cbs) : cbs;
@@ -2607,7 +2192,6 @@ var psd = (function () {
   /*  */
 
   var activeInstance = null;
-  var isUpdatingChildComponent = false;
 
   function initLifecycle (vm) {
     var options = vm.$options;
@@ -2737,46 +2321,12 @@ var psd = (function () {
     vm.$el = el;
     if (!vm.$options.render) {
       vm.$options.render = createEmptyVNode;
-      {
-        /* istanbul ignore if */
-        if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
-          vm.$options.el || el) {
-          warn(
-            'You are using the runtime-only build of Vue where the template ' +
-            'compiler is not available. Either pre-compile the templates into ' +
-            'render functions, or use the compiler-included build.',
-            vm
-          );
-        } else {
-          warn(
-            'Failed to mount component: template or render function not defined.',
-            vm
-          );
-        }
-      }
     }
     callHook(vm, 'beforeMount');
 
     var updateComponent;
     /* istanbul ignore if */
-    if (config.performance && mark) {
-      updateComponent = function () {
-        var name = vm._name;
-        var id = vm._uid;
-        var startTag = "vue-perf-start:" + id;
-        var endTag = "vue-perf-end:" + id;
-
-        mark(startTag);
-        var vnode = vm._render();
-        mark(endTag);
-        measure(("vue " + name + " render"), startTag, endTag);
-
-        mark(startTag);
-        vm._update(vnode, hydrating);
-        mark(endTag);
-        measure(("vue " + name + " patch"), startTag, endTag);
-      };
-    } else {
+    {
       updateComponent = function () {
         vm._update(vm._render(), hydrating);
       };
@@ -2804,9 +2354,6 @@ var psd = (function () {
     parentVnode,
     renderChildren
   ) {
-    {
-      isUpdatingChildComponent = true;
-    }
 
     // determine whether component has slot children
     // we need to do this before overwriting $options._renderChildren
@@ -2856,10 +2403,6 @@ var psd = (function () {
     if (hasChildren) {
       vm.$slots = resolveSlots(renderChildren, parentVnode.context);
       vm.$forceUpdate();
-    }
-
-    {
-      isUpdatingChildComponent = false;
     }
   }
 
@@ -2923,15 +2466,9 @@ var psd = (function () {
     popTarget();
   }
 
-  /*  */
-
-
-  var MAX_UPDATE_COUNT = 100;
-
   var queue = [];
   var activatedChildren = [];
   var has = {};
-  var circular = {};
   var waiting = false;
   var flushing = false;
   var index = 0;
@@ -2942,9 +2479,6 @@ var psd = (function () {
   function resetSchedulerState () {
     index = queue.length = activatedChildren.length = 0;
     has = {};
-    {
-      circular = {};
-    }
     waiting = flushing = false;
   }
 
@@ -2972,21 +2506,6 @@ var psd = (function () {
       id = watcher.id;
       has[id] = null;
       watcher.run();
-      // in dev build, check and stop circular updates.
-      if (has[id] != null) {
-        circular[id] = (circular[id] || 0) + 1;
-        if (circular[id] > MAX_UPDATE_COUNT) {
-          warn(
-            'You may have an infinite update loop ' + (
-              watcher.user
-                ? ("in watcher with expression \"" + (watcher.expression) + "\"")
-                : "in a component render function."
-            ),
-            watcher.vm
-          );
-          break
-        }
-      }
     }
 
     // keep copies of post queues before resetting state
@@ -3101,7 +2620,7 @@ var psd = (function () {
     this.newDeps = [];
     this.depIds = new _Set();
     this.newDepIds = new _Set();
-    this.expression = expOrFn.toString();
+    this.expression = '';
     // parse expression for getter
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn;
@@ -3109,12 +2628,6 @@ var psd = (function () {
       this.getter = parsePath(expOrFn);
       if (!this.getter) {
         this.getter = function () {};
-        warn(
-          "Failed watching path: \"" + expOrFn + "\" " +
-          'Watcher only accepts simple dot-delimited paths. ' +
-          'For full control, use a function instead.',
-          vm
-        );
       }
     }
     this.value = this.lazy
@@ -3325,25 +2838,7 @@ var psd = (function () {
       var value = validateProp(key, propsOptions, propsData, vm);
       /* istanbul ignore else */
       {
-        var hyphenatedKey = hyphenate(key);
-        if (isReservedAttribute(hyphenatedKey) ||
-            config.isReservedAttr(hyphenatedKey)) {
-          warn(
-            ("\"" + hyphenatedKey + "\" is a reserved attribute and cannot be used as component prop."),
-            vm
-          );
-        }
-        defineReactive(props, key, value, function () {
-          if (vm.$parent && !isUpdatingChildComponent) {
-            warn(
-              "Avoid mutating a prop directly since the value will be " +
-              "overwritten whenever the parent component re-renders. " +
-              "Instead, use a data or computed property based on the prop's " +
-              "value. Prop being mutated: \"" + key + "\"",
-              vm
-            );
-          }
-        });
+        defineReactive(props, key, value);
       }
       // static props are already proxied on the component's prototype
       // during Vue.extend(). We only need to proxy props defined at
@@ -3353,7 +2848,7 @@ var psd = (function () {
       }
     };
 
-    for (var key in propsOptions) { loop( key ); }
+    for (var key in propsOptions) loop( key );
     toggleObserving(true);
   }
 
@@ -3364,11 +2859,6 @@ var psd = (function () {
       : data || {};
     if (!isPlainObject(data)) {
       data = {};
-      warn(
-        'data functions should return an object:\n' +
-        'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function',
-        vm
-      );
     }
     // proxy data on instance
     var keys = Object.keys(data);
@@ -3377,21 +2867,7 @@ var psd = (function () {
     var i = keys.length;
     while (i--) {
       var key = keys[i];
-      {
-        if (methods && hasOwn(methods, key)) {
-          warn(
-            ("Method \"" + key + "\" has already been defined as a data property."),
-            vm
-          );
-        }
-      }
-      if (props && hasOwn(props, key)) {
-        warn(
-          "The data property \"" + key + "\" is already declared as a prop. " +
-          "Use prop default value instead.",
-          vm
-        );
-      } else if (!isReserved(key)) {
+      if (props && hasOwn(props, key)) ; else if (!isReserved(key)) {
         proxy(vm, "_data", key);
       }
     }
@@ -3423,12 +2899,6 @@ var psd = (function () {
     for (var key in computed) {
       var userDef = computed[key];
       var getter = typeof userDef === 'function' ? userDef : userDef.get;
-      if (getter == null) {
-        warn(
-          ("Getter is missing for computed property \"" + key + "\"."),
-          vm
-        );
-      }
 
       if (!isSSR) {
         // create internal watcher for the computed property.
@@ -3445,12 +2915,6 @@ var psd = (function () {
       // at instantiation here.
       if (!(key in vm)) {
         defineComputed(vm, key, userDef);
-      } else {
-        if (key in vm.$data) {
-          warn(("The computed property \"" + key + "\" is already defined in data."), vm);
-        } else if (vm.$options.props && key in vm.$options.props) {
-          warn(("The computed property \"" + key + "\" is already defined as a prop."), vm);
-        }
       }
     }
   }
@@ -3476,14 +2940,6 @@ var psd = (function () {
         ? userDef.set
         : noop;
     }
-    if (sharedPropertyDefinition.set === noop) {
-      sharedPropertyDefinition.set = function () {
-        warn(
-          ("Computed property \"" + key + "\" was assigned to but it has no setter."),
-          this
-        );
-      };
-    }
     Object.defineProperty(target, key, sharedPropertyDefinition);
   }
 
@@ -3505,27 +2961,6 @@ var psd = (function () {
   function initMethods (vm, methods) {
     var props = vm.$options.props;
     for (var key in methods) {
-      {
-        if (methods[key] == null) {
-          warn(
-            "Method \"" + key + "\" has an undefined value in the component definition. " +
-            "Did you reference the function correctly?",
-            vm
-          );
-        }
-        if (props && hasOwn(props, key)) {
-          warn(
-            ("Method \"" + key + "\" has already been defined as a prop."),
-            vm
-          );
-        }
-        if ((key in vm) && isReserved(key)) {
-          warn(
-            "Method \"" + key + "\" conflicts with an existing Vue instance method. " +
-            "Avoid defining component methods that start with _ or $."
-          );
-        }
-      }
       vm[key] = methods[key] == null ? noop : bind(methods[key], vm);
     }
   }
@@ -3567,18 +3002,6 @@ var psd = (function () {
     dataDef.get = function () { return this._data };
     var propsDef = {};
     propsDef.get = function () { return this._props };
-    {
-      dataDef.set = function (newData) {
-        warn(
-          'Avoid replacing instance root $data. ' +
-          'Use nested data properties instead.',
-          this
-        );
-      };
-      propsDef.set = function () {
-        warn("$props is readonly.", this);
-      };
-    }
     Object.defineProperty(Vue.prototype, '$data', dataDef);
     Object.defineProperty(Vue.prototype, '$props', propsDef);
 
@@ -3624,14 +3047,7 @@ var psd = (function () {
       Object.keys(result).forEach(function (key) {
         /* istanbul ignore else */
         {
-          defineReactive(vm, key, result[key], function () {
-            warn(
-              "Avoid mutating an injected value directly since the changes will be " +
-              "overwritten whenever the provided component re-renders. " +
-              "injection being mutated: \"" + key + "\"",
-              vm
-            );
-          });
+          defineReactive(vm, key, result[key]);
         }
       });
       toggleObserving(true);
@@ -3666,8 +3082,6 @@ var psd = (function () {
             result[key] = typeof provideDefault === 'function'
               ? provideDefault.call(vm)
               : provideDefault;
-          } else {
-            warn(("Injection \"" + key + "\" not found"), vm);
           }
         }
       }
@@ -3725,12 +3139,6 @@ var psd = (function () {
     if (scopedSlotFn) { // scoped slot
       props = props || {};
       if (bindObject) {
-        if (!isObject(bindObject)) {
-          warn(
-            'slot v-bind without argument expects an Object',
-            this
-          );
-        }
         props = extend(extend({}, bindObject), props);
       }
       nodes = scopedSlotFn(props) || fallback;
@@ -3738,13 +3146,6 @@ var psd = (function () {
       var slotNodes = this.$slots[name];
       // warn duplicate slot usage
       if (slotNodes) {
-        if (slotNodes._rendered) {
-          warn(
-            "Duplicate presence of slot \"" + name + "\" found in the same render tree " +
-            "- this will likely cause render errors.",
-            this
-          );
-        }
         slotNodes._rendered = true;
       }
       nodes = slotNodes || fallback;
@@ -3812,12 +3213,7 @@ var psd = (function () {
     isSync
   ) {
     if (value) {
-      if (!isObject(value)) {
-        warn(
-          'v-bind without argument expects an Object or Array value',
-          this
-        );
-      } else {
+      if (!isObject(value)) ; else {
         if (Array.isArray(value)) {
           value = toObject(value);
         }
@@ -3847,7 +3243,7 @@ var psd = (function () {
           }
         };
 
-        for (var key in value) { loop( key ); }
+        for (var key in value) loop( key );
       }
     }
     return data
@@ -3918,12 +3314,7 @@ var psd = (function () {
 
   function bindObjectListeners (data, value) {
     if (value) {
-      if (!isPlainObject(value)) {
-        warn(
-          'v-on without argument expects an Object value',
-          this
-        );
-      } else {
+      if (!isPlainObject(value)) ; else {
         var on = data.on = data.on ? extend({}, data.on) : {};
         for (var key in value) {
           var existing = on[key];
@@ -4192,9 +3583,6 @@ var psd = (function () {
     // if at this stage it's not a constructor or an async component factory,
     // reject.
     if (typeof Ctor !== 'function') {
-      {
-        warn(("Invalid Component definition: " + (String(Ctor))), context);
-      }
       return
     }
 
@@ -4351,11 +3739,6 @@ var psd = (function () {
     normalizationType
   ) {
     if (isDef(data) && isDef((data).__ob__)) {
-      warn(
-        "Avoid using observed data object as vnode data: " + (JSON.stringify(data)) + "\n" +
-        'Always create fresh vnode data objects in each render!',
-        context
-      );
       return createEmptyVNode()
     }
     // object syntax in v-bind
@@ -4365,17 +3748,6 @@ var psd = (function () {
     if (!tag) {
       // in case of component :is set to falsy value
       return createEmptyVNode()
-    }
-    // warn against non-primitive key
-    if (isDef(data) && isDef(data.key) && !isPrimitive(data.key)
-    ) {
-      {
-        warn(
-          'Avoid using non-primitive value as key, ' +
-          'use string/number value instead.',
-          context
-        );
-      }
     }
     // support single function children as default scoped slot
     if (Array.isArray(children) &&
@@ -4482,12 +3854,8 @@ var psd = (function () {
 
     /* istanbul ignore else */
     {
-      defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, function () {
-        !isUpdatingChildComponent && warn("$attrs is readonly.", vm);
-      }, true);
-      defineReactive(vm, '$listeners', options._parentListeners || emptyObject, function () {
-        !isUpdatingChildComponent && warn("$listeners is readonly.", vm);
-      }, true);
+      defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true);
+      defineReactive(vm, '$listeners', options._parentListeners || emptyObject, null, true);
     }
   }
 
@@ -4504,14 +3872,6 @@ var psd = (function () {
       var ref = vm.$options;
       var render = ref.render;
       var _parentVnode = ref._parentVnode;
-
-      // reset _rendered flag on slots for duplicate slot check
-      {
-        for (var key in vm.$slots) {
-          // $flow-disable-line
-          vm.$slots[key]._rendered = false;
-        }
-      }
 
       if (_parentVnode) {
         vm.$scopedSlots = _parentVnode.data.scopedSlots || emptyObject;
@@ -4530,27 +3890,11 @@ var psd = (function () {
         // or previous vnode to prevent render error causing blank component
         /* istanbul ignore else */
         {
-          if (vm.$options.renderError) {
-            try {
-              vnode = vm.$options.renderError.call(vm._renderProxy, vm.$createElement, e);
-            } catch (e) {
-              handleError(e, vm, "renderError");
-              vnode = vm._vnode;
-            }
-          } else {
-            vnode = vm._vnode;
-          }
+          vnode = vm._vnode;
         }
       }
       // return empty vnode in case the render function errored out
       if (!(vnode instanceof VNode)) {
-        if (Array.isArray(vnode)) {
-          warn(
-            'Multiple root nodes returned from render function. Render function ' +
-            'should return a single root node.',
-            vm
-          );
-        }
         vnode = createEmptyVNode();
       }
       // set parent
@@ -4569,14 +3913,6 @@ var psd = (function () {
       // a uid
       vm._uid = uid$3++;
 
-      var startTag, endTag;
-      /* istanbul ignore if */
-      if (config.performance && mark) {
-        startTag = "vue-perf-start:" + (vm._uid);
-        endTag = "vue-perf-end:" + (vm._uid);
-        mark(startTag);
-      }
-
       // a flag to avoid this being observed
       vm._isVue = true;
       // merge options
@@ -4594,7 +3930,7 @@ var psd = (function () {
       }
       /* istanbul ignore else */
       {
-        initProxy(vm);
+        vm._renderProxy = vm;
       }
       // expose real self
       vm._self = vm;
@@ -4606,13 +3942,6 @@ var psd = (function () {
       initState(vm);
       initProvide(vm); // resolve provide after data/props
       callHook(vm, 'created');
-
-      /* istanbul ignore if */
-      if (config.performance && mark) {
-        vm._name = formatComponentName(vm, false);
-        mark(endTag);
-        measure(("vue " + (vm._name) + " init"), startTag, endTag);
-      }
 
       if (vm.$options.el) {
         vm.$mount(vm.$options.el);
@@ -4699,10 +4028,6 @@ var psd = (function () {
   }
 
   function Vue (options) {
-    if (!(this instanceof Vue)
-    ) {
-      warn('Vue is a constructor and should be called with the `new` keyword');
-    }
     this._init(options);
   }
 
@@ -4767,9 +4092,6 @@ var psd = (function () {
       }
 
       var name = extendOptions.name || Super.options.name;
-      if (name) {
-        validateComponentName(name);
-      }
 
       var Sub = function VueComponent (options) {
         this._init(options);
@@ -4849,10 +4171,6 @@ var psd = (function () {
         if (!definition) {
           return this.options[type + 's'][id]
         } else {
-          /* istanbul ignore if */
-          if (type === 'component') {
-            validateComponentName(id);
-          }
           if (type === 'component' && isPlainObject(definition)) {
             definition.name = definition.name || id;
             definition = this.options._base.extend(definition);
@@ -5007,13 +4325,6 @@ var psd = (function () {
     // config
     var configDef = {};
     configDef.get = function () { return config; };
-    {
-      configDef.set = function () {
-        warn(
-          'Do not replace the Vue.config object, set individual fields instead.'
-        );
-      };
-    }
     Object.defineProperty(Vue, 'config', configDef);
 
     // exposed util methods.
@@ -5274,9 +4585,6 @@ var psd = (function () {
     if (typeof el === 'string') {
       var selected = document.querySelector(el);
       if (!selected) {
-        warn(
-          'Cannot find element: ' + el
-        );
         return document.createElement('div')
       }
       return selected
@@ -5492,24 +4800,6 @@ var psd = (function () {
       }
     }
 
-    function isUnknownElement$$1 (vnode, inVPre) {
-      return (
-        !inVPre &&
-        !vnode.ns &&
-        !(
-          config.ignoredElements.length &&
-          config.ignoredElements.some(function (ignore) {
-            return isRegExp(ignore)
-              ? ignore.test(vnode.tag)
-              : ignore === vnode.tag
-          })
-        ) &&
-        config.isUnknownElement(vnode.tag)
-      )
-    }
-
-    var creatingElmInVPre = 0;
-
     function createElm (
       vnode,
       insertedVnodeQueue,
@@ -5537,19 +4827,6 @@ var psd = (function () {
       var children = vnode.children;
       var tag = vnode.tag;
       if (isDef(tag)) {
-        {
-          if (data && data.pre) {
-            creatingElmInVPre++;
-          }
-          if (isUnknownElement$$1(vnode, creatingElmInVPre)) {
-            warn(
-              'Unknown custom element: <' + tag + '> - did you ' +
-              'register the component correctly? For recursive components, ' +
-              'make sure to provide the "name" option.',
-              vnode.context
-            );
-          }
-        }
 
         vnode.elm = vnode.ns
           ? nodeOps.createElementNS(vnode.ns, tag)
@@ -5563,10 +4840,6 @@ var psd = (function () {
             invokeCreateHooks(vnode, insertedVnodeQueue);
           }
           insert(parentElm, vnode.elm, refElm);
-        }
-
-        if (data && data.pre) {
-          creatingElmInVPre--;
         }
       } else if (isTrue(vnode.isComment)) {
         vnode.elm = nodeOps.createComment(vnode.text);
@@ -5652,9 +4925,6 @@ var psd = (function () {
 
     function createChildren (vnode, children, insertedVnodeQueue) {
       if (Array.isArray(children)) {
-        {
-          checkDuplicateKeys(children);
-        }
         for (var i = 0; i < children.length; ++i) {
           createElm(children[i], insertedVnodeQueue, vnode.elm, null, true, children, i);
         }
@@ -5786,10 +5056,6 @@ var psd = (function () {
       // during leaving transitions
       var canMove = !removeOnly;
 
-      {
-        checkDuplicateKeys(newCh);
-      }
-
       while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
         if (isUndef(oldStartVnode)) {
           oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
@@ -5839,24 +5105,6 @@ var psd = (function () {
         addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
       } else if (newStartIdx > newEndIdx) {
         removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
-      }
-    }
-
-    function checkDuplicateKeys (children) {
-      var seenKeys = {};
-      for (var i = 0; i < children.length; i++) {
-        var vnode = children[i];
-        var key = vnode.key;
-        if (isDef(key)) {
-          if (seenKeys[key]) {
-            warn(
-              ("Duplicate keys detected: '" + key + "'. This may cause an update error."),
-              vnode.context
-            );
-          } else {
-            seenKeys[key] = true;
-          }
-        }
       }
     }
 
@@ -5938,8 +5186,6 @@ var psd = (function () {
         }
       }
     }
-
-    var hydrationBailed = false;
     // list of modules that can skip create hook during hydration because they
     // are already rendered on the client or has no need for initialization
     // Note: style is excluded because it relies on initial clone for future
@@ -5959,12 +5205,6 @@ var psd = (function () {
         vnode.isAsyncPlaceholder = true;
         return true
       }
-      // assert node match
-      {
-        if (!assertNodeMatch(elm, vnode, inVPre)) {
-          return false
-        }
-      }
       if (isDef(data)) {
         if (isDef(i = data.hook) && isDef(i = i.init)) { i(vnode, true /* hydrating */); }
         if (isDef(i = vnode.componentInstance)) {
@@ -5982,15 +5222,6 @@ var psd = (function () {
             // v-html and domProps: innerHTML
             if (isDef(i = data) && isDef(i = i.domProps) && isDef(i = i.innerHTML)) {
               if (i !== elm.innerHTML) {
-                /* istanbul ignore if */
-                if (typeof console !== 'undefined' &&
-                  !hydrationBailed
-                ) {
-                  hydrationBailed = true;
-                  console.warn('Parent: ', elm);
-                  console.warn('server innerHTML: ', i);
-                  console.warn('client innerHTML: ', elm.innerHTML);
-                }
                 return false
               }
             } else {
@@ -6007,14 +5238,6 @@ var psd = (function () {
               // if childNode is not null, it means the actual childNodes list is
               // longer than the virtual children list.
               if (!childrenMatch || childNode) {
-                /* istanbul ignore if */
-                if (typeof console !== 'undefined' &&
-                  !hydrationBailed
-                ) {
-                  hydrationBailed = true;
-                  console.warn('Parent: ', elm);
-                  console.warn('Mismatching childNodes vs. VNodes: ', elm.childNodes, children);
-                }
                 return false
               }
             }
@@ -6038,17 +5261,6 @@ var psd = (function () {
         elm.data = vnode.text;
       }
       return true
-    }
-
-    function assertNodeMatch (node, vnode, inVPre) {
-      if (isDef(vnode.tag)) {
-        return vnode.tag.indexOf('vue-component') === 0 || (
-          !isUnknownElement$$1(vnode, inVPre) &&
-          vnode.tag.toLowerCase() === (node.tagName && node.tagName.toLowerCase())
-        )
-      } else {
-        return node.nodeType === (vnode.isComment ? 8 : 3)
-      }
     }
 
     return function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
@@ -6082,14 +5294,6 @@ var psd = (function () {
               if (hydrate(oldVnode, vnode, insertedVnodeQueue)) {
                 invokeInsertHook(vnode, insertedVnodeQueue, true);
                 return oldVnode
-              } else {
-                warn(
-                  'The client-side rendered virtual DOM tree is not matching ' +
-                  'server-rendered content. This is likely caused by incorrect ' +
-                  'HTML markup, for example nesting block-level elements inside ' +
-                  '<p>, or missing <tbody>. Bailing hydration and performing ' +
-                  'full client-side render.'
-                );
               }
             }
             // either not server-rendered, or hydration failed.
@@ -7126,10 +6330,6 @@ var psd = (function () {
         : duration
     );
 
-    if (explicitEnterDuration != null) {
-      checkDuration(explicitEnterDuration, 'enter', vnode);
-    }
-
     var expectsCSS = css !== false && !isIE9;
     var userWantsControl = getHookArgumentsLength(enterHook);
 
@@ -7234,10 +6434,6 @@ var psd = (function () {
         : duration
     );
 
-    if (isDef(explicitLeaveDuration)) {
-      checkDuration(explicitLeaveDuration, 'leave', vnode);
-    }
-
     var cb = el._leaveCb = once(function () {
       if (el.parentNode && el.parentNode._pending) {
         el.parentNode._pending[vnode.key] = null;
@@ -7295,23 +6491,6 @@ var psd = (function () {
       if (!expectsCSS && !userWantsControl) {
         cb();
       }
-    }
-  }
-
-  // only used in dev mode
-  function checkDuration (val, name, vnode) {
-    if (typeof val !== 'number') {
-      warn(
-        "<transition> explicit " + name + " duration is not a valid number - " +
-        "got " + (JSON.stringify(val)) + ".",
-        vnode.context
-      );
-    } else if (isNaN(val)) {
-      warn(
-        "<transition> explicit " + name + " duration is NaN - " +
-        'the duration expression might be incorrect.',
-        vnode.context
-      );
     }
   }
 
@@ -7461,11 +6640,6 @@ var psd = (function () {
     var value = binding.value;
     var isMultiple = el.multiple;
     if (isMultiple && !Array.isArray(value)) {
-      warn(
-        "<select multiple v-model=\"" + (binding.expression) + "\"> " +
-        "expects an Array value for its binding, but got " + (Object.prototype.toString.call(value).slice(8, -1)),
-        vm
-      );
       return
     }
     var selected, option;
@@ -7676,25 +6850,7 @@ var psd = (function () {
         return
       }
 
-      // warn multiple elements
-      if (children.length > 1) {
-        warn(
-          '<transition> can only be used on a single element. Use ' +
-          '<transition-group> for lists.',
-          this.$parent
-        );
-      }
-
       var mode = this.mode;
-
-      // warn invalid mode
-      if (mode && mode !== 'in-out' && mode !== 'out-in'
-      ) {
-        warn(
-          'invalid <transition> mode: ' + mode,
-          this.$parent
-        );
-      }
 
       var rawChild = children[0];
 
@@ -7812,10 +6968,6 @@ var psd = (function () {
             children.push(c);
             map[c.key] = c
             ;(c.data || (c.data = {})).transition = transitionData;
-          } else {
-            var opts = c.componentOptions;
-            var name = opts ? (opts.Ctor.options.name || opts.tag || '') : c.tag;
-            warn(("<transition-group> children must be keyed: <" + name + ">"));
           }
         }
       }
@@ -7980,32 +7132,1376 @@ var psd = (function () {
       if (config.devtools) {
         if (devtools) {
           devtools.emit('init', Vue);
-        } else if (
-          isChrome
-        ) {
-          console[console.info ? 'info' : 'log'](
-            'Download the Vue Devtools extension for a better development experience:\n' +
-            'https://github.com/vuejs/vue-devtools'
-          );
         }
-      }
-      if (config.productionTip !== false &&
-        typeof console !== 'undefined'
-      ) {
-        console[console.info ? 'info' : 'log'](
-          "You are running Vue in development mode.\n" +
-          "Make sure to turn on production mode when deploying for production.\n" +
-          "See more tips at https://vuejs.org/guide/deployment.html"
-        );
       }
     }, 0);
   }
 
-  //
-  //
-  //
-  //
+  var _isObject = function (it) {
+    return typeof it === 'object' ? it !== null : typeof it === 'function';
+  };
 
+  var _anObject = function (it) {
+    if (!_isObject(it)) throw TypeError(it + ' is not an object!');
+    return it;
+  };
+
+  var _fails = function (exec) {
+    try {
+      return !!exec();
+    } catch (e) {
+      return true;
+    }
+  };
+
+  var _descriptors = !_fails(function () {
+    return Object.defineProperty({}, 'a', {
+      get: function () {
+        return 7;
+      }
+    }).a != 7;
+  });
+
+  function createCommonjsModule(fn, module) {
+  	return module = { exports: {} }, fn(module, module.exports), module.exports;
+  }
+
+  var _global = createCommonjsModule(function (module) {
+    // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+    var global = module.exports = typeof window != 'undefined' && window.Math == Math ? window : typeof self != 'undefined' && self.Math == Math ? self // eslint-disable-next-line no-new-func
+    : Function('return this')();
+    if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
+  });
+
+  var document$1 = _global.document; // typeof document.createElement is 'object' in old IE
+
+  var is = _isObject(document$1) && _isObject(document$1.createElement);
+
+  var _domCreate = function (it) {
+    return is ? document$1.createElement(it) : {};
+  };
+
+  var _ie8DomDefine = !_descriptors && !_fails(function () {
+    return Object.defineProperty(_domCreate('div'), 'a', {
+      get: function () {
+        return 7;
+      }
+    }).a != 7;
+  });
+
+  // instead of the ES6 spec version, we didn't implement @@toPrimitive case
+  // and the second argument - flag - preferred type is a string
+
+  var _toPrimitive = function (it, S) {
+    if (!_isObject(it)) return it;
+    var fn, val;
+    if (S && typeof (fn = it.toString) == 'function' && !_isObject(val = fn.call(it))) return val;
+    if (typeof (fn = it.valueOf) == 'function' && !_isObject(val = fn.call(it))) return val;
+    if (!S && typeof (fn = it.toString) == 'function' && !_isObject(val = fn.call(it))) return val;
+    throw TypeError("Can't convert object to primitive value");
+  };
+
+  var dP = Object.defineProperty;
+  var f = _descriptors ? Object.defineProperty : function defineProperty(O, P, Attributes) {
+    _anObject(O);
+    P = _toPrimitive(P, true);
+    _anObject(Attributes);
+    if (_ie8DomDefine) try {
+      return dP(O, P, Attributes);
+    } catch (e) {
+      /* empty */
+    }
+    if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
+    if ('value' in Attributes) O[P] = Attributes.value;
+    return O;
+  };
+  var _objectDp = {
+    f: f
+  };
+
+  var dP$1 = _objectDp.f;
+  var FProto = Function.prototype;
+  var nameRE = /^\s*function ([^ (]*)/;
+  var NAME = 'name'; // 19.2.4.2 name
+
+  NAME in FProto || _descriptors && dP$1(FProto, NAME, {
+    configurable: true,
+    get: function () {
+      try {
+        return ('' + this).match(nameRE)[1];
+      } catch (e) {
+        return '';
+      }
+    }
+  });
+
+  var _core = createCommonjsModule(function (module) {
+    var core = module.exports = {
+      version: '2.5.7'
+    };
+    if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+  });
+  var _core_1 = _core.version;
+
+  var _propertyDesc = function (bitmap, value) {
+    return {
+      enumerable: !(bitmap & 1),
+      configurable: !(bitmap & 2),
+      writable: !(bitmap & 4),
+      value: value
+    };
+  };
+
+  var _hide = _descriptors ? function (object, key, value) {
+    return _objectDp.f(object, key, _propertyDesc(1, value));
+  } : function (object, key, value) {
+    object[key] = value;
+    return object;
+  };
+
+  var hasOwnProperty$1 = {}.hasOwnProperty;
+
+  var _has = function (it, key) {
+    return hasOwnProperty$1.call(it, key);
+  };
+
+  var id = 0;
+  var px = Math.random();
+
+  var _uid = function (key) {
+    return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
+  };
+
+  var _redefine = createCommonjsModule(function (module) {
+    var SRC = _uid('src');
+    var TO_STRING = 'toString';
+    var $toString = Function[TO_STRING];
+    var TPL = ('' + $toString).split(TO_STRING);
+
+    _core.inspectSource = function (it) {
+      return $toString.call(it);
+    };
+
+    (module.exports = function (O, key, val, safe) {
+      var isFunction = typeof val == 'function';
+      if (isFunction) _has(val, 'name') || _hide(val, 'name', key);
+      if (O[key] === val) return;
+      if (isFunction) _has(val, SRC) || _hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key)));
+
+      if (O === _global) {
+        O[key] = val;
+      } else if (!safe) {
+        delete O[key];
+        _hide(O, key, val);
+      } else if (O[key]) {
+        O[key] = val;
+      } else {
+        _hide(O, key, val);
+      } // add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
+
+    })(Function.prototype, TO_STRING, function toString() {
+      return typeof this == 'function' && this[SRC] || $toString.call(this);
+    });
+  });
+
+  var _aFunction = function (it) {
+    if (typeof it != 'function') throw TypeError(it + ' is not a function!');
+    return it;
+  };
+
+  var _ctx = function (fn, that, length) {
+    _aFunction(fn);
+    if (that === undefined) return fn;
+
+    switch (length) {
+      case 1:
+        return function (a) {
+          return fn.call(that, a);
+        };
+
+      case 2:
+        return function (a, b) {
+          return fn.call(that, a, b);
+        };
+
+      case 3:
+        return function (a, b, c) {
+          return fn.call(that, a, b, c);
+        };
+    }
+
+    return function ()
+    /* ...args */
+    {
+      return fn.apply(that, arguments);
+    };
+  };
+
+  var PROTOTYPE = 'prototype';
+
+  var $export = function (type, name, source) {
+    var IS_FORCED = type & $export.F;
+    var IS_GLOBAL = type & $export.G;
+    var IS_STATIC = type & $export.S;
+    var IS_PROTO = type & $export.P;
+    var IS_BIND = type & $export.B;
+    var target = IS_GLOBAL ? _global : IS_STATIC ? _global[name] || (_global[name] = {}) : (_global[name] || {})[PROTOTYPE];
+    var exports = IS_GLOBAL ? _core : _core[name] || (_core[name] = {});
+    var expProto = exports[PROTOTYPE] || (exports[PROTOTYPE] = {});
+    var key, own, out, exp;
+    if (IS_GLOBAL) source = name;
+
+    for (key in source) {
+      // contains in native
+      own = !IS_FORCED && target && target[key] !== undefined; // export native or passed
+
+      out = (own ? target : source)[key]; // bind timers to global for call from export context
+
+      exp = IS_BIND && own ? _ctx(out, _global) : IS_PROTO && typeof out == 'function' ? _ctx(Function.call, out) : out; // extend global
+
+      if (target) _redefine(target, key, out, type & $export.U); // export
+
+      if (exports[key] != out) _hide(exports, key, exp);
+      if (IS_PROTO && expProto[key] != out) expProto[key] = out;
+    }
+  };
+
+  _global.core = _core; // type bitmap
+
+  $export.F = 1; // forced
+
+  $export.G = 2; // global
+
+  $export.S = 4; // static
+
+  $export.P = 8; // proto
+
+  $export.B = 16; // bind
+
+  $export.W = 32; // wrap
+
+  $export.U = 64; // safe
+
+  $export.R = 128; // real proto method for `library`
+
+  var _export = $export;
+
+  var toString$1 = {}.toString;
+
+  var _cof = function (it) {
+    return toString$1.call(it).slice(8, -1);
+  };
+
+  // eslint-disable-next-line no-prototype-builtins
+
+  var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
+    return _cof(it) == 'String' ? it.split('') : Object(it);
+  };
+
+  // 7.2.1 RequireObjectCoercible(argument)
+  var _defined = function (it) {
+    if (it == undefined) throw TypeError("Can't call method on  " + it);
+    return it;
+  };
+
+  var _toObject = function (it) {
+    return Object(_defined(it));
+  };
+
+  // 7.1.4 ToInteger
+  var ceil = Math.ceil;
+  var floor = Math.floor;
+
+  var _toInteger = function (it) {
+    return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
+  };
+
+  var min = Math.min;
+
+  var _toLength = function (it) {
+    return it > 0 ? min(_toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
+  };
+
+  var _isArray = Array.isArray || function isArray(arg) {
+    return _cof(arg) == 'Array';
+  };
+
+  var _library = false;
+
+  var _shared = createCommonjsModule(function (module) {
+    var SHARED = '__core-js_shared__';
+    var store = _global[SHARED] || (_global[SHARED] = {});
+    (module.exports = function (key, value) {
+      return store[key] || (store[key] = value !== undefined ? value : {});
+    })('versions', []).push({
+      version: _core.version,
+      mode: 'global',
+      copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
+    });
+  });
+
+  var _wks = createCommonjsModule(function (module) {
+    var store = _shared('wks');
+    var Symbol = _global.Symbol;
+    var USE_SYMBOL = typeof Symbol == 'function';
+
+    var $exports = module.exports = function (name) {
+      return store[name] || (store[name] = USE_SYMBOL && Symbol[name] || (USE_SYMBOL ? Symbol : _uid)('Symbol.' + name));
+    };
+
+    $exports.store = store;
+  });
+
+  var SPECIES = _wks('species');
+
+  var _arraySpeciesConstructor = function (original) {
+    var C;
+
+    if (_isArray(original)) {
+      C = original.constructor; // cross-realm fallback
+
+      if (typeof C == 'function' && (C === Array || _isArray(C.prototype))) C = undefined;
+
+      if (_isObject(C)) {
+        C = C[SPECIES];
+        if (C === null) C = undefined;
+      }
+    }
+
+    return C === undefined ? Array : C;
+  };
+
+  var _arraySpeciesCreate = function (original, length) {
+    return new (_arraySpeciesConstructor(original))(length);
+  };
+
+  // 1 -> Array#map
+  // 2 -> Array#filter
+  // 3 -> Array#some
+  // 4 -> Array#every
+  // 5 -> Array#find
+  // 6 -> Array#findIndex
+
+  var _arrayMethods = function (TYPE, $create) {
+    var IS_MAP = TYPE == 1;
+    var IS_FILTER = TYPE == 2;
+    var IS_SOME = TYPE == 3;
+    var IS_EVERY = TYPE == 4;
+    var IS_FIND_INDEX = TYPE == 6;
+    var NO_HOLES = TYPE == 5 || IS_FIND_INDEX;
+    var create = $create || _arraySpeciesCreate;
+    return function ($this, callbackfn, that) {
+      var O = _toObject($this);
+      var self = _iobject(O);
+      var f = _ctx(callbackfn, that, 3);
+      var length = _toLength(self.length);
+      var index = 0;
+      var result = IS_MAP ? create($this, length) : IS_FILTER ? create($this, 0) : undefined;
+      var val, res;
+
+      for (; length > index; index++) if (NO_HOLES || index in self) {
+        val = self[index];
+        res = f(val, index, O);
+
+        if (TYPE) {
+          if (IS_MAP) result[index] = res; // map
+          else if (res) switch (TYPE) {
+              case 3:
+                return true;
+              // some
+
+              case 5:
+                return val;
+              // find
+
+              case 6:
+                return index;
+              // findIndex
+
+              case 2:
+                result.push(val);
+              // filter
+            } else if (IS_EVERY) return false; // every
+        }
+      }
+
+      return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
+    };
+  };
+
+  var _strictMethod = function (method, arg) {
+    return !!method && _fails(function () {
+      // eslint-disable-next-line no-useless-call
+      arg ? method.call(null, function () {
+        /* empty */
+      }, 1) : method.call(null);
+    });
+  };
+
+  var $map = _arrayMethods(1);
+  _export(_export.P + _export.F * !_strictMethod([].map, true), 'Array', {
+    // 22.1.3.15 / 15.4.4.19 Array.prototype.map(callbackfn [, thisArg])
+    map: function map(callbackfn
+    /* , thisArg */
+    ) {
+      return $map(this, callbackfn, arguments[1]);
+    }
+  });
+
+  var runtime = createCommonjsModule(function (module) {
+  /**
+   * Copyright (c) 2014-present, Facebook, Inc.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+  !(function(global) {
+
+    var Op = Object.prototype;
+    var hasOwn = Op.hasOwnProperty;
+    var undefined; // More compressible than void 0.
+    var $Symbol = typeof Symbol === "function" ? Symbol : {};
+    var iteratorSymbol = $Symbol.iterator || "@@iterator";
+    var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+    var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+    var runtime = global.regeneratorRuntime;
+    if (runtime) {
+      {
+        // If regeneratorRuntime is defined globally and we're in a module,
+        // make the exports object identical to regeneratorRuntime.
+        module.exports = runtime;
+      }
+      // Don't bother evaluating the rest of this file if the runtime was
+      // already defined globally.
+      return;
+    }
+
+    // Define the runtime globally (as expected by generated code) as either
+    // module.exports (if we're in a module) or a new, empty object.
+    runtime = global.regeneratorRuntime = module.exports;
+
+    function wrap(innerFn, outerFn, self, tryLocsList) {
+      // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+      var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+      var generator = Object.create(protoGenerator.prototype);
+      var context = new Context(tryLocsList || []);
+
+      // The ._invoke method unifies the implementations of the .next,
+      // .throw, and .return methods.
+      generator._invoke = makeInvokeMethod(innerFn, self, context);
+
+      return generator;
+    }
+    runtime.wrap = wrap;
+
+    // Try/catch helper to minimize deoptimizations. Returns a completion
+    // record like context.tryEntries[i].completion. This interface could
+    // have been (and was previously) designed to take a closure to be
+    // invoked without arguments, but in all the cases we care about we
+    // already have an existing method we want to call, so there's no need
+    // to create a new function object. We can even get away with assuming
+    // the method takes exactly one argument, since that happens to be true
+    // in every case, so we don't have to touch the arguments object. The
+    // only additional allocation required is the completion record, which
+    // has a stable shape and so hopefully should be cheap to allocate.
+    function tryCatch(fn, obj, arg) {
+      try {
+        return { type: "normal", arg: fn.call(obj, arg) };
+      } catch (err) {
+        return { type: "throw", arg: err };
+      }
+    }
+
+    var GenStateSuspendedStart = "suspendedStart";
+    var GenStateSuspendedYield = "suspendedYield";
+    var GenStateExecuting = "executing";
+    var GenStateCompleted = "completed";
+
+    // Returning this object from the innerFn has the same effect as
+    // breaking out of the dispatch switch statement.
+    var ContinueSentinel = {};
+
+    // Dummy constructor functions that we use as the .constructor and
+    // .constructor.prototype properties for functions that return Generator
+    // objects. For full spec compliance, you may wish to configure your
+    // minifier not to mangle the names of these two functions.
+    function Generator() {}
+    function GeneratorFunction() {}
+    function GeneratorFunctionPrototype() {}
+
+    // This is a polyfill for %IteratorPrototype% for environments that
+    // don't natively support it.
+    var IteratorPrototype = {};
+    IteratorPrototype[iteratorSymbol] = function () {
+      return this;
+    };
+
+    var getProto = Object.getPrototypeOf;
+    var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+    if (NativeIteratorPrototype &&
+        NativeIteratorPrototype !== Op &&
+        hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+      // This environment has a native %IteratorPrototype%; use it instead
+      // of the polyfill.
+      IteratorPrototype = NativeIteratorPrototype;
+    }
+
+    var Gp = GeneratorFunctionPrototype.prototype =
+      Generator.prototype = Object.create(IteratorPrototype);
+    GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+    GeneratorFunctionPrototype.constructor = GeneratorFunction;
+    GeneratorFunctionPrototype[toStringTagSymbol] =
+      GeneratorFunction.displayName = "GeneratorFunction";
+
+    // Helper for defining the .next, .throw, and .return methods of the
+    // Iterator interface in terms of a single ._invoke method.
+    function defineIteratorMethods(prototype) {
+      ["next", "throw", "return"].forEach(function(method) {
+        prototype[method] = function(arg) {
+          return this._invoke(method, arg);
+        };
+      });
+    }
+
+    runtime.isGeneratorFunction = function(genFun) {
+      var ctor = typeof genFun === "function" && genFun.constructor;
+      return ctor
+        ? ctor === GeneratorFunction ||
+          // For the native GeneratorFunction constructor, the best we can
+          // do is to check its .name property.
+          (ctor.displayName || ctor.name) === "GeneratorFunction"
+        : false;
+    };
+
+    runtime.mark = function(genFun) {
+      if (Object.setPrototypeOf) {
+        Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+      } else {
+        genFun.__proto__ = GeneratorFunctionPrototype;
+        if (!(toStringTagSymbol in genFun)) {
+          genFun[toStringTagSymbol] = "GeneratorFunction";
+        }
+      }
+      genFun.prototype = Object.create(Gp);
+      return genFun;
+    };
+
+    // Within the body of any async function, `await x` is transformed to
+    // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+    // `hasOwn.call(value, "__await")` to determine if the yielded value is
+    // meant to be awaited.
+    runtime.awrap = function(arg) {
+      return { __await: arg };
+    };
+
+    function AsyncIterator(generator) {
+      function invoke(method, arg, resolve, reject) {
+        var record = tryCatch(generator[method], generator, arg);
+        if (record.type === "throw") {
+          reject(record.arg);
+        } else {
+          var result = record.arg;
+          var value = result.value;
+          if (value &&
+              typeof value === "object" &&
+              hasOwn.call(value, "__await")) {
+            return Promise.resolve(value.__await).then(function(value) {
+              invoke("next", value, resolve, reject);
+            }, function(err) {
+              invoke("throw", err, resolve, reject);
+            });
+          }
+
+          return Promise.resolve(value).then(function(unwrapped) {
+            // When a yielded Promise is resolved, its final value becomes
+            // the .value of the Promise<{value,done}> result for the
+            // current iteration.
+            result.value = unwrapped;
+            resolve(result);
+          }, function(error) {
+            // If a rejected Promise was yielded, throw the rejection back
+            // into the async generator function so it can be handled there.
+            return invoke("throw", error, resolve, reject);
+          });
+        }
+      }
+
+      var previousPromise;
+
+      function enqueue(method, arg) {
+        function callInvokeWithMethodAndArg() {
+          return new Promise(function(resolve, reject) {
+            invoke(method, arg, resolve, reject);
+          });
+        }
+
+        return previousPromise =
+          // If enqueue has been called before, then we want to wait until
+          // all previous Promises have been resolved before calling invoke,
+          // so that results are always delivered in the correct order. If
+          // enqueue has not been called before, then it is important to
+          // call invoke immediately, without waiting on a callback to fire,
+          // so that the async generator function has the opportunity to do
+          // any necessary setup in a predictable way. This predictability
+          // is why the Promise constructor synchronously invokes its
+          // executor callback, and why async functions synchronously
+          // execute code before the first await. Since we implement simple
+          // async functions in terms of async generators, it is especially
+          // important to get this right, even though it requires care.
+          previousPromise ? previousPromise.then(
+            callInvokeWithMethodAndArg,
+            // Avoid propagating failures to Promises returned by later
+            // invocations of the iterator.
+            callInvokeWithMethodAndArg
+          ) : callInvokeWithMethodAndArg();
+      }
+
+      // Define the unified helper method that is used to implement .next,
+      // .throw, and .return (see defineIteratorMethods).
+      this._invoke = enqueue;
+    }
+
+    defineIteratorMethods(AsyncIterator.prototype);
+    AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+      return this;
+    };
+    runtime.AsyncIterator = AsyncIterator;
+
+    // Note that simple async functions are implemented on top of
+    // AsyncIterator objects; they just return a Promise for the value of
+    // the final result produced by the iterator.
+    runtime.async = function(innerFn, outerFn, self, tryLocsList) {
+      var iter = new AsyncIterator(
+        wrap(innerFn, outerFn, self, tryLocsList)
+      );
+
+      return runtime.isGeneratorFunction(outerFn)
+        ? iter // If outerFn is a generator, return the full iterator.
+        : iter.next().then(function(result) {
+            return result.done ? result.value : iter.next();
+          });
+    };
+
+    function makeInvokeMethod(innerFn, self, context) {
+      var state = GenStateSuspendedStart;
+
+      return function invoke(method, arg) {
+        if (state === GenStateExecuting) {
+          throw new Error("Generator is already running");
+        }
+
+        if (state === GenStateCompleted) {
+          if (method === "throw") {
+            throw arg;
+          }
+
+          // Be forgiving, per 25.3.3.3.3 of the spec:
+          // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+          return doneResult();
+        }
+
+        context.method = method;
+        context.arg = arg;
+
+        while (true) {
+          var delegate = context.delegate;
+          if (delegate) {
+            var delegateResult = maybeInvokeDelegate(delegate, context);
+            if (delegateResult) {
+              if (delegateResult === ContinueSentinel) continue;
+              return delegateResult;
+            }
+          }
+
+          if (context.method === "next") {
+            // Setting context._sent for legacy support of Babel's
+            // function.sent implementation.
+            context.sent = context._sent = context.arg;
+
+          } else if (context.method === "throw") {
+            if (state === GenStateSuspendedStart) {
+              state = GenStateCompleted;
+              throw context.arg;
+            }
+
+            context.dispatchException(context.arg);
+
+          } else if (context.method === "return") {
+            context.abrupt("return", context.arg);
+          }
+
+          state = GenStateExecuting;
+
+          var record = tryCatch(innerFn, self, context);
+          if (record.type === "normal") {
+            // If an exception is thrown from innerFn, we leave state ===
+            // GenStateExecuting and loop back for another invocation.
+            state = context.done
+              ? GenStateCompleted
+              : GenStateSuspendedYield;
+
+            if (record.arg === ContinueSentinel) {
+              continue;
+            }
+
+            return {
+              value: record.arg,
+              done: context.done
+            };
+
+          } else if (record.type === "throw") {
+            state = GenStateCompleted;
+            // Dispatch the exception by looping back around to the
+            // context.dispatchException(context.arg) call above.
+            context.method = "throw";
+            context.arg = record.arg;
+          }
+        }
+      };
+    }
+
+    // Call delegate.iterator[context.method](context.arg) and handle the
+    // result, either by returning a { value, done } result from the
+    // delegate iterator, or by modifying context.method and context.arg,
+    // setting context.delegate to null, and returning the ContinueSentinel.
+    function maybeInvokeDelegate(delegate, context) {
+      var method = delegate.iterator[context.method];
+      if (method === undefined) {
+        // A .throw or .return when the delegate iterator has no .throw
+        // method always terminates the yield* loop.
+        context.delegate = null;
+
+        if (context.method === "throw") {
+          if (delegate.iterator.return) {
+            // If the delegate iterator has a return method, give it a
+            // chance to clean up.
+            context.method = "return";
+            context.arg = undefined;
+            maybeInvokeDelegate(delegate, context);
+
+            if (context.method === "throw") {
+              // If maybeInvokeDelegate(context) changed context.method from
+              // "return" to "throw", let that override the TypeError below.
+              return ContinueSentinel;
+            }
+          }
+
+          context.method = "throw";
+          context.arg = new TypeError(
+            "The iterator does not provide a 'throw' method");
+        }
+
+        return ContinueSentinel;
+      }
+
+      var record = tryCatch(method, delegate.iterator, context.arg);
+
+      if (record.type === "throw") {
+        context.method = "throw";
+        context.arg = record.arg;
+        context.delegate = null;
+        return ContinueSentinel;
+      }
+
+      var info = record.arg;
+
+      if (! info) {
+        context.method = "throw";
+        context.arg = new TypeError("iterator result is not an object");
+        context.delegate = null;
+        return ContinueSentinel;
+      }
+
+      if (info.done) {
+        // Assign the result of the finished delegate to the temporary
+        // variable specified by delegate.resultName (see delegateYield).
+        context[delegate.resultName] = info.value;
+
+        // Resume execution at the desired location (see delegateYield).
+        context.next = delegate.nextLoc;
+
+        // If context.method was "throw" but the delegate handled the
+        // exception, let the outer generator proceed normally. If
+        // context.method was "next", forget context.arg since it has been
+        // "consumed" by the delegate iterator. If context.method was
+        // "return", allow the original .return call to continue in the
+        // outer generator.
+        if (context.method !== "return") {
+          context.method = "next";
+          context.arg = undefined;
+        }
+
+      } else {
+        // Re-yield the result returned by the delegate method.
+        return info;
+      }
+
+      // The delegate iterator is finished, so forget it and continue with
+      // the outer generator.
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    // Define Generator.prototype.{next,throw,return} in terms of the
+    // unified ._invoke helper method.
+    defineIteratorMethods(Gp);
+
+    Gp[toStringTagSymbol] = "Generator";
+
+    // A Generator should always return itself as the iterator object when the
+    // @@iterator function is called on it. Some browsers' implementations of the
+    // iterator prototype chain incorrectly implement this, causing the Generator
+    // object to not be returned from this call. This ensures that doesn't happen.
+    // See https://github.com/facebook/regenerator/issues/274 for more details.
+    Gp[iteratorSymbol] = function() {
+      return this;
+    };
+
+    Gp.toString = function() {
+      return "[object Generator]";
+    };
+
+    function pushTryEntry(locs) {
+      var entry = { tryLoc: locs[0] };
+
+      if (1 in locs) {
+        entry.catchLoc = locs[1];
+      }
+
+      if (2 in locs) {
+        entry.finallyLoc = locs[2];
+        entry.afterLoc = locs[3];
+      }
+
+      this.tryEntries.push(entry);
+    }
+
+    function resetTryEntry(entry) {
+      var record = entry.completion || {};
+      record.type = "normal";
+      delete record.arg;
+      entry.completion = record;
+    }
+
+    function Context(tryLocsList) {
+      // The root entry object (effectively a try statement without a catch
+      // or a finally block) gives us a place to store values thrown from
+      // locations where there is no enclosing try statement.
+      this.tryEntries = [{ tryLoc: "root" }];
+      tryLocsList.forEach(pushTryEntry, this);
+      this.reset(true);
+    }
+
+    runtime.keys = function(object) {
+      var keys = [];
+      for (var key in object) {
+        keys.push(key);
+      }
+      keys.reverse();
+
+      // Rather than returning an object with a next method, we keep
+      // things simple and return the next function itself.
+      return function next() {
+        while (keys.length) {
+          var key = keys.pop();
+          if (key in object) {
+            next.value = key;
+            next.done = false;
+            return next;
+          }
+        }
+
+        // To avoid creating an additional object, we just hang the .value
+        // and .done properties off the next function object itself. This
+        // also ensures that the minifier will not anonymize the function.
+        next.done = true;
+        return next;
+      };
+    };
+
+    function values(iterable) {
+      if (iterable) {
+        var iteratorMethod = iterable[iteratorSymbol];
+        if (iteratorMethod) {
+          return iteratorMethod.call(iterable);
+        }
+
+        if (typeof iterable.next === "function") {
+          return iterable;
+        }
+
+        if (!isNaN(iterable.length)) {
+          var i = -1, next = function next() {
+            while (++i < iterable.length) {
+              if (hasOwn.call(iterable, i)) {
+                next.value = iterable[i];
+                next.done = false;
+                return next;
+              }
+            }
+
+            next.value = undefined;
+            next.done = true;
+
+            return next;
+          };
+
+          return next.next = next;
+        }
+      }
+
+      // Return an iterator with no values.
+      return { next: doneResult };
+    }
+    runtime.values = values;
+
+    function doneResult() {
+      return { value: undefined, done: true };
+    }
+
+    Context.prototype = {
+      constructor: Context,
+
+      reset: function(skipTempReset) {
+        this.prev = 0;
+        this.next = 0;
+        // Resetting context._sent for legacy support of Babel's
+        // function.sent implementation.
+        this.sent = this._sent = undefined;
+        this.done = false;
+        this.delegate = null;
+
+        this.method = "next";
+        this.arg = undefined;
+
+        this.tryEntries.forEach(resetTryEntry);
+
+        if (!skipTempReset) {
+          for (var name in this) {
+            // Not sure about the optimal order of these conditions:
+            if (name.charAt(0) === "t" &&
+                hasOwn.call(this, name) &&
+                !isNaN(+name.slice(1))) {
+              this[name] = undefined;
+            }
+          }
+        }
+      },
+
+      stop: function() {
+        this.done = true;
+
+        var rootEntry = this.tryEntries[0];
+        var rootRecord = rootEntry.completion;
+        if (rootRecord.type === "throw") {
+          throw rootRecord.arg;
+        }
+
+        return this.rval;
+      },
+
+      dispatchException: function(exception) {
+        if (this.done) {
+          throw exception;
+        }
+
+        var context = this;
+        function handle(loc, caught) {
+          record.type = "throw";
+          record.arg = exception;
+          context.next = loc;
+
+          if (caught) {
+            // If the dispatched exception was caught by a catch block,
+            // then let that catch block handle the exception normally.
+            context.method = "next";
+            context.arg = undefined;
+          }
+
+          return !! caught;
+        }
+
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          var record = entry.completion;
+
+          if (entry.tryLoc === "root") {
+            // Exception thrown outside of any try block that could handle
+            // it, so set the completion value of the entire function to
+            // throw the exception.
+            return handle("end");
+          }
+
+          if (entry.tryLoc <= this.prev) {
+            var hasCatch = hasOwn.call(entry, "catchLoc");
+            var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+            if (hasCatch && hasFinally) {
+              if (this.prev < entry.catchLoc) {
+                return handle(entry.catchLoc, true);
+              } else if (this.prev < entry.finallyLoc) {
+                return handle(entry.finallyLoc);
+              }
+
+            } else if (hasCatch) {
+              if (this.prev < entry.catchLoc) {
+                return handle(entry.catchLoc, true);
+              }
+
+            } else if (hasFinally) {
+              if (this.prev < entry.finallyLoc) {
+                return handle(entry.finallyLoc);
+              }
+
+            } else {
+              throw new Error("try statement without catch or finally");
+            }
+          }
+        }
+      },
+
+      abrupt: function(type, arg) {
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          if (entry.tryLoc <= this.prev &&
+              hasOwn.call(entry, "finallyLoc") &&
+              this.prev < entry.finallyLoc) {
+            var finallyEntry = entry;
+            break;
+          }
+        }
+
+        if (finallyEntry &&
+            (type === "break" ||
+             type === "continue") &&
+            finallyEntry.tryLoc <= arg &&
+            arg <= finallyEntry.finallyLoc) {
+          // Ignore the finally entry if control is not jumping to a
+          // location outside the try/catch block.
+          finallyEntry = null;
+        }
+
+        var record = finallyEntry ? finallyEntry.completion : {};
+        record.type = type;
+        record.arg = arg;
+
+        if (finallyEntry) {
+          this.method = "next";
+          this.next = finallyEntry.finallyLoc;
+          return ContinueSentinel;
+        }
+
+        return this.complete(record);
+      },
+
+      complete: function(record, afterLoc) {
+        if (record.type === "throw") {
+          throw record.arg;
+        }
+
+        if (record.type === "break" ||
+            record.type === "continue") {
+          this.next = record.arg;
+        } else if (record.type === "return") {
+          this.rval = this.arg = record.arg;
+          this.method = "return";
+          this.next = "end";
+        } else if (record.type === "normal" && afterLoc) {
+          this.next = afterLoc;
+        }
+
+        return ContinueSentinel;
+      },
+
+      finish: function(finallyLoc) {
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          if (entry.finallyLoc === finallyLoc) {
+            this.complete(entry.completion, entry.afterLoc);
+            resetTryEntry(entry);
+            return ContinueSentinel;
+          }
+        }
+      },
+
+      "catch": function(tryLoc) {
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          if (entry.tryLoc === tryLoc) {
+            var record = entry.completion;
+            if (record.type === "throw") {
+              var thrown = record.arg;
+              resetTryEntry(entry);
+            }
+            return thrown;
+          }
+        }
+
+        // The context.catch method must only be called with a location
+        // argument that corresponds to a known catch block.
+        throw new Error("illegal catch attempt");
+      },
+
+      delegateYield: function(iterable, resultName, nextLoc) {
+        this.delegate = {
+          iterator: values(iterable),
+          resultName: resultName,
+          nextLoc: nextLoc
+        };
+
+        if (this.method === "next") {
+          // Deliberately forget the last sent value so that we don't
+          // accidentally pass it on to the delegate.
+          this.arg = undefined;
+        }
+
+        return ContinueSentinel;
+      }
+    };
+  })(
+    // In sloppy mode, unbound `this` refers to the global object, fallback to
+    // Function constructor if we're in global strict mode. That is sadly a form
+    // of indirect eval which violates Content Security Policy.
+    (function() {
+      return this || (typeof self === "object" && self);
+    })() || Function("return this")()
+  );
+  });
+
+  function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+    try {
+      var info = gen[key](arg);
+      var value = info.value;
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    if (info.done) {
+      resolve(value);
+    } else {
+      Promise.resolve(value).then(_next, _throw);
+    }
+  }
+
+  function _asyncToGenerator(fn) {
+    return function () {
+      var self = this,
+          args = arguments;
+      return new Promise(function (resolve, reject) {
+        var gen = fn.apply(self, args);
+
+        function _next(value) {
+          asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+        }
+
+        function _throw(err) {
+          asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+        }
+
+        _next(undefined);
+      });
+    };
+  }
+
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+
+  function _defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  function _createClass(Constructor, protoProps, staticProps) {
+    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) _defineProperties(Constructor, staticProps);
+    return Constructor;
+  }
+
+  var _toIobject = function (it) {
+    return _iobject(_defined(it));
+  };
+
+  var max = Math.max;
+  var min$1 = Math.min;
+
+  var _toAbsoluteIndex = function (index, length) {
+    index = _toInteger(index);
+    return index < 0 ? max(index + length, 0) : min$1(index, length);
+  };
+
+  // true  -> Array#includes
+
+  var _arrayIncludes = function (IS_INCLUDES) {
+    return function ($this, el, fromIndex) {
+      var O = _toIobject($this);
+      var length = _toLength(O.length);
+      var index = _toAbsoluteIndex(fromIndex, length);
+      var value; // Array#includes uses SameValueZero equality algorithm
+      // eslint-disable-next-line no-self-compare
+
+      if (IS_INCLUDES && el != el) while (length > index) {
+        value = O[index++]; // eslint-disable-next-line no-self-compare
+
+        if (value != value) return true; // Array#indexOf ignores holes, Array#includes - not
+      } else for (; length > index; index++) if (IS_INCLUDES || index in O) {
+        if (O[index] === el) return IS_INCLUDES || index || 0;
+      }
+      return !IS_INCLUDES && -1;
+    };
+  };
+
+  var shared = _shared('keys');
+
+  var _sharedKey = function (key) {
+    return shared[key] || (shared[key] = _uid(key));
+  };
+
+  var arrayIndexOf = _arrayIncludes(false);
+  var IE_PROTO = _sharedKey('IE_PROTO');
+
+  var _objectKeysInternal = function (object, names) {
+    var O = _toIobject(object);
+    var i = 0;
+    var result = [];
+    var key;
+
+    for (key in O) if (key != IE_PROTO) _has(O, key) && result.push(key); // Don't enum bug & hidden keys
+
+
+    while (names.length > i) if (_has(O, key = names[i++])) {
+      ~arrayIndexOf(result, key) || result.push(key);
+    }
+
+    return result;
+  };
+
+  // IE 8- don't enum bug keys
+  var _enumBugKeys = 'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'.split(',');
+
+  var _objectKeys = Object.keys || function keys(O) {
+    return _objectKeysInternal(O, _enumBugKeys);
+  };
+
+  var f$1 = Object.getOwnPropertySymbols;
+  var _objectGops = {
+    f: f$1
+  };
+
+  var f$2 = {}.propertyIsEnumerable;
+  var _objectPie = {
+    f: f$2
+  };
+
+  var $assign = Object.assign; // should work with symbols and should have deterministic property order (V8 bug)
+
+  var _objectAssign = !$assign || _fails(function () {
+    var A = {};
+    var B = {}; // eslint-disable-next-line no-undef
+
+    var S = Symbol();
+    var K = 'abcdefghijklmnopqrst';
+    A[S] = 7;
+    K.split('').forEach(function (k) {
+      B[k] = k;
+    });
+    return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
+  }) ? function assign(target, source) {
+    // eslint-disable-line no-unused-vars
+    var T = _toObject(target);
+    var aLen = arguments.length;
+    var index = 1;
+    var getSymbols = _objectGops.f;
+    var isEnum = _objectPie.f;
+
+    while (aLen > index) {
+      var S = _iobject(arguments[index++]);
+      var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
+      var length = keys.length;
+      var j = 0;
+      var key;
+
+      while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+    }
+
+    return T;
+  } : $assign;
+
+  _export(_export.S + _export.F, 'Object', {
+    assign: _objectAssign
+  });
+
+  var UNSCOPABLES = _wks('unscopables');
+  var ArrayProto = Array.prototype;
+  if (ArrayProto[UNSCOPABLES] == undefined) _hide(ArrayProto, UNSCOPABLES, {});
+
+  var _addToUnscopables = function (key) {
+    ArrayProto[UNSCOPABLES][key] = true;
+  };
+
+  var $includes = _arrayIncludes(true);
+  _export(_export.P, 'Array', {
+    includes: function includes(el
+    /* , fromIndex = 0 */
+    ) {
+      return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
+    }
+  });
+  _addToUnscopables('includes');
+
+  var MATCH = _wks('match');
+
+  var _isRegexp = function (it) {
+    var isRegExp;
+    return _isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : _cof(it) == 'RegExp');
+  };
+
+  var _stringContext = function (that, searchString, NAME) {
+    if (_isRegexp(searchString)) throw TypeError('String#' + NAME + " doesn't accept regex!");
+    return String(_defined(that));
+  };
+
+  var MATCH$1 = _wks('match');
+
+  var _failsIsRegexp = function (KEY) {
+    var re = /./;
+
+    try {
+      '/./'[KEY](re);
+    } catch (e) {
+      try {
+        re[MATCH$1] = false;
+        return !'/./'[KEY](re);
+      } catch (f) {
+        /* empty */
+      }
+    }
+
+    return true;
+  };
+
+  var INCLUDES = 'includes';
+  _export(_export.P + _export.F * _failsIsRegexp(INCLUDES), 'String', {
+    includes: function includes(searchString
+    /* , position = 0 */
+    ) {
+      return !!~_stringContext(this, searchString, INCLUDES).indexOf(searchString, arguments.length > 1 ? arguments[1] : undefined);
+    }
+  });
+
+  //
+  //
+  //
+  //
   var script = {
     props: {
       fieldtype: String,
@@ -8013,73 +8509,73 @@ var psd = (function () {
       label: String,
       options: String,
       get_query: Object,
-      onblur: Function,
+      onblur: Function
     },
     mounted: function mounted() {
-      var ref = this;
-      var fieldtype = ref.fieldtype;
-      var fieldname = ref.fieldname;
-      var label = ref.label;
-      var get_query = ref.get_query;
-      var options = ref.options;
-      var onblur = ref.onblur; if ( onblur === void 0 ) onblur = function () {};
+      var fieldtype = this.fieldtype,
+          fieldname = this.fieldname,
+          label = this.label,
+          get_query = this.get_query,
+          options = this.options,
+          _this$onblur = this.onblur,
+          onblur = _this$onblur === void 0 ? function () {} : _this$onblur;
       var field = frappe.ui.form.make_control({
         parent: this.$el,
-        df: { fieldtype: fieldtype, fieldname: fieldname, label: label, get_query: get_query, options: options },
+        df: {
+          fieldtype: fieldtype,
+          fieldname: fieldname,
+          label: label,
+          get_query: get_query,
+          options: options
+        }
       });
       field.refresh();
       field.$input.on('blur', function () {
         onblur(field.get_value());
       });
-      this.$once('hook:beforeDestroy', function() {
+      this.$once('hook:beforeDestroy', function () {
         field.$input.off('blur');
         field.$wrapper.remove();
       });
-      this.$watch('get_query', function(query) {
+      this.$watch('get_query', function (query) {
         field.get_query = query;
         field.set_custom_query({});
       });
-    },
+    }
   };
 
   /* script */
-              var __vue_script__ = script;
+              const __vue_script__ = script;
               
   /* template */
-  var __vue_render__ = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", { ref: "wrapper" })
-  };
+  var __vue_render__ = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{ref:"wrapper"})};
   var __vue_staticRenderFns__ = [];
-  __vue_render__._withStripped = true;
 
     /* style */
-    var __vue_inject_styles__ = undefined;
+    const __vue_inject_styles__ = undefined;
     /* scoped */
-    var __vue_scope_id__ = undefined;
+    const __vue_scope_id__ = undefined;
     /* module identifier */
-    var __vue_module_identifier__ = undefined;
+    const __vue_module_identifier__ = undefined;
     /* functional template */
-    var __vue_is_functional_template__ = false;
+    const __vue_is_functional_template__ = false;
     /* component normalizer */
     function __vue_normalize__(
       template, style, script$$1,
       scope, functional, moduleIdentifier,
       createInjector, createInjectorSSR
     ) {
-      var component = (typeof script$$1 === 'function' ? script$$1.options : script$$1) || {};
+      const component = (typeof script$$1 === 'function' ? script$$1.options : script$$1) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/Field.vue";
+      component.__file = "Field.vue";
 
       if (!component.render) {
         component.render = template.render;
         component.staticRenderFns = template.staticRenderFns;
         component._compiled = true;
 
-        if (functional) { component.functional = true; }
+        if (functional) component.functional = true;
       }
 
       component._scopeId = scope;
@@ -8105,61 +8601,44 @@ var psd = (function () {
 
   //
   var script$1 = {
-    components: { Field: Field },
-    props: ['fieldname', 'label', 'options', 'get_query', 'onchange'],
+    components: {
+      Field: Field
+    },
+    props: ['fieldname', 'label', 'options', 'get_query', 'onchange']
   };
 
   /* script */
-              var __vue_script__$1 = script$1;
+              const __vue_script__$1 = script$1;
               
   /* template */
-  var __vue_render__$1 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c(
-      "field",
-      _vm._b(
-        { attrs: { onblur: _vm.onchange, fieldtype: "Link" } },
-        "field",
-        {
-          fieldname: _vm.fieldname,
-          label: _vm.label,
-          options: _vm.options,
-          get_query: _vm.get_query
-        },
-        false
-      )
-    )
-  };
+  var __vue_render__$1 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('field',_vm._b({attrs:{"onblur":_vm.onchange,"fieldtype":'Link'}},'field',{ fieldname: _vm.fieldname, label: _vm.label, options: _vm.options, get_query: _vm.get_query },false))};
   var __vue_staticRenderFns__$1 = [];
-  __vue_render__$1._withStripped = true;
 
     /* style */
-    var __vue_inject_styles__$1 = undefined;
+    const __vue_inject_styles__$1 = undefined;
     /* scoped */
-    var __vue_scope_id__$1 = undefined;
+    const __vue_scope_id__$1 = undefined;
     /* module identifier */
-    var __vue_module_identifier__$1 = undefined;
+    const __vue_module_identifier__$1 = undefined;
     /* functional template */
-    var __vue_is_functional_template__$1 = false;
+    const __vue_is_functional_template__$1 = false;
     /* component normalizer */
     function __vue_normalize__$1(
       template, style, script,
       scope, functional, moduleIdentifier,
       createInjector, createInjectorSSR
     ) {
-      var component = (typeof script === 'function' ? script.options : script) || {};
+      const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/FieldLink.vue";
+      component.__file = "FieldLink.vue";
 
       if (!component.render) {
         component.render = template.render;
         component.staticRenderFns = template.staticRenderFns;
         component._compiled = true;
 
-        if (functional) { component.functional = true; }
+        if (functional) component.functional = true;
       }
 
       component._scopeId = scope;
@@ -8183,283 +8662,1056 @@ var psd = (function () {
       undefined
     );
 
-  //
+  var TAG = _wks('toStringTag'); // ES3 wrong here
 
-  var default_subscription_filter = { docstatus: 1 };
+  var ARG = _cof(function () {
+    return arguments;
+  }()) == 'Arguments'; // fallback for IE11 Script Access Denied error
+
+  var tryGet = function (it, key) {
+    try {
+      return it[key];
+    } catch (e) {
+      /* empty */
+    }
+  };
+
+  var _classof = function (it) {
+    var O, T, B;
+    return it === undefined ? 'Undefined' : it === null ? 'Null' // @@toStringTag case
+    : typeof (T = tryGet(O = Object(it), TAG)) == 'string' ? T // builtinTag case
+    : ARG ? _cof(O) // ES3 arguments fallback
+    : (B = _cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
+  };
+
+  var _anInstance = function (it, Constructor, name, forbiddenField) {
+    if (!(it instanceof Constructor) || forbiddenField !== undefined && forbiddenField in it) {
+      throw TypeError(name + ': incorrect invocation!');
+    }
+
+    return it;
+  };
+
+  var _iterCall = function (iterator, fn, value, entries) {
+    try {
+      return entries ? fn(_anObject(value)[0], value[1]) : fn(value); // 7.4.6 IteratorClose(iterator, completion)
+    } catch (e) {
+      var ret = iterator['return'];
+      if (ret !== undefined) _anObject(ret.call(iterator));
+      throw e;
+    }
+  };
+
+  var _iterators = {};
+
+  var ITERATOR = _wks('iterator');
+  var ArrayProto$1 = Array.prototype;
+
+  var _isArrayIter = function (it) {
+    return it !== undefined && (_iterators.Array === it || ArrayProto$1[ITERATOR] === it);
+  };
+
+  var ITERATOR$1 = _wks('iterator');
+
+  var core_getIteratorMethod = _core.getIteratorMethod = function (it) {
+    if (it != undefined) return it[ITERATOR$1] || it['@@iterator'] || _iterators[_classof(it)];
+  };
+
+  var _forOf = createCommonjsModule(function (module) {
+    var BREAK = {};
+    var RETURN = {};
+
+    var exports = module.exports = function (iterable, entries, fn, that, ITERATOR) {
+      var iterFn = ITERATOR ? function () {
+        return iterable;
+      } : core_getIteratorMethod(iterable);
+      var f = _ctx(fn, that, entries ? 2 : 1);
+      var index = 0;
+      var length, step, iterator, result;
+      if (typeof iterFn != 'function') throw TypeError(iterable + ' is not iterable!'); // fast case for arrays with default iterator
+
+      if (_isArrayIter(iterFn)) for (length = _toLength(iterable.length); length > index; index++) {
+        result = entries ? f(_anObject(step = iterable[index])[0], step[1]) : f(iterable[index]);
+        if (result === BREAK || result === RETURN) return result;
+      } else for (iterator = iterFn.call(iterable); !(step = iterator.next()).done;) {
+        result = _iterCall(iterator, f, step.value, entries);
+        if (result === BREAK || result === RETURN) return result;
+      }
+    };
+
+    exports.BREAK = BREAK;
+    exports.RETURN = RETURN;
+  });
+
+  var SPECIES$1 = _wks('species');
+
+  var _speciesConstructor = function (O, D) {
+    var C = _anObject(O).constructor;
+    var S;
+    return C === undefined || (S = _anObject(C)[SPECIES$1]) == undefined ? D : _aFunction(S);
+  };
+
+  // fast apply, http://jsperf.lnkit.com/fast-apply/5
+  var _invoke = function (fn, args, that) {
+    var un = that === undefined;
+
+    switch (args.length) {
+      case 0:
+        return un ? fn() : fn.call(that);
+
+      case 1:
+        return un ? fn(args[0]) : fn.call(that, args[0]);
+
+      case 2:
+        return un ? fn(args[0], args[1]) : fn.call(that, args[0], args[1]);
+
+      case 3:
+        return un ? fn(args[0], args[1], args[2]) : fn.call(that, args[0], args[1], args[2]);
+
+      case 4:
+        return un ? fn(args[0], args[1], args[2], args[3]) : fn.call(that, args[0], args[1], args[2], args[3]);
+    }
+
+    return fn.apply(that, args);
+  };
+
+  var document$2 = _global.document;
+
+  var _html = document$2 && document$2.documentElement;
+
+  var process = _global.process;
+  var setTask = _global.setImmediate;
+  var clearTask = _global.clearImmediate;
+  var MessageChannel$1 = _global.MessageChannel;
+  var Dispatch = _global.Dispatch;
+  var counter = 0;
+  var queue$1 = {};
+  var ONREADYSTATECHANGE = 'onreadystatechange';
+  var defer, channel$1, port$1;
+
+  var run = function () {
+    var id = +this; // eslint-disable-next-line no-prototype-builtins
+
+    if (queue$1.hasOwnProperty(id)) {
+      var fn = queue$1[id];
+      delete queue$1[id];
+      fn();
+    }
+  };
+
+  var listener = function (event) {
+    run.call(event.data);
+  }; // Node.js 0.9+ & IE10+ has setImmediate, otherwise:
+
+
+  if (!setTask || !clearTask) {
+    setTask = function setImmediate(fn) {
+      var args = [];
+      var i = 1;
+
+      while (arguments.length > i) args.push(arguments[i++]);
+
+      queue$1[++counter] = function () {
+        // eslint-disable-next-line no-new-func
+        _invoke(typeof fn == 'function' ? fn : Function(fn), args);
+      };
+
+      defer(counter);
+      return counter;
+    };
+
+    clearTask = function clearImmediate(id) {
+      delete queue$1[id];
+    }; // Node.js 0.8-
+
+
+    if (_cof(process) == 'process') {
+      defer = function (id) {
+        process.nextTick(_ctx(run, id, 1));
+      }; // Sphere (JS game engine) Dispatch API
+
+    } else if (Dispatch && Dispatch.now) {
+      defer = function (id) {
+        Dispatch.now(_ctx(run, id, 1));
+      }; // Browsers with MessageChannel, includes WebWorkers
+
+    } else if (MessageChannel$1) {
+      channel$1 = new MessageChannel$1();
+      port$1 = channel$1.port2;
+      channel$1.port1.onmessage = listener;
+      defer = _ctx(port$1.postMessage, port$1, 1); // Browsers with postMessage, skip WebWorkers
+      // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
+    } else if (_global.addEventListener && typeof postMessage == 'function' && !_global.importScripts) {
+      defer = function (id) {
+        _global.postMessage(id + '', '*');
+      };
+
+      _global.addEventListener('message', listener, false); // IE8-
+    } else if (ONREADYSTATECHANGE in _domCreate('script')) {
+      defer = function (id) {
+        _html.appendChild(_domCreate('script'))[ONREADYSTATECHANGE] = function () {
+          _html.removeChild(this);
+          run.call(id);
+        };
+      }; // Rest old browsers
+
+    } else {
+      defer = function (id) {
+        setTimeout(_ctx(run, id, 1), 0);
+      };
+    }
+  }
+
+  var _task = {
+    set: setTask,
+    clear: clearTask
+  };
+
+  var macrotask = _task.set;
+  var Observer$1 = _global.MutationObserver || _global.WebKitMutationObserver;
+  var process$1 = _global.process;
+  var Promise$1 = _global.Promise;
+  var isNode = _cof(process$1) == 'process';
+
+  var _microtask = function () {
+    var head, last, notify;
+
+    var flush = function () {
+      var parent, fn;
+      if (isNode && (parent = process$1.domain)) parent.exit();
+
+      while (head) {
+        fn = head.fn;
+        head = head.next;
+
+        try {
+          fn();
+        } catch (e) {
+          if (head) notify();else last = undefined;
+          throw e;
+        }
+      }
+
+      last = undefined;
+      if (parent) parent.enter();
+    }; // Node.js
+
+
+    if (isNode) {
+      notify = function () {
+        process$1.nextTick(flush);
+      }; // browsers with MutationObserver, except iOS Safari - https://github.com/zloirock/core-js/issues/339
+
+    } else if (Observer$1 && !(_global.navigator && _global.navigator.standalone)) {
+      var toggle = true;
+      var node = document.createTextNode('');
+      new Observer$1(flush).observe(node, {
+        characterData: true
+      }); // eslint-disable-line no-new
+
+      notify = function () {
+        node.data = toggle = !toggle;
+      }; // environments with maybe non-completely correct, but existent Promise
+
+    } else if (Promise$1 && Promise$1.resolve) {
+      // Promise.resolve without an argument throws an error in LG WebOS 2
+      var promise = Promise$1.resolve(undefined);
+
+      notify = function () {
+        promise.then(flush);
+      }; // for other environments - macrotask based on:
+      // - setImmediate
+      // - MessageChannel
+      // - window.postMessag
+      // - onreadystatechange
+      // - setTimeout
+
+    } else {
+      notify = function () {
+        // strange IE + webpack dev server bug - use .call(global)
+        macrotask.call(_global, flush);
+      };
+    }
+
+    return function (fn) {
+      var task = {
+        fn: fn,
+        next: undefined
+      };
+      if (last) last.next = task;
+
+      if (!head) {
+        head = task;
+        notify();
+      }
+
+      last = task;
+    };
+  };
+
+  function PromiseCapability(C) {
+    var resolve, reject;
+    this.promise = new C(function ($$resolve, $$reject) {
+      if (resolve !== undefined || reject !== undefined) throw TypeError('Bad Promise constructor');
+      resolve = $$resolve;
+      reject = $$reject;
+    });
+    this.resolve = _aFunction(resolve);
+    this.reject = _aFunction(reject);
+  }
+
+  var f$3 = function (C) {
+    return new PromiseCapability(C);
+  };
+
+  var _newPromiseCapability = {
+    f: f$3
+  };
+
+  var _perform = function (exec) {
+    try {
+      return {
+        e: false,
+        v: exec()
+      };
+    } catch (e) {
+      return {
+        e: true,
+        v: e
+      };
+    }
+  };
+
+  var navigator$1 = _global.navigator;
+
+  var _userAgent = navigator$1 && navigator$1.userAgent || '';
+
+  var _promiseResolve = function (C, x) {
+    _anObject(C);
+    if (_isObject(x) && x.constructor === C) return x;
+    var promiseCapability = _newPromiseCapability.f(C);
+    var resolve = promiseCapability.resolve;
+    resolve(x);
+    return promiseCapability.promise;
+  };
+
+  var _redefineAll = function (target, src, safe) {
+    for (var key in src) _redefine(target, key, src[key], safe);
+
+    return target;
+  };
+
+  var def$1 = _objectDp.f;
+  var TAG$1 = _wks('toStringTag');
+
+  var _setToStringTag = function (it, tag, stat) {
+    if (it && !_has(it = stat ? it : it.prototype, TAG$1)) def$1(it, TAG$1, {
+      configurable: true,
+      value: tag
+    });
+  };
+
+  var SPECIES$2 = _wks('species');
+
+  var _setSpecies = function (KEY) {
+    var C = _global[KEY];
+    if (_descriptors && C && !C[SPECIES$2]) _objectDp.f(C, SPECIES$2, {
+      configurable: true,
+      get: function () {
+        return this;
+      }
+    });
+  };
+
+  var ITERATOR$2 = _wks('iterator');
+  var SAFE_CLOSING = false;
+
+  try {
+    var riter = [7][ITERATOR$2]();
+
+    riter['return'] = function () {
+      SAFE_CLOSING = true;
+    }; // eslint-disable-next-line no-throw-literal
+  } catch (e) {
+    /* empty */
+  }
+
+  var _iterDetect = function (exec, skipClosing) {
+    if (!skipClosing && !SAFE_CLOSING) return false;
+    var safe = false;
+
+    try {
+      var arr = [7];
+      var iter = arr[ITERATOR$2]();
+
+      iter.next = function () {
+        return {
+          done: safe = true
+        };
+      };
+
+      arr[ITERATOR$2] = function () {
+        return iter;
+      };
+
+      exec(arr);
+    } catch (e) {
+      /* empty */
+    }
+
+    return safe;
+  };
+
+  var task = _task.set;
+  var microtask = _microtask();
+  var PROMISE = 'Promise';
+  var TypeError$1 = _global.TypeError;
+  var process$2 = _global.process;
+  var versions = process$2 && process$2.versions;
+  var v8 = versions && versions.v8 || '';
+  var $Promise = _global[PROMISE];
+  var isNode$1 = _classof(process$2) == 'process';
+
+  var empty = function () {
+    /* empty */
+  };
+
+  var Internal, newGenericPromiseCapability, OwnPromiseCapability, Wrapper;
+  var newPromiseCapability = newGenericPromiseCapability = _newPromiseCapability.f;
+  var USE_NATIVE = !!function () {
+    try {
+      // correct subclassing with @@species support
+      var promise = $Promise.resolve(1);
+
+      var FakePromise = (promise.constructor = {})[_wks('species')] = function (exec) {
+        exec(empty, empty);
+      }; // unhandled rejections tracking support, NodeJS Promise without it fails @@species test
+
+
+      return (isNode$1 || typeof PromiseRejectionEvent == 'function') && promise.then(empty) instanceof FakePromise // v8 6.6 (Node 10 and Chrome 66) have a bug with resolving custom thenables
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=830565
+      // we can't detect it synchronously, so just check versions
+      && v8.indexOf('6.6') !== 0 && _userAgent.indexOf('Chrome/66') === -1;
+    } catch (e) {
+      /* empty */
+    }
+  }(); // helpers
+
+  var isThenable = function (it) {
+    var then;
+    return _isObject(it) && typeof (then = it.then) == 'function' ? then : false;
+  };
+
+  var notify = function (promise, isReject) {
+    if (promise._n) return;
+    promise._n = true;
+    var chain = promise._c;
+    microtask(function () {
+      var value = promise._v;
+      var ok = promise._s == 1;
+      var i = 0;
+
+      var run = function (reaction) {
+        var handler = ok ? reaction.ok : reaction.fail;
+        var resolve = reaction.resolve;
+        var reject = reaction.reject;
+        var domain = reaction.domain;
+        var result, then, exited;
+
+        try {
+          if (handler) {
+            if (!ok) {
+              if (promise._h == 2) onHandleUnhandled(promise);
+              promise._h = 1;
+            }
+
+            if (handler === true) result = value;else {
+              if (domain) domain.enter();
+              result = handler(value); // may throw
+
+              if (domain) {
+                domain.exit();
+                exited = true;
+              }
+            }
+
+            if (result === reaction.promise) {
+              reject(TypeError$1('Promise-chain cycle'));
+            } else if (then = isThenable(result)) {
+              then.call(result, resolve, reject);
+            } else resolve(result);
+          } else reject(value);
+        } catch (e) {
+          if (domain && !exited) domain.exit();
+          reject(e);
+        }
+      };
+
+      while (chain.length > i) run(chain[i++]); // variable length - can't use forEach
+
+
+      promise._c = [];
+      promise._n = false;
+      if (isReject && !promise._h) onUnhandled(promise);
+    });
+  };
+
+  var onUnhandled = function (promise) {
+    task.call(_global, function () {
+      var value = promise._v;
+      var unhandled = isUnhandled(promise);
+      var result, handler, console;
+
+      if (unhandled) {
+        result = _perform(function () {
+          if (isNode$1) {
+            process$2.emit('unhandledRejection', value, promise);
+          } else if (handler = _global.onunhandledrejection) {
+            handler({
+              promise: promise,
+              reason: value
+            });
+          } else if ((console = _global.console) && console.error) {
+            console.error('Unhandled promise rejection', value);
+          }
+        }); // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
+
+        promise._h = isNode$1 || isUnhandled(promise) ? 2 : 1;
+      }
+
+      promise._a = undefined;
+      if (unhandled && result.e) throw result.v;
+    });
+  };
+
+  var isUnhandled = function (promise) {
+    return promise._h !== 1 && (promise._a || promise._c).length === 0;
+  };
+
+  var onHandleUnhandled = function (promise) {
+    task.call(_global, function () {
+      var handler;
+
+      if (isNode$1) {
+        process$2.emit('rejectionHandled', promise);
+      } else if (handler = _global.onrejectionhandled) {
+        handler({
+          promise: promise,
+          reason: promise._v
+        });
+      }
+    });
+  };
+
+  var $reject = function (value) {
+    var promise = this;
+    if (promise._d) return;
+    promise._d = true;
+    promise = promise._w || promise; // unwrap
+
+    promise._v = value;
+    promise._s = 2;
+    if (!promise._a) promise._a = promise._c.slice();
+    notify(promise, true);
+  };
+
+  var $resolve = function (value) {
+    var promise = this;
+    var then;
+    if (promise._d) return;
+    promise._d = true;
+    promise = promise._w || promise; // unwrap
+
+    try {
+      if (promise === value) throw TypeError$1("Promise can't be resolved itself");
+
+      if (then = isThenable(value)) {
+        microtask(function () {
+          var wrapper = {
+            _w: promise,
+            _d: false
+          }; // wrap
+
+          try {
+            then.call(value, _ctx($resolve, wrapper, 1), _ctx($reject, wrapper, 1));
+          } catch (e) {
+            $reject.call(wrapper, e);
+          }
+        });
+      } else {
+        promise._v = value;
+        promise._s = 1;
+        notify(promise, false);
+      }
+    } catch (e) {
+      $reject.call({
+        _w: promise,
+        _d: false
+      }, e); // wrap
+    }
+  }; // constructor polyfill
+
+
+  if (!USE_NATIVE) {
+    // 25.4.3.1 Promise(executor)
+    $Promise = function Promise(executor) {
+      _anInstance(this, $Promise, PROMISE, '_h');
+      _aFunction(executor);
+      Internal.call(this);
+
+      try {
+        executor(_ctx($resolve, this, 1), _ctx($reject, this, 1));
+      } catch (err) {
+        $reject.call(this, err);
+      }
+    }; // eslint-disable-next-line no-unused-vars
+
+
+    Internal = function Promise(executor) {
+      this._c = []; // <- awaiting reactions
+
+      this._a = undefined; // <- checked in isUnhandled reactions
+
+      this._s = 0; // <- state
+
+      this._d = false; // <- done
+
+      this._v = undefined; // <- value
+
+      this._h = 0; // <- rejection state, 0 - default, 1 - handled, 2 - unhandled
+
+      this._n = false; // <- notify
+    };
+
+    Internal.prototype = _redefineAll($Promise.prototype, {
+      // 25.4.5.3 Promise.prototype.then(onFulfilled, onRejected)
+      then: function then(onFulfilled, onRejected) {
+        var reaction = newPromiseCapability(_speciesConstructor(this, $Promise));
+        reaction.ok = typeof onFulfilled == 'function' ? onFulfilled : true;
+        reaction.fail = typeof onRejected == 'function' && onRejected;
+        reaction.domain = isNode$1 ? process$2.domain : undefined;
+
+        this._c.push(reaction);
+
+        if (this._a) this._a.push(reaction);
+        if (this._s) notify(this, false);
+        return reaction.promise;
+      },
+      // 25.4.5.1 Promise.prototype.catch(onRejected)
+      'catch': function (onRejected) {
+        return this.then(undefined, onRejected);
+      }
+    });
+
+    OwnPromiseCapability = function () {
+      var promise = new Internal();
+      this.promise = promise;
+      this.resolve = _ctx($resolve, promise, 1);
+      this.reject = _ctx($reject, promise, 1);
+    };
+
+    _newPromiseCapability.f = newPromiseCapability = function (C) {
+      return C === $Promise || C === Wrapper ? new OwnPromiseCapability(C) : newGenericPromiseCapability(C);
+    };
+  }
+
+  _export(_export.G + _export.W + _export.F * !USE_NATIVE, {
+    Promise: $Promise
+  });
+  _setToStringTag($Promise, PROMISE);
+  _setSpecies(PROMISE);
+  Wrapper = _core[PROMISE]; // statics
+
+  _export(_export.S + _export.F * !USE_NATIVE, PROMISE, {
+    // 25.4.4.5 Promise.reject(r)
+    reject: function reject(r) {
+      var capability = newPromiseCapability(this);
+      var $$reject = capability.reject;
+      $$reject(r);
+      return capability.promise;
+    }
+  });
+  _export(_export.S + _export.F * (_library || !USE_NATIVE), PROMISE, {
+    // 25.4.4.6 Promise.resolve(x)
+    resolve: function resolve(x) {
+      return _promiseResolve(_library && this === Wrapper ? $Promise : this, x);
+    }
+  });
+  _export(_export.S + _export.F * !(USE_NATIVE && _iterDetect(function (iter) {
+    $Promise.all(iter)['catch'](empty);
+  })), PROMISE, {
+    // 25.4.4.1 Promise.all(iterable)
+    all: function all(iterable) {
+      var C = this;
+      var capability = newPromiseCapability(C);
+      var resolve = capability.resolve;
+      var reject = capability.reject;
+      var result = _perform(function () {
+        var values = [];
+        var index = 0;
+        var remaining = 1;
+        _forOf(iterable, false, function (promise) {
+          var $index = index++;
+          var alreadyCalled = false;
+          values.push(undefined);
+          remaining++;
+          C.resolve(promise).then(function (value) {
+            if (alreadyCalled) return;
+            alreadyCalled = true;
+            values[$index] = value;
+            --remaining || resolve(values);
+          }, reject);
+        });
+        --remaining || resolve(values);
+      });
+      if (result.e) reject(result.v);
+      return capability.promise;
+    },
+    // 25.4.4.4 Promise.race(iterable)
+    race: function race(iterable) {
+      var C = this;
+      var capability = newPromiseCapability(C);
+      var reject = capability.reject;
+      var result = _perform(function () {
+        _forOf(iterable, false, function (promise) {
+          C.resolve(promise).then(capability.resolve, reject);
+        });
+      });
+      if (result.e) reject(result.v);
+      return capability.promise;
+    }
+  });
+
+  // Copyright (c) 2018, Libermatic and contributors
+  // For license information, please see license.txt
+  var prompt = function prompt(fields, title, primary_label) {
+    return new Promise(function (resolve, reject) {
+      try {
+        return frappe.prompt(fields, function (values) {
+          return values ? resolve(values) : reject();
+        }, title, primary_label);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  };
+  var confirm = function confirm(message) {
+    return new Promise(function (resolve, reject) {
+      try {
+        return frappe.confirm(message, function () {
+          return resolve(true);
+        }, function () {
+          return resolve(false);
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  };
+  var frappeAsync = {
+    prompt: prompt,
+    confirm: confirm
+  };
+
+  var default_subscription_filter = {
+    docstatus: 1
+  };
+
+  function make_dialog_field(what) {
+    var field = {
+      fieldname: 'value',
+      reqd: 1
+    };
+
+    if (['from_date', 'to_date'].includes(what)) {
+      return [Object.assign(field, {
+        fieldtype: 'Date',
+        label: 'Date'
+      })];
+    }
+
+    if (what === 'slot') {
+      return [Object.assign(field, {
+        fieldtype: 'Link',
+        label: 'Slot',
+        options: 'Training Slot'
+      })];
+    }
+
+    if (what === 'trainer') {
+      return [Object.assign(field, {
+        fieldtype: 'Link',
+        label: 'Trainer',
+        options: 'Gym Trainer'
+      })];
+    }
+
+    return null;
+  }
 
   var script$2 = {
     data: function data() {
       return {
-        subscription_query: { filters: default_subscription_filter },
+        subscription_query: {
+          filters: default_subscription_filter
+        },
+        subscription: null,
         item_name: null,
         start_date: null,
         end_date: null,
-        schedules: [],
+        schedules: []
       };
     },
-    components: { FieldLink: FieldLink },
+    components: {
+      FieldLink: FieldLink
+    },
     methods: {
-      set_subscription_query: function(member) {
+      set_subscription_query: function set_subscription_query(member) {
         this.subscription_query = {
-          filters: member
-            ? Object.assign({}, default_subscription_filter, { member: member })
-            : default_subscription_filter,
+          filters: member ? Object.assign({}, default_subscription_filter, {
+            member: member
+          }) : default_subscription_filter
         };
       },
-      get_subscription: async function(subscription) {
-        if (subscription) {
-          var ref = await frappe.call({
-            method:
-              'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
-            args: { subscription: subscription },
-          });
-          var trainable_items = ref.message;
-          if (trainable_items) {
-            this.item_name = trainable_items.items[0];
-            this.start_date = frappe.datetime.str_to_user(
-              trainable_items.from_date
-            );
-            this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);
-            this.get_schedules(subscription);
-          }
-        } else {
-          this.item_name = null;
-          this.start_date = null;
-          this.end_date = null;
-        }
-      },
-      get_schedules: async function(subscription) {
-        var ref = await frappe.call({
-          method:
-            'psd_customization.fitness_world.api.trainer_allocation.get_schedule',
-          args: { subscription: subscription },
-        });
-        var schedules = ref.message; if ( schedules === void 0 ) schedules = [];
-        this.schedules = schedules.map(
-          function (ref) {
-            var from_date = ref.from_date;
-            var to_date = ref.to_date;
-            var training_slot = ref.training_slot;
-            var gym_trainer = ref.gym_trainer;
+      get_subscription: function () {
+        var _get_subscription = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee(subscription) {
+          var _ref, trainable_items;
 
-            return ({
-            from: frappe.datetime.str_to_user(from_date),
-            to: frappe.datetime.str_to_user(to_date),
-            slot: training_slot,
-            trainer: gym_trainer,
-          });
-        }
-        );
-      },
-    },
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  if (!subscription) {
+                    _context.next = 9;
+                    break;
+                  }
+
+                  this.subscription = subscription;
+                  _context.next = 4;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
+                    args: {
+                      subscription: subscription
+                    }
+                  });
+
+                case 4:
+                  _ref = _context.sent;
+                  trainable_items = _ref.message;
+
+                  if (trainable_items) {
+                    this.item_name = trainable_items.items[0];
+                    this.start_date = frappe.datetime.str_to_user(trainable_items.from_date);
+                    this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);
+                    this.get_schedules(subscription);
+                  }
+
+                  _context.next = 13;
+                  break;
+
+                case 9:
+                  this.subscription = null;
+                  this.item_name = null;
+                  this.start_date = null;
+                  this.end_date = null;
+
+                case 13:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        }));
+
+        return function get_subscription(_x) {
+          return _get_subscription.apply(this, arguments);
+        };
+      }(),
+      get_schedules: function () {
+        var _get_schedules = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee2() {
+          var _ref2, _ref2$message, schedules;
+
+          return regeneratorRuntime.wrap(function _callee2$(_context2) {
+            while (1) {
+              switch (_context2.prev = _context2.next) {
+                case 0:
+                  _context2.next = 2;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.trainer_allocation.get_schedule',
+                    args: {
+                      subscription: this.subscription
+                    }
+                  });
+
+                case 2:
+                  _ref2 = _context2.sent;
+                  _ref2$message = _ref2.message;
+                  schedules = _ref2$message === void 0 ? [] : _ref2$message;
+                  this.schedules = schedules.map(function (_ref3) {
+                    var name = _ref3.name,
+                        from_date = _ref3.from_date,
+                        to_date = _ref3.to_date,
+                        training_slot = _ref3.training_slot,
+                        gym_trainer = _ref3.gym_trainer;
+                    return {
+                      name: name,
+                      from: frappe.datetime.str_to_user(from_date),
+                      to: frappe.datetime.str_to_user(to_date),
+                      slot: training_slot,
+                      trainer: gym_trainer
+                    };
+                  });
+
+                case 6:
+                case "end":
+                  return _context2.stop();
+              }
+            }
+          }, _callee2, this);
+        }));
+
+        return function get_schedules() {
+          return _get_schedules.apply(this, arguments);
+        };
+      }(),
+      create: function () {
+        var _create = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee3(start, end) {
+          var _ref4, trainer;
+
+          return regeneratorRuntime.wrap(function _callee3$(_context3) {
+            while (1) {
+              switch (_context3.prev = _context3.next) {
+                case 0:
+                  _context3.next = 2;
+                  return frappeAsync.prompt(make_dialog_field('trainer'), 'Select Trainer');
+
+                case 2:
+                  _ref4 = _context3.sent;
+                  trainer = _ref4.value;
+                  console.log(start, end);
+
+                case 5:
+                case "end":
+                  return _context3.stop();
+              }
+            }
+          }, _callee3, this);
+        }));
+
+        return function create(_x2, _x3) {
+          return _create.apply(this, arguments);
+        };
+      }(),
+      update: function () {
+        var _update = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee4(name, what) {
+          var field, _ref5, value;
+
+          return regeneratorRuntime.wrap(function _callee4$(_context4) {
+            while (1) {
+              switch (_context4.prev = _context4.next) {
+                case 0:
+                  field = make_dialog_field(what);
+                  _context4.next = 3;
+                  return frappeAsync.prompt(field, field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot');
+
+                case 3:
+                  _ref5 = _context4.sent;
+                  value = _ref5.value;
+                  console.log(name, what, value);
+
+                case 6:
+                case "end":
+                  return _context4.stop();
+              }
+            }
+          }, _callee4, this);
+        }));
+
+        return function update(_x4, _x5) {
+          return _update.apply(this, arguments);
+        };
+      }(),
+      remove: function () {
+        var _remove = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee5(name) {
+          var will_remove;
+          return regeneratorRuntime.wrap(function _callee5$(_context5) {
+            while (1) {
+              switch (_context5.prev = _context5.next) {
+                case 0:
+                  _context5.next = 2;
+                  return frappeAsync.confirm('Trainer for this period will be unassigned');
+
+                case 2:
+                  will_remove = _context5.sent;
+                  console.log(name, will_remove);
+
+                case 4:
+                case "end":
+                  return _context5.stop();
+              }
+            }
+          }, _callee5, this);
+        }));
+
+        return function remove(_x6) {
+          return _remove.apply(this, arguments);
+        };
+      }()
+    }
   };
 
   /* script */
-              var __vue_script__$2 = script$2;
+              const __vue_script__$2 = script$2;
               
   /* template */
-  var __vue_render__$2 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", [
-      _c(
-        "div",
-        { staticClass: "section" },
-        [
-          _c("FieldLink", {
-            attrs: {
-              fieldname: "member",
-              label: "Member",
-              options: "Gym Member",
-              onchange: _vm.set_subscription_query
-            }
-          }),
-          _vm._v(" "),
-          _c("FieldLink", {
-            attrs: {
-              fieldname: "subscription",
-              label: "Subscription",
-              options: "Gym Subscription",
-              get_query: _vm.subscription_query,
-              onchange: _vm.get_subscription
-            }
-          })
-        ],
-        1
-      ),
-      _vm._v(" "),
-      _vm.item_name
-        ? _c("div", { staticClass: "section info-section" }, [
-            _c("div", [
-              _c("span", [_vm._v("Item")]),
-              _vm._v(" "),
-              _c("span", [_vm._v(_vm._s(_vm.item_name))])
-            ]),
-            _vm._v(" "),
-            _c("div", [
-              _c("span", [_vm._v("Start Date")]),
-              _vm._v(" "),
-              _c("span", [_vm._v(_vm._s(_vm.start_date))])
-            ]),
-            _vm._v(" "),
-            _c("div", [
-              _c("span", [_vm._v("End Date")]),
-              _vm._v(" "),
-              _c("span", [_vm._v(_vm._s(_vm.end_date))])
-            ])
-          ])
-        : _vm._e(),
-      _vm._v(" "),
-      _c("div", { staticClass: "list-section" }, [
-        _vm.schedules.length > 0
-          ? _c("table", { staticClass: "table" }, [
-              _vm._m(0),
-              _vm._v(" "),
-              _c(
-                "tbody",
-                _vm._l(_vm.schedules, function(schedule) {
-                  return _c("tr", [
-                    _c("td", [
-                      _vm._v(
-                        "\n            " +
-                          _vm._s(schedule.from) +
-                          "\n            "
-                      ),
-                      _vm._m(1, true)
-                    ]),
-                    _vm._v(" "),
-                    _c("td", [
-                      _vm._v(
-                        "\n            " + _vm._s(schedule.to) + "\n            "
-                      ),
-                      _vm._m(2, true)
-                    ]),
-                    _vm._v(" "),
-                    _c("td", [
-                      _vm._v(
-                        "\n            " +
-                          _vm._s(schedule.slot || "-") +
-                          "\n            "
-                      ),
-                      _vm._m(3, true)
-                    ]),
-                    _vm._v(" "),
-                    _c("td", [
-                      _vm._v(
-                        "\n            " +
-                          _vm._s(schedule.trainer || "Unallocated") +
-                          "\n            "
-                      ),
-                      _vm._m(4, true),
-                      _vm._v(" "),
-                      _vm._m(5, true)
-                    ])
-                  ])
-                })
-              )
-            ])
-          : _vm._e()
-      ])
-    ])
-  };
-  var __vue_staticRenderFns__$2 = [
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("thead", [
-        _c("tr", [
-          _c("th", [_vm._v("From")]),
-          _vm._v(" "),
-          _c("th", [_vm._v("To")]),
-          _vm._v(" "),
-          _c("th", [_vm._v("Slot")]),
-          _vm._v(" "),
-          _c("th", [_vm._v("Trainer")]),
-          _vm._v(" "),
-          _c("th")
-        ])
-      ])
-    },
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("button", { attrs: { type: "button" } }, [
-        _c("i", { staticClass: "fa fa-pencil" })
-      ])
-    },
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("button", { attrs: { type: "button" } }, [
-        _c("i", { staticClass: "fa fa-pencil" })
-      ])
-    },
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("button", { attrs: { type: "button" } }, [
-        _c("i", { staticClass: "fa fa-pencil" })
-      ])
-    },
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("button", { attrs: { type: "button" } }, [
-        _c("i", { staticClass: "fa fa-plus" })
-      ])
-    },
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("button", { attrs: { type: "button" } }, [
-        _c("i", { staticClass: "fa fa-remove" })
-      ])
-    }
-  ];
-  __vue_render__$2._withStripped = true;
+  var __vue_render__$2 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"section"},[_c('FieldLink',{attrs:{"fieldname":"member","label":"Member","options":"Gym Member","onchange":_vm.set_subscription_query}}),_vm._v(" "),_c('FieldLink',{attrs:{"fieldname":"subscription","label":"Subscription","options":"Gym Subscription","get_query":_vm.subscription_query,"onchange":_vm.get_subscription}})],1),_vm._v(" "),(_vm.item_name)?_c('div',{staticClass:"section info-section"},[_c('div',[_c('span',[_vm._v("Item")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.item_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Start Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.start_date))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("End Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.end_date))])])]):_vm._e(),_vm._v(" "),_c('div',{staticClass:"list-section"},[(_vm.schedules.length > 0)?_c('table',{staticClass:"table"},[_vm._m(0),_vm._v(" "),_c('tbody',_vm._l((_vm.schedules),function(schedule){return _c('tr',[_c('td',[_vm._v("\n            "+_vm._s(schedule.from)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_from_date"},on:{"click":function($event){_vm.update(schedule.name, 'from_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.to)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_to_date"},on:{"click":function($event){_vm.update(schedule.name, 'to_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.slot || '-')+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_slot"},on:{"click":function($event){_vm.update(schedule.name, 'slot');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.trainer || 'Unallocated')+"\n            "),_c('button',{attrs:{"type":"button","name":"create"},on:{"click":function($event){_vm.create(schedule.from, schedule.to);}}},[_c('i',{staticClass:"fa fa-plus"})]),_vm._v(" "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"remove"},on:{"click":function($event){_vm.remove(schedule.name);}}},[_c('i',{staticClass:"fa fa-remove"})]):_vm._e()])])}))]):_vm._e()])])};
+  var __vue_staticRenderFns__$2 = [function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('thead',[_c('tr',[_c('th',[_vm._v("From")]),_vm._v(" "),_c('th',[_vm._v("To")]),_vm._v(" "),_c('th',[_vm._v("Slot")]),_vm._v(" "),_c('th',[_vm._v("Trainer")]),_vm._v(" "),_c('th')])])}];
 
     /* style */
-    var __vue_inject_styles__$2 = function (inject) {
-      if (!inject) { return }
-      inject("data-v-5e1d5c74_0", { source: "\n.section[data-v-5e1d5c74] {\n  display: flex;\n  flex-flow: row wrap;\n  padding-top: 12px;\n}\n.section > div[data-v-5e1d5c74] {\n  margin: 0 8px;\n  box-sizing: border-box;\n  min-width: 196px;\n}\n.info-section > div[data-v-5e1d5c74] {\n  min-height: 48px;\n}\n.info-section > div > span[data-v-5e1d5c74] {\n  display: block;\n  white-space: nowrap;\n}\n.info-section > div > span[data-v-5e1d5c74]:first-of-type {\n  font-size: 12px;\n  color: #8d99a6;\n}\n.info-section > div > span[data-v-5e1d5c74]:last-of-type {\n  font-weight: bold;\n}\n.list-section button[data-v-5e1d5c74] {\n  border: none;\n  background-color: inherit;\n}\n.list-section > table th[data-v-5e1d5c74] {\n  color: #8d99a6;\n}\n.list-section > table button[data-v-5e1d5c74]:hover {\n  color: #8d99a6;\n}\n", map: {"version":3,"sources":["/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/TrainingSchedule.vue"],"names":[],"mappings":";AAqIA;EACA,cAAA;EACA,oBAAA;EACA,kBAAA;CACA;AACA;EACA,cAAA;EACA,uBAAA;EACA,iBAAA;CACA;AACA;EACA,iBAAA;CACA;AACA;EACA,eAAA;EACA,oBAAA;CACA;AACA;EACA,gBAAA;EACA,eAAA;CACA;AACA;EACA,kBAAA;CACA;AACA;EACA,aAAA;EACA,0BAAA;CACA;AACA;EACA,eAAA;CACA;AACA;EACA,eAAA;CACA","file":"TrainingSchedule.vue","sourcesContent":["<template>\n  <div>\n    <div class=\"section\">\n      <FieldLink\n        fieldname=\"member\"\n        label=\"Member\"\n        options=\"Gym Member\"\n        :onchange=\"set_subscription_query\"\n      />\n      <FieldLink\n        fieldname=\"subscription\"\n        label=\"Subscription\"\n        options=\"Gym Subscription\"\n        :get_query=\"subscription_query\"\n        :onchange=\"get_subscription\"\n      />\n    </div>\n    <div v-if=\"item_name\" class=\"section info-section\">\n      <div>\n        <span>Item</span>\n        <span>{{ item_name }}</span>\n      </div>\n      <div>\n        <span>Start Date</span>\n        <span>{{ start_date }}</span>\n      </div>\n      <div>\n        <span>End Date</span>\n        <span>{{ end_date }}</span>\n      </div>\n    </div>\n    <div class=\"list-section\">\n      <table v-if=\"schedules.length > 0\" class=\"table\">\n        <thead>\n          <tr>\n            <th>From</th>\n            <th>To</th>\n            <th>Slot</th>\n            <th>Trainer</th>\n            <th />\n          </tr>\n        </thead>\n        <tbody>\n          <tr v-for=\"schedule in schedules\">\n            <td>\n              {{ schedule.from }}\n              <button type=\"button\"><i class=\"fa fa-pencil\" /></button>\n            </td>\n            <td>\n              {{ schedule.to }}\n              <button type=\"button\"><i class=\"fa fa-pencil\" /></button>\n            </td>\n            <td>\n              {{ schedule.slot || '-' }}\n              <button type=\"button\"><i class=\"fa fa-pencil\" /></button>\n            </td>\n            <td>\n              {{ schedule.trainer || 'Unallocated' }}\n              <button type=\"button\"><i class=\"fa fa-plus\" /></button>\n              <button type=\"button\"><i class=\"fa fa-remove\" /></button>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</template>\n\n<script>\nimport FieldLink from './components/FieldLink.vue';\n\nconst default_subscription_filter = { docstatus: 1 };\n\nexport default {\n  data() {\n    return {\n      subscription_query: { filters: default_subscription_filter },\n      item_name: null,\n      start_date: null,\n      end_date: null,\n      schedules: [],\n    };\n  },\n  components: { FieldLink },\n  methods: {\n    set_subscription_query: function(member) {\n      this.subscription_query = {\n        filters: member\n          ? Object.assign({}, default_subscription_filter, { member })\n          : default_subscription_filter,\n      };\n    },\n    get_subscription: async function(subscription) {\n      if (subscription) {\n        const { message: trainable_items } = await frappe.call({\n          method:\n            'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',\n          args: { subscription },\n        });\n        if (trainable_items) {\n          this.item_name = trainable_items.items[0];\n          this.start_date = frappe.datetime.str_to_user(\n            trainable_items.from_date\n          );\n          this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);\n          this.get_schedules(subscription);\n        }\n      } else {\n        this.item_name = null;\n        this.start_date = null;\n        this.end_date = null;\n      }\n    },\n    get_schedules: async function(subscription) {\n      const { message: schedules = [] } = await frappe.call({\n        method:\n          'psd_customization.fitness_world.api.trainer_allocation.get_schedule',\n        args: { subscription },\n      });\n      this.schedules = schedules.map(\n        ({ from_date, to_date, training_slot, gym_trainer }) => ({\n          from: frappe.datetime.str_to_user(from_date),\n          to: frappe.datetime.str_to_user(to_date),\n          slot: training_slot,\n          trainer: gym_trainer,\n        })\n      );\n    },\n  },\n};\n</script>\n\n<style scoped>\n.section {\n  display: flex;\n  flex-flow: row wrap;\n  padding-top: 12px;\n}\n.section > div {\n  margin: 0 8px;\n  box-sizing: border-box;\n  min-width: 196px;\n}\n.info-section > div {\n  min-height: 48px;\n}\n.info-section > div > span {\n  display: block;\n  white-space: nowrap;\n}\n.info-section > div > span:first-of-type {\n  font-size: 12px;\n  color: #8d99a6;\n}\n.info-section > div > span:last-of-type {\n  font-weight: bold;\n}\n.list-section button {\n  border: none;\n  background-color: inherit;\n}\n.list-section > table th {\n  color: #8d99a6;\n}\n.list-section > table button:hover {\n  color: #8d99a6;\n}\n</style>\n"]}, media: undefined });
+    const __vue_inject_styles__$2 = function (inject) {
+      if (!inject) return
+      inject("data-v-3298cab5_0", { source: "\n.section[data-v-3298cab5]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-3298cab5]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.info-section>div[data-v-3298cab5]{min-height:48px\n}\n.info-section>div>span[data-v-3298cab5]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-3298cab5]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-3298cab5]:last-of-type{font-weight:700\n}\n.list-section button[data-v-3298cab5]{border:none;background-color:inherit;opacity:0\n}\n.list-section tr:hover button[data-v-3298cab5]{opacity:1\n}\n.list-section>table th[data-v-3298cab5]{color:#8d99a6\n}\n.list-section>table button[data-v-3298cab5]:hover{color:#8d99a6\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    var __vue_scope_id__$2 = "data-v-5e1d5c74";
+    const __vue_scope_id__$2 = "data-v-3298cab5";
     /* module identifier */
-    var __vue_module_identifier__$2 = undefined;
+    const __vue_module_identifier__$2 = undefined;
     /* functional template */
-    var __vue_is_functional_template__$2 = false;
+    const __vue_is_functional_template__$2 = false;
     /* component normalizer */
     function __vue_normalize__$2(
       template, style, script,
       scope, functional, moduleIdentifier,
       createInjector, createInjectorSSR
     ) {
-      var component = (typeof script === 'function' ? script.options : script) || {};
+      const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/TrainingSchedule.vue";
+      component.__file = "TrainingSchedule.vue";
 
       if (!component.render) {
         component.render = template.render;
         component.staticRenderFns = template.staticRenderFns;
         component._compiled = true;
 
-        if (functional) { component.functional = true; }
+        if (functional) component.functional = true;
       }
 
       component._scopeId = scope;
 
       {
-        var hook;
+        let hook;
         if (style) {
           hook = function(context) {
             style.call(this, createInjector(context));
@@ -8469,14 +9721,14 @@ var psd = (function () {
         if (hook !== undefined) {
           if (component.functional) {
             // register for functional component in vue file
-            var originalRender = component.render;
+            const originalRender = component.render;
             component.render = function renderWithStyleInjection(h, context) {
               hook.call(context);
               return originalRender(h, context)
             };
           } else {
             // inject component registration as beforeCreate hook
-            var existing = component.beforeCreate;
+            const existing = component.beforeCreate;
             component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
           }
         }
@@ -8486,33 +9738,44 @@ var psd = (function () {
     }
     /* style inject */
     function __vue_create_injector__() {
-      var head = document.head || document.getElementsByTagName('head')[0];
-      var styles = __vue_create_injector__.styles || (__vue_create_injector__.styles = {});
-      var isOldIE =
+      const head = document.head || document.getElementsByTagName('head')[0];
+      const styles = __vue_create_injector__.styles || (__vue_create_injector__.styles = {});
+      const isOldIE =
         typeof navigator !== 'undefined' &&
         /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
 
       return function addStyle(id, css) {
-        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) { return } // SSR styles are present.
+        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
 
-        var group = isOldIE ? css.media || 'default' : id;
-        var style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
+        const group = isOldIE ? css.media || 'default' : id;
+        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
 
         if (!style.ids.includes(id)) {
-          var code = css.source;
-          var index = style.ids.length;
+          let code = css.source;
+          let index = style.ids.length;
 
           style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
 
           if (isOldIE) {
             style.element = style.element || document.querySelector('style[data-group=' + group + ']');
           }
 
           if (!style.element) {
-            var el = style.element = document.createElement('style');
+            const el = style.element = document.createElement('style');
             el.type = 'text/css';
 
-            if (css.media) { el.setAttribute('media', css.media); }
+            if (css.media) el.setAttribute('media', css.media);
             if (isOldIE) {
               el.setAttribute('data-group', group);
               el.setAttribute('data-next-index', '0');
@@ -8532,11 +9795,11 @@ var psd = (function () {
               .filter(Boolean)
               .join('\n');
           } else {
-            var textNode = document.createTextNode(code);
-            var nodes = style.element.childNodes;
-            if (nodes[index]) { style.element.removeChild(nodes[index]); }
-            if (nodes.length) { style.element.insertBefore(textNode, nodes[index]); }
-            else { style.element.appendChild(textNode); }
+            const textNode = document.createTextNode(code);
+            const nodes = style.element.childNodes;
+            if (nodes[index]) style.element.removeChild(nodes[index]);
+            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
+            else style.element.appendChild(textNode);
           }
         }
       }
@@ -8556,11 +9819,1022 @@ var psd = (function () {
       undefined
     );
 
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  var script$3 = {
+    props: ['label', 'content', 'color'],
+    computed: {
+      indicator: function indicator() {
+        return "indicator ".concat(this.color);
+      }
+    }
+  };
+
+  /* script */
+              const __vue_script__$3 = script$3;
+              
+  /* template */
+  var __vue_render__$3 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"col-sm-3 psd-dashboard-item"},[_c('span',{class:_vm.indicator}),_vm._v(" "),_c('dl',[_c('dt',[_vm._v(_vm._s(_vm.label))]),_vm._v(" "),_c('dd',[_vm._v(_vm._s(_vm.content))])])])};
+  var __vue_staticRenderFns__$3 = [];
+
+    /* style */
+    const __vue_inject_styles__$3 = function (inject) {
+      if (!inject) return
+      inject("data-v-639af32a_0", { source: "\n.psd-dashboard-item[data-v-639af32a]{display:flex;flex-flow:row nowrap\n}\n.psd-dashboard-item dt[data-v-639af32a]{text-transform:uppercase;font-size:.8em;font-weight:400\n}\n.psd-dashboard-item dd[data-v-639af32a]{font-size:1.2em;font-weight:700\n}", map: undefined, media: undefined });
+
+    };
+    /* scoped */
+    const __vue_scope_id__$3 = "data-v-639af32a";
+    /* module identifier */
+    const __vue_module_identifier__$3 = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$3 = false;
+    /* component normalizer */
+    function __vue_normalize__$3(
+      template, style, script,
+      scope, functional, moduleIdentifier,
+      createInjector, createInjectorSSR
+    ) {
+      const component = (typeof script === 'function' ? script.options : script) || {};
+
+      // For security concerns, we use only base name in production mode.
+      component.__file = "DashboardItem.vue";
+
+      if (!component.render) {
+        component.render = template.render;
+        component.staticRenderFns = template.staticRenderFns;
+        component._compiled = true;
+
+        if (functional) component.functional = true;
+      }
+
+      component._scopeId = scope;
+
+      {
+        let hook;
+        if (style) {
+          hook = function(context) {
+            style.call(this, createInjector(context));
+          };
+        }
+
+        if (hook !== undefined) {
+          if (component.functional) {
+            // register for functional component in vue file
+            const originalRender = component.render;
+            component.render = function renderWithStyleInjection(h, context) {
+              hook.call(context);
+              return originalRender(h, context)
+            };
+          } else {
+            // inject component registration as beforeCreate hook
+            const existing = component.beforeCreate;
+            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
+          }
+        }
+      }
+
+      return component
+    }
+    /* style inject */
+    function __vue_create_injector__$1() {
+      const head = document.head || document.getElementsByTagName('head')[0];
+      const styles = __vue_create_injector__$1.styles || (__vue_create_injector__$1.styles = {});
+      const isOldIE =
+        typeof navigator !== 'undefined' &&
+        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
+
+      return function addStyle(id, css) {
+        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
+
+        const group = isOldIE ? css.media || 'default' : id;
+        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
+
+        if (!style.ids.includes(id)) {
+          let code = css.source;
+          let index = style.ids.length;
+
+          style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
+
+          if (isOldIE) {
+            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
+          }
+
+          if (!style.element) {
+            const el = style.element = document.createElement('style');
+            el.type = 'text/css';
+
+            if (css.media) el.setAttribute('media', css.media);
+            if (isOldIE) {
+              el.setAttribute('data-group', group);
+              el.setAttribute('data-next-index', '0');
+            }
+
+            head.appendChild(el);
+          }
+
+          if (isOldIE) {
+            index = parseInt(style.element.getAttribute('data-next-index'));
+            style.element.setAttribute('data-next-index', index + 1);
+          }
+
+          if (style.element.styleSheet) {
+            style.parts.push(code);
+            style.element.styleSheet.cssText = style.parts
+              .filter(Boolean)
+              .join('\n');
+          } else {
+            const textNode = document.createTextNode(code);
+            const nodes = style.element.childNodes;
+            if (nodes[index]) style.element.removeChild(nodes[index]);
+            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
+            else style.element.appendChild(textNode);
+          }
+        }
+      }
+    }
+    /* style inject SSR */
+    
+
+    
+    var DashboardItem = __vue_normalize__$3(
+      { render: __vue_render__$3, staticRenderFns: __vue_staticRenderFns__$3 },
+      __vue_inject_styles__$3,
+      __vue_script__$3,
+      __vue_scope_id__$3,
+      __vue_is_functional_template__$3,
+      __vue_module_identifier__$3,
+      __vue_create_injector__$1,
+      undefined
+    );
+
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  var script$4 = {
+    props: ['item_name', 'is_lifetime', 'from_date', 'to_date'],
+    methods: {
+      get_color: function get_color() {
+        var is_lifetime = this.is_lifetime,
+            to_date = this.to_date;
+
+        if (is_lifetime) {
+          return 'green';
+        }
+
+        if (!to_date) {
+          return 'darkgrey';
+        }
+
+        if (moment().add(7, 'days').isBefore(to_date)) {
+          return 'green';
+        }
+
+        if (moment().isSameOrBefore(to_date)) {
+          return 'orange';
+        }
+
+        return 'red';
+      }
+    },
+    computed: {
+      colorClass: function colorClass() {
+        return "indicator ".concat(this.get_color());
+      },
+      interval: function interval() {
+        var from_date = this.from_date,
+            to_date = this.to_date;
+
+        if (to_date) {
+          return "".concat(frappe.datetime.str_to_user(from_date), " \u2013 ").concat(frappe.datetime.str_to_user(to_date));
+        }
+
+        return frappe.datetime.str_to_user(from_date);
+      },
+      eta: function eta() {
+        var from_date = this.from_date,
+            to_date = this.to_date,
+            is_lifetime = this.is_lifetime;
+
+        if (is_lifetime && !to_date) {
+          return null;
+        }
+
+        return "".concat(moment().isAfter(to_date) ? 'Expired' : 'Expires', " ").concat(moment(to_date).fromNow());
+      }
+    }
+  };
+
+  /* script */
+              const __vue_script__$4 = script$4;
+              
+  /* template */
+  var __vue_render__$4 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v("\n    "+_vm._s(_vm.item_name)+"\n    "),(_vm.is_lifetime)?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
+  var __vue_staticRenderFns__$4 = [];
+
+    /* style */
+    const __vue_inject_styles__$4 = function (inject) {
+      if (!inject) return
+      inject("data-v-3623c10f_0", { source: "\n.psd-current-sub[data-v-3623c10f]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-3623c10f]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-3623c10f]:first-of-type{flex:auto\n}\n.badge[data-v-3623c10f]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-3623c10f]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-3623c10f]{background-color:#ffa00a\n}", map: undefined, media: undefined });
+
+    };
+    /* scoped */
+    const __vue_scope_id__$4 = "data-v-3623c10f";
+    /* module identifier */
+    const __vue_module_identifier__$4 = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$4 = false;
+    /* component normalizer */
+    function __vue_normalize__$4(
+      template, style, script,
+      scope, functional, moduleIdentifier,
+      createInjector, createInjectorSSR
+    ) {
+      const component = (typeof script === 'function' ? script.options : script) || {};
+
+      // For security concerns, we use only base name in production mode.
+      component.__file = "CurrentSubscriptionItem.vue";
+
+      if (!component.render) {
+        component.render = template.render;
+        component.staticRenderFns = template.staticRenderFns;
+        component._compiled = true;
+
+        if (functional) component.functional = true;
+      }
+
+      component._scopeId = scope;
+
+      {
+        let hook;
+        if (style) {
+          hook = function(context) {
+            style.call(this, createInjector(context));
+          };
+        }
+
+        if (hook !== undefined) {
+          if (component.functional) {
+            // register for functional component in vue file
+            const originalRender = component.render;
+            component.render = function renderWithStyleInjection(h, context) {
+              hook.call(context);
+              return originalRender(h, context)
+            };
+          } else {
+            // inject component registration as beforeCreate hook
+            const existing = component.beforeCreate;
+            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
+          }
+        }
+      }
+
+      return component
+    }
+    /* style inject */
+    function __vue_create_injector__$2() {
+      const head = document.head || document.getElementsByTagName('head')[0];
+      const styles = __vue_create_injector__$2.styles || (__vue_create_injector__$2.styles = {});
+      const isOldIE =
+        typeof navigator !== 'undefined' &&
+        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
+
+      return function addStyle(id, css) {
+        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
+
+        const group = isOldIE ? css.media || 'default' : id;
+        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
+
+        if (!style.ids.includes(id)) {
+          let code = css.source;
+          let index = style.ids.length;
+
+          style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
+
+          if (isOldIE) {
+            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
+          }
+
+          if (!style.element) {
+            const el = style.element = document.createElement('style');
+            el.type = 'text/css';
+
+            if (css.media) el.setAttribute('media', css.media);
+            if (isOldIE) {
+              el.setAttribute('data-group', group);
+              el.setAttribute('data-next-index', '0');
+            }
+
+            head.appendChild(el);
+          }
+
+          if (isOldIE) {
+            index = parseInt(style.element.getAttribute('data-next-index'));
+            style.element.setAttribute('data-next-index', index + 1);
+          }
+
+          if (style.element.styleSheet) {
+            style.parts.push(code);
+            style.element.styleSheet.cssText = style.parts
+              .filter(Boolean)
+              .join('\n');
+          } else {
+            const textNode = document.createTextNode(code);
+            const nodes = style.element.childNodes;
+            if (nodes[index]) style.element.removeChild(nodes[index]);
+            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
+            else style.element.appendChild(textNode);
+          }
+        }
+      }
+    }
+    /* style inject SSR */
+    
+
+    
+    var CurrentSubscriptionItem = __vue_normalize__$4(
+      { render: __vue_render__$4, staticRenderFns: __vue_staticRenderFns__$4 },
+      __vue_inject_styles__$4,
+      __vue_script__$4,
+      __vue_scope_id__$4,
+      __vue_is_functional_template__$4,
+      __vue_module_identifier__$4,
+      __vue_create_injector__$2,
+      undefined
+    );
+
+  //
+  var script$5 = {
+    props: ['subscriptions'],
+    components: {
+      CurrentSubscriptionItem: CurrentSubscriptionItem
+    }
+  };
+
+  /* script */
+              const __vue_script__$5 = script$5;
+              
+  /* template */
+  var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('h6',[_vm._v("Existing Subscriptions")]),_vm._v(" "),(_vm.subscriptions && _vm.subscriptions.length > 0)?_c('div',_vm._l((_vm.subscriptions),function(subscription){return _c('div',[_c('current-subscription-item',_vm._b({},'current-subscription-item',subscription,false))],1)})):_c('div',{staticClass:"psd-no-data"},[_vm._v("\n    Currently none\n  ")])])};
+  var __vue_staticRenderFns__$5 = [];
+
+    /* style */
+    const __vue_inject_styles__$5 = function (inject) {
+      if (!inject) return
+      inject("data-v-243244e3_0", { source: "\n.psd-no-data[data-v-243244e3]{color:#8d99a6\n}", map: undefined, media: undefined });
+
+    };
+    /* scoped */
+    const __vue_scope_id__$5 = "data-v-243244e3";
+    /* module identifier */
+    const __vue_module_identifier__$5 = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$5 = false;
+    /* component normalizer */
+    function __vue_normalize__$5(
+      template, style, script,
+      scope, functional, moduleIdentifier,
+      createInjector, createInjectorSSR
+    ) {
+      const component = (typeof script === 'function' ? script.options : script) || {};
+
+      // For security concerns, we use only base name in production mode.
+      component.__file = "CurrentSubscriptions.vue";
+
+      if (!component.render) {
+        component.render = template.render;
+        component.staticRenderFns = template.staticRenderFns;
+        component._compiled = true;
+
+        if (functional) component.functional = true;
+      }
+
+      component._scopeId = scope;
+
+      {
+        let hook;
+        if (style) {
+          hook = function(context) {
+            style.call(this, createInjector(context));
+          };
+        }
+
+        if (hook !== undefined) {
+          if (component.functional) {
+            // register for functional component in vue file
+            const originalRender = component.render;
+            component.render = function renderWithStyleInjection(h, context) {
+              hook.call(context);
+              return originalRender(h, context)
+            };
+          } else {
+            // inject component registration as beforeCreate hook
+            const existing = component.beforeCreate;
+            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
+          }
+        }
+      }
+
+      return component
+    }
+    /* style inject */
+    function __vue_create_injector__$3() {
+      const head = document.head || document.getElementsByTagName('head')[0];
+      const styles = __vue_create_injector__$3.styles || (__vue_create_injector__$3.styles = {});
+      const isOldIE =
+        typeof navigator !== 'undefined' &&
+        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
+
+      return function addStyle(id, css) {
+        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
+
+        const group = isOldIE ? css.media || 'default' : id;
+        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
+
+        if (!style.ids.includes(id)) {
+          let code = css.source;
+          let index = style.ids.length;
+
+          style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
+
+          if (isOldIE) {
+            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
+          }
+
+          if (!style.element) {
+            const el = style.element = document.createElement('style');
+            el.type = 'text/css';
+
+            if (css.media) el.setAttribute('media', css.media);
+            if (isOldIE) {
+              el.setAttribute('data-group', group);
+              el.setAttribute('data-next-index', '0');
+            }
+
+            head.appendChild(el);
+          }
+
+          if (isOldIE) {
+            index = parseInt(style.element.getAttribute('data-next-index'));
+            style.element.setAttribute('data-next-index', index + 1);
+          }
+
+          if (style.element.styleSheet) {
+            style.parts.push(code);
+            style.element.styleSheet.cssText = style.parts
+              .filter(Boolean)
+              .join('\n');
+          } else {
+            const textNode = document.createTextNode(code);
+            const nodes = style.element.childNodes;
+            if (nodes[index]) style.element.removeChild(nodes[index]);
+            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
+            else style.element.appendChild(textNode);
+          }
+        }
+      }
+    }
+    /* style inject SSR */
+    
+
+    
+    var CurrentSubscriptions = __vue_normalize__$5(
+      { render: __vue_render__$5, staticRenderFns: __vue_staticRenderFns__$5 },
+      __vue_inject_styles__$5,
+      __vue_script__$5,
+      __vue_scope_id__$5,
+      __vue_is_functional_template__$5,
+      __vue_module_identifier__$5,
+      __vue_create_injector__$3,
+      undefined
+    );
+
+  //
+  var script$6 = {
+    props: ['outstanding', 'total_invoices', 'unpaid_invoices', 'subscriptions'],
+    components: {
+      DashboardItem: DashboardItem,
+      CurrentSubscriptions: CurrentSubscriptions
+    },
+    computed: {
+      outstanding_cpt: function outstanding_cpt() {
+        return {
+          label: 'Current Outstanding',
+          content: this.outstanding ? format_currency(this.outstanding, frappe.defaults.get_default('currency')) : '-',
+          color: this.outstanding ? 'orange' : 'lightblue'
+        };
+      },
+      invoices: function invoices() {
+        return {
+          label: 'Invoices: All / Unpaid',
+          content: "".concat(this.unpaid_invoices || '-', " / ").concat(this.total_invoices || '-'),
+          color: this.unpaid_invoices ? 'orange' : 'green'
+        };
+      }
+    }
+  };
+
+  /* script */
+              const __vue_script__$6 = script$6;
+              
+  /* template */
+  var __vue_render__$6 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.outstanding_cpt,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoices,false))],1),_vm._v(" "),_c('current-subscriptions',{attrs:{"subscriptions":_vm.subscriptions}})],1)};
+  var __vue_staticRenderFns__$6 = [];
+
+    /* style */
+    const __vue_inject_styles__$6 = undefined;
+    /* scoped */
+    const __vue_scope_id__$6 = undefined;
+    /* module identifier */
+    const __vue_module_identifier__$6 = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$6 = false;
+    /* component normalizer */
+    function __vue_normalize__$6(
+      template, style, script,
+      scope, functional, moduleIdentifier,
+      createInjector, createInjectorSSR
+    ) {
+      const component = (typeof script === 'function' ? script.options : script) || {};
+
+      // For security concerns, we use only base name in production mode.
+      component.__file = "MemberDashboard.vue";
+
+      if (!component.render) {
+        component.render = template.render;
+        component.staticRenderFns = template.staticRenderFns;
+        component._compiled = true;
+
+        if (functional) component.functional = true;
+      }
+
+      component._scopeId = scope;
+
+      return component
+    }
+    /* style inject */
+    
+    /* style inject SSR */
+    
+
+    
+    var MemberDashboard = __vue_normalize__$6(
+      { render: __vue_render__$6, staticRenderFns: __vue_staticRenderFns__$6 },
+      __vue_inject_styles__$6,
+      __vue_script__$6,
+      __vue_scope_id__$6,
+      __vue_is_functional_template__$6,
+      __vue_module_identifier__$6,
+      undefined,
+      undefined
+    );
+
+  //
+
+  function get_color(status) {
+    if (status === 'Paid') {
+      return 'green';
+    }
+
+    if (status === 'Unpaid') {
+      return 'orange';
+    }
+
+    if (status === 'Overdue') {
+      return 'red';
+    }
+
+    return 'blue';
+  }
+
+  var script$7 = {
+    props: ['invoice'],
+    components: {
+      DashboardItem: DashboardItem
+    },
+    computed: {
+      invoice_cpt: function invoice_cpt() {
+        var _ref = this.invoice || {},
+            amount = _ref.amount,
+            status = _ref.status;
+
+        return {
+          label: 'Invoice Amount',
+          content: amount ? format_currency(amount, frappe.defaults.get_default('currency')) : '-',
+          color: get_color(status)
+        };
+      }
+    }
+  };
+
+  /* script */
+              const __vue_script__$7 = script$7;
+              
+  /* template */
+  var __vue_render__$7 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoice_cpt,false))],1)};
+  var __vue_staticRenderFns__$7 = [];
+
+    /* style */
+    const __vue_inject_styles__$7 = undefined;
+    /* scoped */
+    const __vue_scope_id__$7 = undefined;
+    /* module identifier */
+    const __vue_module_identifier__$7 = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$7 = false;
+    /* component normalizer */
+    function __vue_normalize__$7(
+      template, style, script,
+      scope, functional, moduleIdentifier,
+      createInjector, createInjectorSSR
+    ) {
+      const component = (typeof script === 'function' ? script.options : script) || {};
+
+      // For security concerns, we use only base name in production mode.
+      component.__file = "SubscriptionDashboard.vue";
+
+      if (!component.render) {
+        component.render = template.render;
+        component.staticRenderFns = template.staticRenderFns;
+        component._compiled = true;
+
+        if (functional) component.functional = true;
+      }
+
+      component._scopeId = scope;
+
+      return component
+    }
+    /* style inject */
+    
+    /* style inject SSR */
+    
+
+    
+    var SubscriptionDashboard = __vue_normalize__$7(
+      { render: __vue_render__$7, staticRenderFns: __vue_staticRenderFns__$7 },
+      __vue_inject_styles__$7,
+      __vue_script__$7,
+      __vue_scope_id__$7,
+      __vue_is_functional_template__$7,
+      __vue_module_identifier__$7,
+      undefined,
+      undefined
+    );
+
+  // Copyright (c) 2018, Libermatic and contributors
+  // For license information, please see license.txt
+  function month_diff_dec(d1, d2) {
+    var last_start = frappe.datetime.add_days(d2, 1);
+    var next_start = d1;
+    var cur_start = d1;
+    var months = 0;
+    var cur_months = 0;
+
+    while (moment(next_start).isSameOrBefore(last_start)) {
+      cur_start = next_start;
+      cur_months = months;
+      next_start = frappe.datetime.add_months(next_start, 1);
+      months += 1;
+    }
+
+    var rem_days = frappe.datetime.get_day_diff(last_start, cur_start);
+    var days_in_month = frappe.datetime.get_day_diff(next_start, cur_start);
+    return cur_months + rem_days / days_in_month;
+  }
+
+  function get_to_date(date, freq) {
+    return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
+  }
+
+  function get_description(_ref) {
+    var item_name = _ref.item_name,
+        frequency = _ref.frequency,
+        from_date = _ref.from_date,
+        to_date = _ref.to_date;
+
+    if (frequency === 'Lifetime') {
+      return "".concat(item_name, ": Lifetime validity, starting ").concat(frappe.datetime.str_to_user(from_date));
+    }
+
+    return "".concat(item_name, ": Valid from ").concat(frappe.datetime.str_to_user(from_date), " to ").concat(frappe.datetime.str_to_user(to_date));
+  }
+
+  var SubscriptionDialog =
+  /*#__PURE__*/
+  function () {
+    function SubscriptionDialog() {
+      _classCallCheck(this, SubscriptionDialog);
+
+      var today = frappe.datetime.nowdate();
+      this.dialog = new frappe.ui.Dialog({
+        title: 'Select Subscription Period',
+        fields: [{
+          fieldname: 'ht',
+          fieldtype: 'HTML'
+        }, {
+          fieldtype: 'Section Break'
+        }, {
+          label: 'Frequency',
+          fieldname: 'frequency',
+          fieldtype: 'Select',
+          options: 'Monthly\nQuarterly\nHalf-Yearly\nYearly\nLifetime',
+          default: 'Monthly'
+        }, {
+          fieldtype: 'Column Break'
+        }, {
+          label: 'From Date',
+          fieldname: 'from_date',
+          fieldtype: 'Date',
+          default: today
+        }, {
+          label: 'To Date',
+          fieldname: 'to_date',
+          fieldtype: 'Date',
+          default: get_to_date(today, 1)
+        }]
+      });
+
+      this._setup();
+    }
+
+    _createClass(SubscriptionDialog, [{
+      key: "_setup",
+      value: function _setup() {
+        var _this = this;
+
+        var months = {
+          Monthly: 1,
+          Quarterly: 3,
+          'Half-Yearly': 6,
+          Yearly: 12,
+          Lifetime: 60
+        };
+
+        var handle_to_date = function handle_to_date() {
+          var _this$dialog$get_valu = _this.dialog.get_values(),
+              frequency = _this$dialog$get_valu.frequency,
+              from_date = _this$dialog$get_valu.from_date;
+
+          if (from_date && frequency && months[frequency]) {
+            if (frequency === 'Lifetime') {
+              _this.dialog.set_value('to_date', null);
+
+              _this.dialog.fields_dict['to_date'].toggle(false);
+            } else {
+              _this.dialog.fields_dict['to_date'].toggle(true);
+
+              _this.dialog.set_value('to_date', get_to_date(from_date, months[frequency]));
+            }
+          }
+        };
+
+        this.dialog.fields_dict['frequency'].$input.on('input', handle_to_date);
+        this.dialog.fields_dict['from_date'].$input.on('blur', handle_to_date);
+      }
+    }, {
+      key: "load_priors",
+      value: function () {
+        var _load_priors = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee(member) {
+          var _ref2, _ref2$message, subscriptions;
+
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  if (this.vm) {
+                    this.vm.$destroy();
+                  }
+
+                  this.dialog.fields_dict['ht'].$wrapper.empty();
+                  _context.next = 4;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.gym_subscription.get_currents',
+                    args: {
+                      member: member
+                    }
+                  });
+
+                case 4:
+                  _ref2 = _context.sent;
+                  _ref2$message = _ref2.message;
+                  subscriptions = _ref2$message === void 0 ? [] : _ref2$message;
+                  this.vm = new Vue({
+                    el: $('<div />').appendTo(this.dialog.fields_dict['ht'].$wrapper)[0],
+                    render: function render(h) {
+                      return h(CurrentSubscriptions, {
+                        props: {
+                          subscriptions: subscriptions
+                        }
+                      });
+                    }
+                  });
+
+                case 8:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        }));
+
+        return function load_priors(_x) {
+          return _load_priors.apply(this, arguments);
+        };
+      }()
+    }, {
+      key: "register",
+      value: function () {
+        var _register = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee2(frm, cdt, cdn) {
+          var _this2 = this;
+
+          var row, _ref3, sub_item, item_name;
+
+          return regeneratorRuntime.wrap(function _callee2$(_context2) {
+            while (1) {
+              switch (_context2.prev = _context2.next) {
+                case 0:
+                  row = frappe.get_doc(cdt, cdn) || {};
+
+                  if (row.item_code) {
+                    _context2.next = 3;
+                    break;
+                  }
+
+                  return _context2.abrupt("return", false);
+
+                case 3:
+                  _context2.next = 5;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
+                    args: {
+                      item_code: row.item_code
+                    }
+                  });
+
+                case 5:
+                  _ref3 = _context2.sent;
+                  sub_item = _ref3.message;
+
+                  if (sub_item) {
+                    _context2.next = 9;
+                    break;
+                  }
+
+                  return _context2.abrupt("return", false);
+
+                case 9:
+                  item_name = sub_item.item_name;
+
+                  if (item_name) {
+                    this.dialog.set_title("Select Period for ".concat(item_name));
+                  }
+
+                  this.dialog.set_primary_action('OK', function () {
+                    var _this2$dialog$get_val = _this2.dialog.get_values(),
+                        frequency = _this2$dialog$get_val.frequency,
+                        from_date = _this2$dialog$get_val.from_date,
+                        to_date = _this2$dialog$get_val.to_date;
+
+                    frappe.model.set_value(cdt, cdn, 'qty', frequency === 'Lifetime' ? 60 : month_diff_dec(from_date, to_date));
+                    frappe.model.set_value(cdt, cdn, 'description', get_description({
+                      frequency: frequency,
+                      from_date: from_date,
+                      to_date: to_date,
+                      item_name: item_name || row.item_name
+                    }));
+                    frappe.model.set_value(cdt, cdn, 'is_gym_subscription', 1);
+
+                    if (frequency === 'Lifetime') {
+                      frappe.model.set_value(cdt, cdn, 'gym_is_lifetime', 1);
+                      frappe.model.set_value(cdt, cdn, 'gym_from_date', from_date);
+                    } else {
+                      frappe.model.set_value(cdt, cdn, 'gym_from_date', from_date);
+                      frappe.model.set_value(cdt, cdn, 'gym_to_date', to_date);
+                    }
+
+                    _this2.dialog.hide();
+
+                    _this2.dialog.get_primary_btn().off('click');
+                  });
+                  return _context2.abrupt("return", true);
+
+                case 13:
+                case "end":
+                  return _context2.stop();
+              }
+            }
+          }, _callee2, this);
+        }));
+
+        return function register(_x2, _x3, _x4) {
+          return _register.apply(this, arguments);
+        };
+      }()
+    }, {
+      key: "show",
+      value: function show() {
+        this.dialog.show();
+      }
+    }]);
+
+    return SubscriptionDialog;
+  }();
+
+  var components = {
+    SubscriptionSelector: SubscriptionDialog
+  };
+
   var index$1 = {
-    make_training_schedule_page: function (node) { return new Vue({
+    make_member_dashboard: function make_member_dashboard(node, props) {
+      return new Vue({
         el: node,
-        render: function (h) { return h(TrainingSchedule); },
-      }); },
+        render: function render(h) {
+          return h(MemberDashboard, {
+            props: props
+          });
+        }
+      });
+    },
+    make_subscription_dashboard: function make_subscription_dashboard(node, props) {
+      return new Vue({
+        el: node,
+        render: function render(h) {
+          return h(SubscriptionDashboard, {
+            props: props
+          });
+        }
+      });
+    },
+    make_training_schedule_page: function make_training_schedule_page(node) {
+      return new Vue({
+        el: node,
+        render: function render(h) {
+          return h(TrainingSchedule);
+        }
+      });
+    },
+    components: components
   };
 
   return index$1;

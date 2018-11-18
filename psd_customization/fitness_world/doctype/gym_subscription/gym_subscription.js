@@ -57,7 +57,6 @@ frappe.ui.form.on('Gym Subscription', {
         }
         return false;
       }
-      console.log(get_button_state());
       const { label, method } = get_invoice_props();
       frm
         .add_custom_button(label, function() {
