@@ -185,5 +185,39 @@
   "property": "collapsible", 
   "property_type": "Check", 
   "value": "1"
+ }, 
+ {
+  "_assign": null, 
+  "_comments": null, 
+  "_liked_by": null, 
+  "_user_tags": null, 
+  "default_value": null, 
+  "doc_type": "Sales Invoice Item", 
+  "docstatus": 0, 
+  "doctype": "Property Setter", 
+  "doctype_or_field": "DocField", 
+  "field_name": "item_code", 
+  "modified": "2018-11-20 01:31:49.413398", 
+  "name": "Sales Invoice Item-item_code-columns", 
+  "property": "columns", 
+  "property_type": "Int", 
+  "value": "3"
+ }, 
+ {
+  "_assign": null, 
+  "_comments": null, 
+  "_liked_by": null, 
+  "_user_tags": null, 
+  "default_value": null, 
+  "doc_type": "Sales Invoice Item", 
+  "docstatus": 0, 
+  "doctype": "Property Setter", 
+  "doctype_or_field": "DocField", 
+  "field_name": "warehouse", 
+  "modified": "2018-11-20 01:34:13.911568", 
+  "name": "Sales Invoice Item-warehouse-in_list_view", 
+  "property": "in_list_view", 
+  "property_type": "Check", 
+  "value": "0"
  }
 ]
