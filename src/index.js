@@ -4,7 +4,6 @@ import TrainingSchedule from './TrainingSchedule.vue';
 import MemberDashboard from './MemberDashboard.vue';
 import SubscriptionDashboard from './SubscriptionDashboard.vue';
 import scripts from './scripts';
-import components from './frappe-components';
 import utils from './utils';
 
 export default {
@@ -24,6 +23,5 @@ export default {
       render: h => h(TrainingSchedule),
     }),
   scripts,
-  components,
   utils,
 };
