@@ -366,12 +366,12 @@ var psd = (function () {
     /**
      * Show production mode tip message on boot?
      */
-    productionTip: "development" !== 'production',
+    productionTip: "production" !== 'production',
 
     /**
      * Whether to enable devtools
      */
-    devtools: "development" !== 'production',
+    devtools: "production" !== 'production',
 
     /**
      * Whether to record perf
@@ -570,96 +570,6 @@ var psd = (function () {
   /*  */
 
   var warn = noop;
-  var tip = noop;
-  var generateComponentTrace = (noop); // work around flow check
-  var formatComponentName = (noop);
-
-  {
-    var hasConsole = typeof console !== 'undefined';
-    var classifyRE = /(?:^|[-_])(\w)/g;
-    var classify = function (str) { return str
-      .replace(classifyRE, function (c) { return c.toUpperCase(); })
-      .replace(/[-_]/g, ''); };
-
-    warn = function (msg, vm) {
-      var trace = vm ? generateComponentTrace(vm) : '';
-
-      if (config.warnHandler) {
-        config.warnHandler.call(null, msg, vm, trace);
-      } else if (hasConsole && (!config.silent)) {
-        console.error(("[Vue warn]: " + msg + trace));
-      }
-    };
-
-    tip = function (msg, vm) {
-      if (hasConsole && (!config.silent)) {
-        console.warn("[Vue tip]: " + msg + (
-          vm ? generateComponentTrace(vm) : ''
-        ));
-      }
-    };
-
-    formatComponentName = function (vm, includeFile) {
-      if (vm.$root === vm) {
-        return '<Root>'
-      }
-      var options = typeof vm === 'function' && vm.cid != null
-        ? vm.options
-        : vm._isVue
-          ? vm.$options || vm.constructor.options
-          : vm || {};
-      var name = options.name || options._componentTag;
-      var file = options.__file;
-      if (!name && file) {
-        var match = file.match(/([^/\\]+)\.vue$/);
-        name = match && match[1];
-      }
-
-      return (
-        (name ? ("<" + (classify(name)) + ">") : "<Anonymous>") +
-        (file && includeFile !== false ? (" at " + file) : '')
-      )
-    };
-
-    var repeat = function (str, n) {
-      var res = '';
-      while (n) {
-        if (n % 2 === 1) { res += str; }
-        if (n > 1) { str += str; }
-        n >>= 1;
-      }
-      return res
-    };
-
-    generateComponentTrace = function (vm) {
-      if (vm._isVue && vm.$parent) {
-        var tree = [];
-        var currentRecursiveSequence = 0;
-        while (vm) {
-          if (tree.length > 0) {
-            var last = tree[tree.length - 1];
-            if (last.constructor === vm.constructor) {
-              currentRecursiveSequence++;
-              vm = vm.$parent;
-              continue
-            } else if (currentRecursiveSequence > 0) {
-              tree[tree.length - 1] = [last, currentRecursiveSequence];
-              currentRecursiveSequence = 0;
-            }
-          }
-          tree.push(vm);
-          vm = vm.$parent;
-        }
-        return '\n\nfound in\n\n' + tree
-          .map(function (vm, i) { return ("" + (i === 0 ? '---> ' : repeat(' ', 5 + i * 2)) + (Array.isArray(vm)
-              ? ((formatComponentName(vm[0])) + "... (" + (vm[1]) + " recursive calls)")
-              : formatComponentName(vm))); })
-          .join('\n')
-      } else {
-        return ("\n\n(found in " + (formatComponentName(vm)) + ")")
-      }
-    };
-  }
 
   /*  */
 
@@ -1000,10 +910,6 @@ var psd = (function () {
         if (newVal === value || (newVal !== newVal && value !== value)) {
           return
         }
-        /* eslint-enable no-self-compare */
-        if (customSetter) {
-          customSetter();
-        }
         if (setter) {
           setter.call(obj, newVal);
         } else {
@@ -1021,10 +927,6 @@ var psd = (function () {
    * already exist.
    */
   function set (target, key, val) {
-    if (isUndef(target) || isPrimitive(target)
-    ) {
-      warn(("Cannot set reactive property on undefined, null, or primitive value: " + ((target))));
-    }
     if (Array.isArray(target) && isValidArrayIndex(key)) {
       target.length = Math.max(target.length, key);
       target.splice(key, 1, val);
@@ -1036,10 +938,6 @@ var psd = (function () {
     }
     var ob = (target).__ob__;
     if (target._isVue || (ob && ob.vmCount)) {
-      warn(
-        'Avoid adding reactive properties to a Vue instance or its root $data ' +
-        'at runtime - declare it upfront in the data option.'
-      );
       return val
     }
     if (!ob) {
@@ -1055,20 +953,12 @@ var psd = (function () {
    * Delete a property and trigger change if necessary.
    */
   function del (target, key) {
-    if (isUndef(target) || isPrimitive(target)
-    ) {
-      warn(("Cannot delete reactive property on undefined, null, or primitive value: " + ((target))));
-    }
     if (Array.isArray(target) && isValidArrayIndex(key)) {
       target.splice(key, 1);
       return
     }
     var ob = (target).__ob__;
     if (target._isVue || (ob && ob.vmCount)) {
-      warn(
-        'Avoid deleting properties on a Vue instance or its root $data ' +
-        '- just set it to null.'
-      );
       return
     }
     if (!hasOwn(target, key)) {
@@ -1103,21 +993,6 @@ var psd = (function () {
    * value into the final value.
    */
   var strats = config.optionMergeStrategies;
-
-  /**
-   * Options with restrictions
-   */
-  {
-    strats.el = strats.propsData = function (parent, child, vm, key) {
-      if (!vm) {
-        warn(
-          "option \"" + key + "\" can only be used during instance " +
-          'creation with the `new` keyword.'
-        );
-      }
-      return defaultStrat(parent, child)
-    };
-  }
 
   /**
    * Helper that recursively merges two data objects together.
@@ -1191,12 +1066,6 @@ var psd = (function () {
   ) {
     if (!vm) {
       if (childVal && typeof childVal !== 'function') {
-        warn(
-          'The "data" option should be a function ' +
-          'that returns a per-instance value in component ' +
-          'definitions.',
-          vm
-        );
 
         return parentVal
       }
@@ -1241,7 +1110,6 @@ var psd = (function () {
   ) {
     var res = Object.create(parentVal || null);
     if (childVal) {
-      assertObjectType(key, childVal, vm);
       return extend(res, childVal)
     } else {
       return res
@@ -1269,9 +1137,6 @@ var psd = (function () {
     if (childVal === nativeWatch) { childVal = undefined; }
     /* istanbul ignore if */
     if (!childVal) { return Object.create(parentVal || null) }
-    {
-      assertObjectType(key, childVal, vm);
-    }
     if (!parentVal) { return childVal }
     var ret = {};
     extend(ret, parentVal);
@@ -1300,7 +1165,7 @@ var psd = (function () {
     vm,
     key
   ) {
-    if (childVal && "development" !== 'production') {
+    if (childVal && "production" !== 'production') {
       assertObjectType(key, childVal, vm);
     }
     if (!parentVal) { return childVal }
@@ -1321,31 +1186,6 @@ var psd = (function () {
   };
 
   /**
-   * Validate component names
-   */
-  function checkComponents (options) {
-    for (var key in options.components) {
-      validateComponentName(key);
-    }
-  }
-
-  function validateComponentName (name) {
-    if (!/^[a-zA-Z][\w-]*$/.test(name)) {
-      warn(
-        'Invalid component name: "' + name + '". Component names ' +
-        'can only contain alphanumeric characters and the hyphen, ' +
-        'and must start with a letter.'
-      );
-    }
-    if (isBuiltInTag(name) || config.isReservedTag(name)) {
-      warn(
-        'Do not use built-in or reserved HTML elements as component ' +
-        'id: ' + name
-      );
-    }
-  }
-
-  /**
    * Ensure all props option syntax are normalized into the
    * Object-based format.
    */
@@ -1361,8 +1201,6 @@ var psd = (function () {
         if (typeof val === 'string') {
           name = camelize(val);
           res[name] = { type: null };
-        } else {
-          warn('props must be strings when using array syntax.');
         }
       }
     } else if (isPlainObject(props)) {
@@ -1373,12 +1211,6 @@ var psd = (function () {
           ? val
           : { type: val };
       }
-    } else {
-      warn(
-        "Invalid value for option \"props\": expected an Array or an Object, " +
-        "but got " + (toRawType(props)) + ".",
-        vm
-      );
     }
     options.props = res;
   }
@@ -1401,12 +1233,6 @@ var psd = (function () {
           ? extend({ from: key }, val)
           : { from: val };
       }
-    } else {
-      warn(
-        "Invalid value for option \"inject\": expected an Array or an Object, " +
-        "but got " + (toRawType(inject)) + ".",
-        vm
-      );
     }
   }
 
@@ -1444,9 +1270,6 @@ var psd = (function () {
     child,
     vm
   ) {
-    {
-      checkComponents(child);
-    }
 
     if (typeof child === 'function') {
       child = child.options;
@@ -1505,12 +1328,6 @@ var psd = (function () {
     if (hasOwn(assets, PascalCaseId)) { return assets[PascalCaseId] }
     // fallback to prototype chain
     var res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
-    if (warnMissing && !res) {
-      warn(
-        'Failed to resolve ' + type.slice(0, -1) + ': ' + id,
-        options
-      );
-    }
     return res
   }
 
@@ -1549,9 +1366,6 @@ var psd = (function () {
       observe(value);
       toggleObserving(prevShouldObserve);
     }
-    {
-      assertProp(prop, key, value, vm, absent);
-    }
     return value
   }
 
@@ -1564,15 +1378,6 @@ var psd = (function () {
       return undefined
     }
     var def = prop.default;
-    // warn against non-factory defaults for Object & Array
-    if (isObject(def)) {
-      warn(
-        'Invalid default value for prop "' + key + '": ' +
-        'Props with type Object/Array must use a factory function ' +
-        'to return the default value.',
-        vm
-      );
-    }
     // the raw prop value was also undefined from previous render,
     // return previous default value to avoid unnecessary watcher trigger
     if (vm && vm.$options.propsData &&
@@ -1586,84 +1391,6 @@ var psd = (function () {
     return typeof def === 'function' && getType(prop.type) !== 'Function'
       ? def.call(vm)
       : def
-  }
-
-  /**
-   * Assert whether a prop is valid.
-   */
-  function assertProp (
-    prop,
-    name,
-    value,
-    vm,
-    absent
-  ) {
-    if (prop.required && absent) {
-      warn(
-        'Missing required prop: "' + name + '"',
-        vm
-      );
-      return
-    }
-    if (value == null && !prop.required) {
-      return
-    }
-    var type = prop.type;
-    var valid = !type || type === true;
-    var expectedTypes = [];
-    if (type) {
-      if (!Array.isArray(type)) {
-        type = [type];
-      }
-      for (var i = 0; i < type.length && !valid; i++) {
-        var assertedType = assertType(value, type[i]);
-        expectedTypes.push(assertedType.expectedType || '');
-        valid = assertedType.valid;
-      }
-    }
-    if (!valid) {
-      warn(
-        "Invalid prop: type check failed for prop \"" + name + "\"." +
-        " Expected " + (expectedTypes.map(capitalize).join(', ')) +
-        ", got " + (toRawType(value)) + ".",
-        vm
-      );
-      return
-    }
-    var validator = prop.validator;
-    if (validator) {
-      if (!validator(value)) {
-        warn(
-          'Invalid prop: custom validator check failed for prop "' + name + '".',
-          vm
-        );
-      }
-    }
-  }
-
-  var simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
-
-  function assertType (value, type) {
-    var valid;
-    var expectedType = getType(type);
-    if (simpleCheckRE.test(expectedType)) {
-      var t = typeof value;
-      valid = t === expectedType.toLowerCase();
-      // for primitive wrapper objects
-      if (!valid && t === 'object') {
-        valid = value instanceof type;
-      }
-    } else if (expectedType === 'Object') {
-      valid = isPlainObject(value);
-    } else if (expectedType === 'Array') {
-      valid = Array.isArray(value);
-    } else {
-      valid = value instanceof type;
-    }
-    return {
-      valid: valid,
-      expectedType: expectedType
-    }
   }
 
   /**
@@ -1726,9 +1453,6 @@ var psd = (function () {
   }
 
   function logError (err, vm, info) {
-    {
-      warn(("Error in " + info + ": \"" + (err.toString()) + "\""), vm);
-    }
     /* istanbul ignore else */
     if ((inBrowser || inWeex) && typeof console !== 'undefined') {
       console.error(err);
@@ -1853,83 +1577,6 @@ var psd = (function () {
 
   /*  */
 
-  /* not type checking this file because flow doesn't play well with Proxy */
-
-  var initProxy;
-
-  {
-    var allowedGlobals = makeMap(
-      'Infinity,undefined,NaN,isFinite,isNaN,' +
-      'parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,' +
-      'Math,Number,Date,Array,Object,Boolean,String,RegExp,Map,Set,JSON,Intl,' +
-      'require' // for Webpack/Browserify
-    );
-
-    var warnNonPresent = function (target, key) {
-      warn(
-        "Property or method \"" + key + "\" is not defined on the instance but " +
-        'referenced during render. Make sure that this property is reactive, ' +
-        'either in the data option, or for class-based components, by ' +
-        'initializing the property. ' +
-        'See: https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties.',
-        target
-      );
-    };
-
-    var hasProxy =
-      typeof Proxy !== 'undefined' && isNative(Proxy);
-
-    if (hasProxy) {
-      var isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact');
-      config.keyCodes = new Proxy(config.keyCodes, {
-        set: function set (target, key, value) {
-          if (isBuiltInModifier(key)) {
-            warn(("Avoid overwriting built-in modifier in config.keyCodes: ." + key));
-            return false
-          } else {
-            target[key] = value;
-            return true
-          }
-        }
-      });
-    }
-
-    var hasHandler = {
-      has: function has (target, key) {
-        var has = key in target;
-        var isAllowed = allowedGlobals(key) || key.charAt(0) === '_';
-        if (!has && !isAllowed) {
-          warnNonPresent(target, key);
-        }
-        return has || !isAllowed
-      }
-    };
-
-    var getHandler = {
-      get: function get (target, key) {
-        if (typeof key === 'string' && !(key in target)) {
-          warnNonPresent(target, key);
-        }
-        return target[key]
-      }
-    };
-
-    initProxy = function initProxy (vm) {
-      if (hasProxy) {
-        // determine which proxy handler to use
-        var options = vm.$options;
-        var handlers = options.render && options.render._withStripped
-          ? getHandler
-          : hasHandler;
-        vm._renderProxy = new Proxy(vm, handlers);
-      } else {
-        vm._renderProxy = vm;
-      }
-    };
-  }
-
-  /*  */
-
   var seenObjects = new _Set();
 
   /**
@@ -1962,29 +1609,6 @@ var psd = (function () {
       keys = Object.keys(val);
       i = keys.length;
       while (i--) { _traverse(val[keys[i]], seen); }
-    }
-  }
-
-  var mark;
-  var measure;
-
-  {
-    var perf = inBrowser && window.performance;
-    /* istanbul ignore if */
-    if (
-      perf &&
-      perf.mark &&
-      perf.measure &&
-      perf.clearMarks &&
-      perf.clearMeasures
-    ) {
-      mark = function (tag) { return perf.mark(tag); };
-      measure = function (name, startTag, endTag) {
-        perf.measure(name, startTag, endTag);
-        perf.clearMarks(startTag);
-        perf.clearMarks(endTag);
-        perf.clearMeasures(name);
-      };
     }
   }
 
@@ -2037,12 +1661,7 @@ var psd = (function () {
       old = oldOn[name];
       event = normalizeEvent(name);
       /* istanbul ignore if */
-      if (isUndef(cur)) {
-        warn(
-          "Invalid handler for event \"" + (event.name) + "\": got " + String(cur),
-          vm
-        );
-      } else if (isUndef(old)) {
+      if (isUndef(cur)) ; else if (isUndef(old)) {
         if (isUndef(cur.fns)) {
           cur = on[name] = createFnInvoker(cur);
         }
@@ -2115,22 +1734,6 @@ var psd = (function () {
     if (isDef(attrs) || isDef(props)) {
       for (var key in propOptions) {
         var altKey = hyphenate(key);
-        {
-          var keyInLowerCase = key.toLowerCase();
-          if (
-            key !== keyInLowerCase &&
-            attrs && hasOwn(attrs, keyInLowerCase)
-          ) {
-            tip(
-              "Prop \"" + keyInLowerCase + "\" is passed to component " +
-              (formatComponentName(tag || Ctor)) + ", but the declared prop name is" +
-              " \"" + key + "\". " +
-              "Note that HTML attributes are case-insensitive and camelCased " +
-              "props need to use their kebab-case equivalents when using in-DOM " +
-              "templates. You should probably use \"" + altKey + "\" instead of \"" + key + "\"."
-            );
-          }
-        }
         checkProp(res, props, key, altKey, true) ||
         checkProp(res, attrs, key, altKey, false);
       }
@@ -2318,10 +1921,6 @@ var psd = (function () {
       });
 
       var reject = once(function (reason) {
-        warn(
-          "Failed to resolve async component: " + (String(factory)) +
-          (reason ? ("\nReason: " + reason) : '')
-        );
         if (isDef(factory.errorComp)) {
           factory.error = true;
           forceRender();
@@ -2361,7 +1960,7 @@ var psd = (function () {
             setTimeout(function () {
               if (isUndef(factory.resolved)) {
                 reject(
-                  "timeout (" + (res.timeout) + "ms)"
+                  null
                 );
               }
             }, res.timeout);
@@ -2508,18 +2107,6 @@ var psd = (function () {
 
     Vue.prototype.$emit = function (event) {
       var vm = this;
-      {
-        var lowerCaseEvent = event.toLowerCase();
-        if (lowerCaseEvent !== event && vm._events[lowerCaseEvent]) {
-          tip(
-            "Event \"" + lowerCaseEvent + "\" is emitted in component " +
-            (formatComponentName(vm)) + " but the handler is registered for \"" + event + "\". " +
-            "Note that HTML attributes are case-insensitive and you cannot use " +
-            "v-on to listen to camelCase events when using in-DOM templates. " +
-            "You should probably use \"" + (hyphenate(event)) + "\" instead of \"" + event + "\"."
-          );
-        }
-      }
       var cbs = vm._events[event];
       if (cbs) {
         cbs = cbs.length > 1 ? toArray(cbs) : cbs;
@@ -2605,7 +2192,6 @@ var psd = (function () {
   /*  */
 
   var activeInstance = null;
-  var isUpdatingChildComponent = false;
 
   function initLifecycle (vm) {
     var options = vm.$options;
@@ -2735,46 +2321,12 @@ var psd = (function () {
     vm.$el = el;
     if (!vm.$options.render) {
       vm.$options.render = createEmptyVNode;
-      {
-        /* istanbul ignore if */
-        if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
-          vm.$options.el || el) {
-          warn(
-            'You are using the runtime-only build of Vue where the template ' +
-            'compiler is not available. Either pre-compile the templates into ' +
-            'render functions, or use the compiler-included build.',
-            vm
-          );
-        } else {
-          warn(
-            'Failed to mount component: template or render function not defined.',
-            vm
-          );
-        }
-      }
     }
     callHook(vm, 'beforeMount');
 
     var updateComponent;
     /* istanbul ignore if */
-    if (config.performance && mark) {
-      updateComponent = function () {
-        var name = vm._name;
-        var id = vm._uid;
-        var startTag = "vue-perf-start:" + id;
-        var endTag = "vue-perf-end:" + id;
-
-        mark(startTag);
-        var vnode = vm._render();
-        mark(endTag);
-        measure(("vue " + name + " render"), startTag, endTag);
-
-        mark(startTag);
-        vm._update(vnode, hydrating);
-        mark(endTag);
-        measure(("vue " + name + " patch"), startTag, endTag);
-      };
-    } else {
+    {
       updateComponent = function () {
         vm._update(vm._render(), hydrating);
       };
@@ -2802,9 +2354,6 @@ var psd = (function () {
     parentVnode,
     renderChildren
   ) {
-    {
-      isUpdatingChildComponent = true;
-    }
 
     // determine whether component has slot children
     // we need to do this before overwriting $options._renderChildren
@@ -2854,10 +2403,6 @@ var psd = (function () {
     if (hasChildren) {
       vm.$slots = resolveSlots(renderChildren, parentVnode.context);
       vm.$forceUpdate();
-    }
-
-    {
-      isUpdatingChildComponent = false;
     }
   }
 
@@ -2921,15 +2466,9 @@ var psd = (function () {
     popTarget();
   }
 
-  /*  */
-
-
-  var MAX_UPDATE_COUNT = 100;
-
   var queue = [];
   var activatedChildren = [];
   var has = {};
-  var circular = {};
   var waiting = false;
   var flushing = false;
   var index = 0;
@@ -2940,9 +2479,6 @@ var psd = (function () {
   function resetSchedulerState () {
     index = queue.length = activatedChildren.length = 0;
     has = {};
-    {
-      circular = {};
-    }
     waiting = flushing = false;
   }
 
@@ -2970,21 +2506,6 @@ var psd = (function () {
       id = watcher.id;
       has[id] = null;
       watcher.run();
-      // in dev build, check and stop circular updates.
-      if (has[id] != null) {
-        circular[id] = (circular[id] || 0) + 1;
-        if (circular[id] > MAX_UPDATE_COUNT) {
-          warn(
-            'You may have an infinite update loop ' + (
-              watcher.user
-                ? ("in watcher with expression \"" + (watcher.expression) + "\"")
-                : "in a component render function."
-            ),
-            watcher.vm
-          );
-          break
-        }
-      }
     }
 
     // keep copies of post queues before resetting state
@@ -3099,7 +2620,7 @@ var psd = (function () {
     this.newDeps = [];
     this.depIds = new _Set();
     this.newDepIds = new _Set();
-    this.expression = expOrFn.toString();
+    this.expression = '';
     // parse expression for getter
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn;
@@ -3107,12 +2628,6 @@ var psd = (function () {
       this.getter = parsePath(expOrFn);
       if (!this.getter) {
         this.getter = function () {};
-        warn(
-          "Failed watching path: \"" + expOrFn + "\" " +
-          'Watcher only accepts simple dot-delimited paths. ' +
-          'For full control, use a function instead.',
-          vm
-        );
       }
     }
     this.value = this.lazy
@@ -3323,25 +2838,7 @@ var psd = (function () {
       var value = validateProp(key, propsOptions, propsData, vm);
       /* istanbul ignore else */
       {
-        var hyphenatedKey = hyphenate(key);
-        if (isReservedAttribute(hyphenatedKey) ||
-            config.isReservedAttr(hyphenatedKey)) {
-          warn(
-            ("\"" + hyphenatedKey + "\" is a reserved attribute and cannot be used as component prop."),
-            vm
-          );
-        }
-        defineReactive(props, key, value, function () {
-          if (vm.$parent && !isUpdatingChildComponent) {
-            warn(
-              "Avoid mutating a prop directly since the value will be " +
-              "overwritten whenever the parent component re-renders. " +
-              "Instead, use a data or computed property based on the prop's " +
-              "value. Prop being mutated: \"" + key + "\"",
-              vm
-            );
-          }
-        });
+        defineReactive(props, key, value);
       }
       // static props are already proxied on the component's prototype
       // during Vue.extend(). We only need to proxy props defined at
@@ -3362,11 +2859,6 @@ var psd = (function () {
       : data || {};
     if (!isPlainObject(data)) {
       data = {};
-      warn(
-        'data functions should return an object:\n' +
-        'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function',
-        vm
-      );
     }
     // proxy data on instance
     var keys = Object.keys(data);
@@ -3375,21 +2867,7 @@ var psd = (function () {
     var i = keys.length;
     while (i--) {
       var key = keys[i];
-      {
-        if (methods && hasOwn(methods, key)) {
-          warn(
-            ("Method \"" + key + "\" has already been defined as a data property."),
-            vm
-          );
-        }
-      }
-      if (props && hasOwn(props, key)) {
-        warn(
-          "The data property \"" + key + "\" is already declared as a prop. " +
-          "Use prop default value instead.",
-          vm
-        );
-      } else if (!isReserved(key)) {
+      if (props && hasOwn(props, key)) ; else if (!isReserved(key)) {
         proxy(vm, "_data", key);
       }
     }
@@ -3421,12 +2899,6 @@ var psd = (function () {
     for (var key in computed) {
       var userDef = computed[key];
       var getter = typeof userDef === 'function' ? userDef : userDef.get;
-      if (getter == null) {
-        warn(
-          ("Getter is missing for computed property \"" + key + "\"."),
-          vm
-        );
-      }
 
       if (!isSSR) {
         // create internal watcher for the computed property.
@@ -3443,12 +2915,6 @@ var psd = (function () {
       // at instantiation here.
       if (!(key in vm)) {
         defineComputed(vm, key, userDef);
-      } else {
-        if (key in vm.$data) {
-          warn(("The computed property \"" + key + "\" is already defined in data."), vm);
-        } else if (vm.$options.props && key in vm.$options.props) {
-          warn(("The computed property \"" + key + "\" is already defined as a prop."), vm);
-        }
       }
     }
   }
@@ -3474,14 +2940,6 @@ var psd = (function () {
         ? userDef.set
         : noop;
     }
-    if (sharedPropertyDefinition.set === noop) {
-      sharedPropertyDefinition.set = function () {
-        warn(
-          ("Computed property \"" + key + "\" was assigned to but it has no setter."),
-          this
-        );
-      };
-    }
     Object.defineProperty(target, key, sharedPropertyDefinition);
   }
 
@@ -3503,27 +2961,6 @@ var psd = (function () {
   function initMethods (vm, methods) {
     var props = vm.$options.props;
     for (var key in methods) {
-      {
-        if (methods[key] == null) {
-          warn(
-            "Method \"" + key + "\" has an undefined value in the component definition. " +
-            "Did you reference the function correctly?",
-            vm
-          );
-        }
-        if (props && hasOwn(props, key)) {
-          warn(
-            ("Method \"" + key + "\" has already been defined as a prop."),
-            vm
-          );
-        }
-        if ((key in vm) && isReserved(key)) {
-          warn(
-            "Method \"" + key + "\" conflicts with an existing Vue instance method. " +
-            "Avoid defining component methods that start with _ or $."
-          );
-        }
-      }
       vm[key] = methods[key] == null ? noop : bind(methods[key], vm);
     }
   }
@@ -3565,18 +3002,6 @@ var psd = (function () {
     dataDef.get = function () { return this._data };
     var propsDef = {};
     propsDef.get = function () { return this._props };
-    {
-      dataDef.set = function (newData) {
-        warn(
-          'Avoid replacing instance root $data. ' +
-          'Use nested data properties instead.',
-          this
-        );
-      };
-      propsDef.set = function () {
-        warn("$props is readonly.", this);
-      };
-    }
     Object.defineProperty(Vue.prototype, '$data', dataDef);
     Object.defineProperty(Vue.prototype, '$props', propsDef);
 
@@ -3622,14 +3047,7 @@ var psd = (function () {
       Object.keys(result).forEach(function (key) {
         /* istanbul ignore else */
         {
-          defineReactive(vm, key, result[key], function () {
-            warn(
-              "Avoid mutating an injected value directly since the changes will be " +
-              "overwritten whenever the provided component re-renders. " +
-              "injection being mutated: \"" + key + "\"",
-              vm
-            );
-          });
+          defineReactive(vm, key, result[key]);
         }
       });
       toggleObserving(true);
@@ -3664,8 +3082,6 @@ var psd = (function () {
             result[key] = typeof provideDefault === 'function'
               ? provideDefault.call(vm)
               : provideDefault;
-          } else {
-            warn(("Injection \"" + key + "\" not found"), vm);
           }
         }
       }
@@ -3723,12 +3139,6 @@ var psd = (function () {
     if (scopedSlotFn) { // scoped slot
       props = props || {};
       if (bindObject) {
-        if (!isObject(bindObject)) {
-          warn(
-            'slot v-bind without argument expects an Object',
-            this
-          );
-        }
         props = extend(extend({}, bindObject), props);
       }
       nodes = scopedSlotFn(props) || fallback;
@@ -3736,13 +3146,6 @@ var psd = (function () {
       var slotNodes = this.$slots[name];
       // warn duplicate slot usage
       if (slotNodes) {
-        if (slotNodes._rendered) {
-          warn(
-            "Duplicate presence of slot \"" + name + "\" found in the same render tree " +
-            "- this will likely cause render errors.",
-            this
-          );
-        }
         slotNodes._rendered = true;
       }
       nodes = slotNodes || fallback;
@@ -3810,12 +3213,7 @@ var psd = (function () {
     isSync
   ) {
     if (value) {
-      if (!isObject(value)) {
-        warn(
-          'v-bind without argument expects an Object or Array value',
-          this
-        );
-      } else {
+      if (!isObject(value)) ; else {
         if (Array.isArray(value)) {
           value = toObject(value);
         }
@@ -3916,12 +3314,7 @@ var psd = (function () {
 
   function bindObjectListeners (data, value) {
     if (value) {
-      if (!isPlainObject(value)) {
-        warn(
-          'v-on without argument expects an Object value',
-          this
-        );
-      } else {
+      if (!isPlainObject(value)) ; else {
         var on = data.on = data.on ? extend({}, data.on) : {};
         for (var key in value) {
           var existing = on[key];
@@ -4190,9 +3583,6 @@ var psd = (function () {
     // if at this stage it's not a constructor or an async component factory,
     // reject.
     if (typeof Ctor !== 'function') {
-      {
-        warn(("Invalid Component definition: " + (String(Ctor))), context);
-      }
       return
     }
 
@@ -4349,11 +3739,6 @@ var psd = (function () {
     normalizationType
   ) {
     if (isDef(data) && isDef((data).__ob__)) {
-      warn(
-        "Avoid using observed data object as vnode data: " + (JSON.stringify(data)) + "\n" +
-        'Always create fresh vnode data objects in each render!',
-        context
-      );
       return createEmptyVNode()
     }
     // object syntax in v-bind
@@ -4363,17 +3748,6 @@ var psd = (function () {
     if (!tag) {
       // in case of component :is set to falsy value
       return createEmptyVNode()
-    }
-    // warn against non-primitive key
-    if (isDef(data) && isDef(data.key) && !isPrimitive(data.key)
-    ) {
-      {
-        warn(
-          'Avoid using non-primitive value as key, ' +
-          'use string/number value instead.',
-          context
-        );
-      }
     }
     // support single function children as default scoped slot
     if (Array.isArray(children) &&
@@ -4480,12 +3854,8 @@ var psd = (function () {
 
     /* istanbul ignore else */
     {
-      defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, function () {
-        !isUpdatingChildComponent && warn("$attrs is readonly.", vm);
-      }, true);
-      defineReactive(vm, '$listeners', options._parentListeners || emptyObject, function () {
-        !isUpdatingChildComponent && warn("$listeners is readonly.", vm);
-      }, true);
+      defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true);
+      defineReactive(vm, '$listeners', options._parentListeners || emptyObject, null, true);
     }
   }
 
@@ -4502,14 +3872,6 @@ var psd = (function () {
       var ref = vm.$options;
       var render = ref.render;
       var _parentVnode = ref._parentVnode;
-
-      // reset _rendered flag on slots for duplicate slot check
-      {
-        for (var key in vm.$slots) {
-          // $flow-disable-line
-          vm.$slots[key]._rendered = false;
-        }
-      }
 
       if (_parentVnode) {
         vm.$scopedSlots = _parentVnode.data.scopedSlots || emptyObject;
@@ -4528,27 +3890,11 @@ var psd = (function () {
         // or previous vnode to prevent render error causing blank component
         /* istanbul ignore else */
         {
-          if (vm.$options.renderError) {
-            try {
-              vnode = vm.$options.renderError.call(vm._renderProxy, vm.$createElement, e);
-            } catch (e) {
-              handleError(e, vm, "renderError");
-              vnode = vm._vnode;
-            }
-          } else {
-            vnode = vm._vnode;
-          }
+          vnode = vm._vnode;
         }
       }
       // return empty vnode in case the render function errored out
       if (!(vnode instanceof VNode)) {
-        if (Array.isArray(vnode)) {
-          warn(
-            'Multiple root nodes returned from render function. Render function ' +
-            'should return a single root node.',
-            vm
-          );
-        }
         vnode = createEmptyVNode();
       }
       // set parent
@@ -4567,14 +3913,6 @@ var psd = (function () {
       // a uid
       vm._uid = uid$3++;
 
-      var startTag, endTag;
-      /* istanbul ignore if */
-      if (config.performance && mark) {
-        startTag = "vue-perf-start:" + (vm._uid);
-        endTag = "vue-perf-end:" + (vm._uid);
-        mark(startTag);
-      }
-
       // a flag to avoid this being observed
       vm._isVue = true;
       // merge options
@@ -4592,7 +3930,7 @@ var psd = (function () {
       }
       /* istanbul ignore else */
       {
-        initProxy(vm);
+        vm._renderProxy = vm;
       }
       // expose real self
       vm._self = vm;
@@ -4604,13 +3942,6 @@ var psd = (function () {
       initState(vm);
       initProvide(vm); // resolve provide after data/props
       callHook(vm, 'created');
-
-      /* istanbul ignore if */
-      if (config.performance && mark) {
-        vm._name = formatComponentName(vm, false);
-        mark(endTag);
-        measure(("vue " + (vm._name) + " init"), startTag, endTag);
-      }
 
       if (vm.$options.el) {
         vm.$mount(vm.$options.el);
@@ -4697,10 +4028,6 @@ var psd = (function () {
   }
 
   function Vue (options) {
-    if (!(this instanceof Vue)
-    ) {
-      warn('Vue is a constructor and should be called with the `new` keyword');
-    }
     this._init(options);
   }
 
@@ -4765,9 +4092,6 @@ var psd = (function () {
       }
 
       var name = extendOptions.name || Super.options.name;
-      if (name) {
-        validateComponentName(name);
-      }
 
       var Sub = function VueComponent (options) {
         this._init(options);
@@ -4847,10 +4171,6 @@ var psd = (function () {
         if (!definition) {
           return this.options[type + 's'][id]
         } else {
-          /* istanbul ignore if */
-          if (type === 'component') {
-            validateComponentName(id);
-          }
           if (type === 'component' && isPlainObject(definition)) {
             definition.name = definition.name || id;
             definition = this.options._base.extend(definition);
@@ -5005,13 +4325,6 @@ var psd = (function () {
     // config
     var configDef = {};
     configDef.get = function () { return config; };
-    {
-      configDef.set = function () {
-        warn(
-          'Do not replace the Vue.config object, set individual fields instead.'
-        );
-      };
-    }
     Object.defineProperty(Vue, 'config', configDef);
 
     // exposed util methods.
@@ -5272,9 +4585,6 @@ var psd = (function () {
     if (typeof el === 'string') {
       var selected = document.querySelector(el);
       if (!selected) {
-        warn(
-          'Cannot find element: ' + el
-        );
         return document.createElement('div')
       }
       return selected
@@ -5490,24 +4800,6 @@ var psd = (function () {
       }
     }
 
-    function isUnknownElement$$1 (vnode, inVPre) {
-      return (
-        !inVPre &&
-        !vnode.ns &&
-        !(
-          config.ignoredElements.length &&
-          config.ignoredElements.some(function (ignore) {
-            return isRegExp(ignore)
-              ? ignore.test(vnode.tag)
-              : ignore === vnode.tag
-          })
-        ) &&
-        config.isUnknownElement(vnode.tag)
-      )
-    }
-
-    var creatingElmInVPre = 0;
-
     function createElm (
       vnode,
       insertedVnodeQueue,
@@ -5535,19 +4827,6 @@ var psd = (function () {
       var children = vnode.children;
       var tag = vnode.tag;
       if (isDef(tag)) {
-        {
-          if (data && data.pre) {
-            creatingElmInVPre++;
-          }
-          if (isUnknownElement$$1(vnode, creatingElmInVPre)) {
-            warn(
-              'Unknown custom element: <' + tag + '> - did you ' +
-              'register the component correctly? For recursive components, ' +
-              'make sure to provide the "name" option.',
-              vnode.context
-            );
-          }
-        }
 
         vnode.elm = vnode.ns
           ? nodeOps.createElementNS(vnode.ns, tag)
@@ -5561,10 +4840,6 @@ var psd = (function () {
             invokeCreateHooks(vnode, insertedVnodeQueue);
           }
           insert(parentElm, vnode.elm, refElm);
-        }
-
-        if (data && data.pre) {
-          creatingElmInVPre--;
         }
       } else if (isTrue(vnode.isComment)) {
         vnode.elm = nodeOps.createComment(vnode.text);
@@ -5650,9 +4925,6 @@ var psd = (function () {
 
     function createChildren (vnode, children, insertedVnodeQueue) {
       if (Array.isArray(children)) {
-        {
-          checkDuplicateKeys(children);
-        }
         for (var i = 0; i < children.length; ++i) {
           createElm(children[i], insertedVnodeQueue, vnode.elm, null, true, children, i);
         }
@@ -5784,10 +5056,6 @@ var psd = (function () {
       // during leaving transitions
       var canMove = !removeOnly;
 
-      {
-        checkDuplicateKeys(newCh);
-      }
-
       while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
         if (isUndef(oldStartVnode)) {
           oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
@@ -5837,24 +5105,6 @@ var psd = (function () {
         addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
       } else if (newStartIdx > newEndIdx) {
         removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
-      }
-    }
-
-    function checkDuplicateKeys (children) {
-      var seenKeys = {};
-      for (var i = 0; i < children.length; i++) {
-        var vnode = children[i];
-        var key = vnode.key;
-        if (isDef(key)) {
-          if (seenKeys[key]) {
-            warn(
-              ("Duplicate keys detected: '" + key + "'. This may cause an update error."),
-              vnode.context
-            );
-          } else {
-            seenKeys[key] = true;
-          }
-        }
       }
     }
 
@@ -5936,8 +5186,6 @@ var psd = (function () {
         }
       }
     }
-
-    var hydrationBailed = false;
     // list of modules that can skip create hook during hydration because they
     // are already rendered on the client or has no need for initialization
     // Note: style is excluded because it relies on initial clone for future
@@ -5957,12 +5205,6 @@ var psd = (function () {
         vnode.isAsyncPlaceholder = true;
         return true
       }
-      // assert node match
-      {
-        if (!assertNodeMatch(elm, vnode, inVPre)) {
-          return false
-        }
-      }
       if (isDef(data)) {
         if (isDef(i = data.hook) && isDef(i = i.init)) { i(vnode, true /* hydrating */); }
         if (isDef(i = vnode.componentInstance)) {
@@ -5980,15 +5222,6 @@ var psd = (function () {
             // v-html and domProps: innerHTML
             if (isDef(i = data) && isDef(i = i.domProps) && isDef(i = i.innerHTML)) {
               if (i !== elm.innerHTML) {
-                /* istanbul ignore if */
-                if (typeof console !== 'undefined' &&
-                  !hydrationBailed
-                ) {
-                  hydrationBailed = true;
-                  console.warn('Parent: ', elm);
-                  console.warn('server innerHTML: ', i);
-                  console.warn('client innerHTML: ', elm.innerHTML);
-                }
                 return false
               }
             } else {
@@ -6005,14 +5238,6 @@ var psd = (function () {
               // if childNode is not null, it means the actual childNodes list is
               // longer than the virtual children list.
               if (!childrenMatch || childNode) {
-                /* istanbul ignore if */
-                if (typeof console !== 'undefined' &&
-                  !hydrationBailed
-                ) {
-                  hydrationBailed = true;
-                  console.warn('Parent: ', elm);
-                  console.warn('Mismatching childNodes vs. VNodes: ', elm.childNodes, children);
-                }
                 return false
               }
             }
@@ -6036,17 +5261,6 @@ var psd = (function () {
         elm.data = vnode.text;
       }
       return true
-    }
-
-    function assertNodeMatch (node, vnode, inVPre) {
-      if (isDef(vnode.tag)) {
-        return vnode.tag.indexOf('vue-component') === 0 || (
-          !isUnknownElement$$1(vnode, inVPre) &&
-          vnode.tag.toLowerCase() === (node.tagName && node.tagName.toLowerCase())
-        )
-      } else {
-        return node.nodeType === (vnode.isComment ? 8 : 3)
-      }
     }
 
     return function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
@@ -6080,14 +5294,6 @@ var psd = (function () {
               if (hydrate(oldVnode, vnode, insertedVnodeQueue)) {
                 invokeInsertHook(vnode, insertedVnodeQueue, true);
                 return oldVnode
-              } else {
-                warn(
-                  'The client-side rendered virtual DOM tree is not matching ' +
-                  'server-rendered content. This is likely caused by incorrect ' +
-                  'HTML markup, for example nesting block-level elements inside ' +
-                  '<p>, or missing <tbody>. Bailing hydration and performing ' +
-                  'full client-side render.'
-                );
               }
             }
             // either not server-rendered, or hydration failed.
@@ -7124,10 +6330,6 @@ var psd = (function () {
         : duration
     );
 
-    if (explicitEnterDuration != null) {
-      checkDuration(explicitEnterDuration, 'enter', vnode);
-    }
-
     var expectsCSS = css !== false && !isIE9;
     var userWantsControl = getHookArgumentsLength(enterHook);
 
@@ -7232,10 +6434,6 @@ var psd = (function () {
         : duration
     );
 
-    if (isDef(explicitLeaveDuration)) {
-      checkDuration(explicitLeaveDuration, 'leave', vnode);
-    }
-
     var cb = el._leaveCb = once(function () {
       if (el.parentNode && el.parentNode._pending) {
         el.parentNode._pending[vnode.key] = null;
@@ -7293,23 +6491,6 @@ var psd = (function () {
       if (!expectsCSS && !userWantsControl) {
         cb();
       }
-    }
-  }
-
-  // only used in dev mode
-  function checkDuration (val, name, vnode) {
-    if (typeof val !== 'number') {
-      warn(
-        "<transition> explicit " + name + " duration is not a valid number - " +
-        "got " + (JSON.stringify(val)) + ".",
-        vnode.context
-      );
-    } else if (isNaN(val)) {
-      warn(
-        "<transition> explicit " + name + " duration is NaN - " +
-        'the duration expression might be incorrect.',
-        vnode.context
-      );
     }
   }
 
@@ -7459,11 +6640,6 @@ var psd = (function () {
     var value = binding.value;
     var isMultiple = el.multiple;
     if (isMultiple && !Array.isArray(value)) {
-      warn(
-        "<select multiple v-model=\"" + (binding.expression) + "\"> " +
-        "expects an Array value for its binding, but got " + (Object.prototype.toString.call(value).slice(8, -1)),
-        vm
-      );
       return
     }
     var selected, option;
@@ -7674,25 +6850,7 @@ var psd = (function () {
         return
       }
 
-      // warn multiple elements
-      if (children.length > 1) {
-        warn(
-          '<transition> can only be used on a single element. Use ' +
-          '<transition-group> for lists.',
-          this.$parent
-        );
-      }
-
       var mode = this.mode;
-
-      // warn invalid mode
-      if (mode && mode !== 'in-out' && mode !== 'out-in'
-      ) {
-        warn(
-          'invalid <transition> mode: ' + mode,
-          this.$parent
-        );
-      }
 
       var rawChild = children[0];
 
@@ -7810,10 +6968,6 @@ var psd = (function () {
             children.push(c);
             map[c.key] = c
             ;(c.data || (c.data = {})).transition = transitionData;
-          } else {
-            var opts = c.componentOptions;
-            var name = opts ? (opts.Ctor.options.name || opts.tag || '') : c.tag;
-            warn(("<transition-group> children must be keyed: <" + name + ">"));
           }
         }
       }
@@ -7978,23 +7132,7 @@ var psd = (function () {
       if (config.devtools) {
         if (devtools) {
           devtools.emit('init', Vue);
-        } else if (
-          isChrome
-        ) {
-          console[console.info ? 'info' : 'log'](
-            'Download the Vue Devtools extension for a better development experience:\n' +
-            'https://github.com/vuejs/vue-devtools'
-          );
         }
-      }
-      if (config.productionTip !== false &&
-        typeof console !== 'undefined'
-      ) {
-        console[console.info ? 'info' : 'log'](
-          "You are running Vue in development mode.\n" +
-          "Make sure to turn on production mode when deploying for production.\n" +
-          "See more tips at https://vuejs.org/guide/deployment.html"
-        );
       }
     }, 0);
   }
@@ -8297,7 +7435,7 @@ var psd = (function () {
       return store[key] || (store[key] = value !== undefined ? value : {});
     })('versions', []).push({
       version: _core.version,
-      mode: 'global',
+      mode: _library ? 'pure' : 'global',
       copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
     });
   });
@@ -9388,14 +8526,8 @@ var psd = (function () {
               const __vue_script__ = script;
               
   /* template */
-  var __vue_render__ = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", { ref: "wrapper" })
-  };
+  var __vue_render__ = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{ref:"wrapper"})};
   var __vue_staticRenderFns__ = [];
-  __vue_render__._withStripped = true;
 
     /* style */
     const __vue_inject_styles__ = undefined;
@@ -9414,7 +8546,7 @@ var psd = (function () {
       const component = (typeof script$$1 === 'function' ? script$$1.options : script$$1) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/Field.vue";
+      component.__file = "Field.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -9457,27 +8589,8 @@ var psd = (function () {
               const __vue_script__$1 = script$1;
               
   /* template */
-  var __vue_render__$1 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c(
-      "field",
-      _vm._b(
-        { attrs: { onblur: _vm.onchange, fieldtype: "Link" } },
-        "field",
-        {
-          fieldname: _vm.fieldname,
-          label: _vm.label,
-          options: _vm.options,
-          get_query: _vm.get_query
-        },
-        false
-      )
-    )
-  };
+  var __vue_render__$1 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('field',_vm._b({attrs:{"onblur":_vm.onchange,"fieldtype":'Link'}},'field',{ fieldname: _vm.fieldname, label: _vm.label, options: _vm.options, get_query: _vm.get_query },false))};
   var __vue_staticRenderFns__$1 = [];
-  __vue_render__$1._withStripped = true;
 
     /* style */
     const __vue_inject_styles__$1 = undefined;
@@ -9496,7 +8609,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/FieldLink.vue";
+      component.__file = "FieldLink.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -10196,10 +9309,10 @@ var psd = (function () {
       return capability.promise;
     }
   });
-  _export(_export.S + _export.F * (_library || !USE_NATIVE), PROMISE, {
+  _export(_export.S + _export.F * (!USE_NATIVE), PROMISE, {
     // 25.4.4.6 Promise.resolve(x)
     resolve: function resolve(x) {
-      return _promiseResolve(_library && this === Wrapper ? $Promise : this, x);
+      return _promiseResolve(this, x);
     }
   });
   _export(_export.S + _export.F * !(USE_NATIVE && _iterDetect(function (iter) {
@@ -10539,204 +9652,17 @@ var psd = (function () {
               const __vue_script__$2 = script$2;
               
   /* template */
-  var __vue_render__$2 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", [
-      _c(
-        "div",
-        { staticClass: "section" },
-        [
-          _c("FieldLink", {
-            attrs: {
-              fieldname: "member",
-              label: "Member",
-              options: "Gym Member",
-              onchange: _vm.set_subscription_query
-            }
-          }),
-          _vm._v(" "),
-          _c("FieldLink", {
-            attrs: {
-              fieldname: "subscription",
-              label: "Subscription",
-              options: "Gym Subscription",
-              get_query: _vm.subscription_query,
-              onchange: _vm.get_subscription
-            }
-          })
-        ],
-        1
-      ),
-      _vm._v(" "),
-      _vm.item_name
-        ? _c("div", { staticClass: "section info-section" }, [
-            _c("div", [
-              _c("span", [_vm._v("Item")]),
-              _vm._v(" "),
-              _c("span", [_vm._v(_vm._s(_vm.item_name))])
-            ]),
-            _vm._v(" "),
-            _c("div", [
-              _c("span", [_vm._v("Start Date")]),
-              _vm._v(" "),
-              _c("span", [_vm._v(_vm._s(_vm.start_date))])
-            ]),
-            _vm._v(" "),
-            _c("div", [
-              _c("span", [_vm._v("End Date")]),
-              _vm._v(" "),
-              _c("span", [_vm._v(_vm._s(_vm.end_date))])
-            ])
-          ])
-        : _vm._e(),
-      _vm._v(" "),
-      _c("div", { staticClass: "list-section" }, [
-        _vm.schedules.length > 0
-          ? _c("table", { staticClass: "table" }, [
-              _vm._m(0),
-              _vm._v(" "),
-              _c(
-                "tbody",
-                _vm._l(_vm.schedules, function(schedule) {
-                  return _c("tr", [
-                    _c("td", [
-                      _vm._v(
-                        "\n            " +
-                          _vm._s(schedule.from) +
-                          "\n            "
-                      ),
-                      schedule.name
-                        ? _c(
-                            "button",
-                            {
-                              attrs: { type: "button", name: "update_from_date" },
-                              on: {
-                                click: function($event) {
-                                  _vm.update(schedule.name, "from_date");
-                                }
-                              }
-                            },
-                            [_c("i", { staticClass: "fa fa-pencil" })]
-                          )
-                        : _vm._e()
-                    ]),
-                    _vm._v(" "),
-                    _c("td", [
-                      _vm._v(
-                        "\n            " + _vm._s(schedule.to) + "\n            "
-                      ),
-                      schedule.name
-                        ? _c(
-                            "button",
-                            {
-                              attrs: { type: "button", name: "update_to_date" },
-                              on: {
-                                click: function($event) {
-                                  _vm.update(schedule.name, "to_date");
-                                }
-                              }
-                            },
-                            [_c("i", { staticClass: "fa fa-pencil" })]
-                          )
-                        : _vm._e()
-                    ]),
-                    _vm._v(" "),
-                    _c("td", [
-                      _vm._v(
-                        "\n            " +
-                          _vm._s(schedule.slot || "-") +
-                          "\n            "
-                      ),
-                      schedule.name
-                        ? _c(
-                            "button",
-                            {
-                              attrs: { type: "button", name: "update_slot" },
-                              on: {
-                                click: function($event) {
-                                  _vm.update(schedule.name, "slot");
-                                }
-                              }
-                            },
-                            [_c("i", { staticClass: "fa fa-pencil" })]
-                          )
-                        : _vm._e()
-                    ]),
-                    _vm._v(" "),
-                    _c("td", [
-                      _vm._v(
-                        "\n            " +
-                          _vm._s(schedule.trainer || "Unallocated") +
-                          "\n            "
-                      ),
-                      _c(
-                        "button",
-                        {
-                          attrs: { type: "button", name: "create" },
-                          on: {
-                            click: function($event) {
-                              _vm.create(schedule.from, schedule.to);
-                            }
-                          }
-                        },
-                        [_c("i", { staticClass: "fa fa-plus" })]
-                      ),
-                      _vm._v(" "),
-                      schedule.name
-                        ? _c(
-                            "button",
-                            {
-                              attrs: { type: "button", name: "remove" },
-                              on: {
-                                click: function($event) {
-                                  _vm.remove(schedule.name);
-                                }
-                              }
-                            },
-                            [_c("i", { staticClass: "fa fa-remove" })]
-                          )
-                        : _vm._e()
-                    ])
-                  ])
-                })
-              )
-            ])
-          : _vm._e()
-      ])
-    ])
-  };
-  var __vue_staticRenderFns__$2 = [
-    function() {
-      var _vm = this;
-      var _h = _vm.$createElement;
-      var _c = _vm._self._c || _h;
-      return _c("thead", [
-        _c("tr", [
-          _c("th", [_vm._v("From")]),
-          _vm._v(" "),
-          _c("th", [_vm._v("To")]),
-          _vm._v(" "),
-          _c("th", [_vm._v("Slot")]),
-          _vm._v(" "),
-          _c("th", [_vm._v("Trainer")]),
-          _vm._v(" "),
-          _c("th")
-        ])
-      ])
-    }
-  ];
-  __vue_render__$2._withStripped = true;
+  var __vue_render__$2 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"section"},[_c('FieldLink',{attrs:{"fieldname":"member","label":"Member","options":"Gym Member","onchange":_vm.set_subscription_query}}),_vm._v(" "),_c('FieldLink',{attrs:{"fieldname":"subscription","label":"Subscription","options":"Gym Subscription","get_query":_vm.subscription_query,"onchange":_vm.get_subscription}})],1),_vm._v(" "),(_vm.item_name)?_c('div',{staticClass:"section info-section"},[_c('div',[_c('span',[_vm._v("Item")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.item_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Start Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.start_date))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("End Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.end_date))])])]):_vm._e(),_vm._v(" "),_c('div',{staticClass:"list-section"},[(_vm.schedules.length > 0)?_c('table',{staticClass:"table"},[_vm._m(0),_vm._v(" "),_c('tbody',_vm._l((_vm.schedules),function(schedule){return _c('tr',[_c('td',[_vm._v("\n            "+_vm._s(schedule.from)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_from_date"},on:{"click":function($event){_vm.update(schedule.name, 'from_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.to)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_to_date"},on:{"click":function($event){_vm.update(schedule.name, 'to_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.slot || '-')+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_slot"},on:{"click":function($event){_vm.update(schedule.name, 'slot');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.trainer || 'Unallocated')+"\n            "),_c('button',{attrs:{"type":"button","name":"create"},on:{"click":function($event){_vm.create(schedule.from, schedule.to);}}},[_c('i',{staticClass:"fa fa-plus"})]),_vm._v(" "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"remove"},on:{"click":function($event){_vm.remove(schedule.name);}}},[_c('i',{staticClass:"fa fa-remove"})]):_vm._e()])])}))]):_vm._e()])])};
+  var __vue_staticRenderFns__$2 = [function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('thead',[_c('tr',[_c('th',[_vm._v("From")]),_vm._v(" "),_c('th',[_vm._v("To")]),_vm._v(" "),_c('th',[_vm._v("Slot")]),_vm._v(" "),_c('th',[_vm._v("Trainer")]),_vm._v(" "),_c('th')])])}];
 
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-4dd22dde_0", { source: "\n.section[data-v-4dd22dde] {\n  display: flex;\n  flex-flow: row wrap;\n  padding-top: 12px;\n}\n.section > div[data-v-4dd22dde] {\n  margin: 0 8px;\n  box-sizing: border-box;\n  min-width: 196px;\n}\n.info-section > div[data-v-4dd22dde] {\n  min-height: 48px;\n}\n.info-section > div > span[data-v-4dd22dde] {\n  display: block;\n  white-space: nowrap;\n}\n.info-section > div > span[data-v-4dd22dde]:first-of-type {\n  font-size: 12px;\n  color: #8d99a6;\n}\n.info-section > div > span[data-v-4dd22dde]:last-of-type {\n  font-weight: bold;\n}\n.list-section button[data-v-4dd22dde] {\n  border: none;\n  background-color: inherit;\n  opacity: 0;\n}\n.list-section tr:hover button[data-v-4dd22dde] {\n  opacity: 1;\n}\n.list-section > table th[data-v-4dd22dde] {\n  color: #8d99a6;\n}\n.list-section > table button[data-v-4dd22dde]:hover {\n  color: #8d99a6;\n}\n", map: {"version":3,"sources":["/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/TrainingSchedule.vue"],"names":[],"mappings":";AA2NA;EACA,cAAA;EACA,oBAAA;EACA,kBAAA;CACA;AACA;EACA,cAAA;EACA,uBAAA;EACA,iBAAA;CACA;AACA;EACA,iBAAA;CACA;AACA;EACA,eAAA;EACA,oBAAA;CACA;AACA;EACA,gBAAA;EACA,eAAA;CACA;AACA;EACA,kBAAA;CACA;AACA;EACA,aAAA;EACA,0BAAA;EACA,WAAA;CACA;AACA;EACA,WAAA;CACA;AACA;EACA,eAAA;CACA;AACA;EACA,eAAA;CACA","file":"TrainingSchedule.vue","sourcesContent":["<template>\n  <div>\n    <div class=\"section\">\n      <FieldLink\n        fieldname=\"member\"\n        label=\"Member\"\n        options=\"Gym Member\"\n        :onchange=\"set_subscription_query\"\n      />\n      <FieldLink\n        fieldname=\"subscription\"\n        label=\"Subscription\"\n        options=\"Gym Subscription\"\n        :get_query=\"subscription_query\"\n        :onchange=\"get_subscription\"\n      />\n    </div>\n    <div v-if=\"item_name\" class=\"section info-section\">\n      <div>\n        <span>Item</span>\n        <span>{{ item_name }}</span>\n      </div>\n      <div>\n        <span>Start Date</span>\n        <span>{{ start_date }}</span>\n      </div>\n      <div>\n        <span>End Date</span>\n        <span>{{ end_date }}</span>\n      </div>\n    </div>\n    <div class=\"list-section\">\n      <table v-if=\"schedules.length > 0\" class=\"table\">\n        <thead>\n          <tr>\n            <th>From</th>\n            <th>To</th>\n            <th>Slot</th>\n            <th>Trainer</th>\n            <th />\n          </tr>\n        </thead>\n        <tbody>\n          <tr v-for=\"schedule in schedules\">\n            <td>\n              {{ schedule.from }}\n              <button\n                v-if=\"schedule.name\"\n                type=\"button\"\n                name=\"update_from_date\"\n                @click=\"update(schedule.name, 'from_date')\"\n              >\n                <i class=\"fa fa-pencil\" />\n              </button>\n            </td>\n            <td>\n              {{ schedule.to }}\n              <button\n                v-if=\"schedule.name\"\n                type=\"button\"\n                name=\"update_to_date\"\n                @click=\"update(schedule.name, 'to_date')\"\n              >\n                <i class=\"fa fa-pencil\" />\n              </button>\n            </td>\n            <td>\n              {{ schedule.slot || '-' }}\n              <button\n                v-if=\"schedule.name\"\n                type=\"button\"\n                name=\"update_slot\"\n                @click=\"update(schedule.name, 'slot')\"\n              >\n                <i class=\"fa fa-pencil\" />\n              </button>\n            </td>\n            <td>\n              {{ schedule.trainer || 'Unallocated' }}\n              <button\n                type=\"button\"\n                name=\"create\"\n                @click=\"create(schedule.from, schedule.to)\"\n              >\n                <i class=\"fa fa-plus\" />\n              </button>\n              <button\n                v-if=\"schedule.name\"\n                type=\"button\"\n                name=\"remove\"\n                @click=\"remove(schedule.name)\"\n              >\n                <i class=\"fa fa-remove\" />\n              </button>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</template>\n\n<script>\nimport FieldLink from './components/FieldLink.vue';\nimport frappeAsync from './utils/frappe-async';\n\nconst default_subscription_filter = { docstatus: 1 };\n\nfunction make_dialog_field(what) {\n  const field = { fieldname: 'value', reqd: 1 };\n  if (['from_date', 'to_date'].includes(what)) {\n    return [Object.assign(field, { fieldtype: 'Date', label: 'Date' })];\n  }\n  if (what === 'slot') {\n    return [\n      Object.assign(field, {\n        fieldtype: 'Link',\n        label: 'Slot',\n        options: 'Training Slot',\n      }),\n    ];\n  }\n  if (what === 'trainer') {\n    return [\n      Object.assign(field, {\n        fieldtype: 'Link',\n        label: 'Trainer',\n        options: 'Gym Trainer',\n      }),\n    ];\n  }\n  return null;\n}\n\nexport default {\n  data() {\n    return {\n      subscription_query: { filters: default_subscription_filter },\n      subscription: null,\n      item_name: null,\n      start_date: null,\n      end_date: null,\n      schedules: [],\n    };\n  },\n  components: { FieldLink },\n  methods: {\n    set_subscription_query: function(member) {\n      this.subscription_query = {\n        filters: member\n          ? Object.assign({}, default_subscription_filter, { member })\n          : default_subscription_filter,\n      };\n    },\n    get_subscription: async function(subscription) {\n      if (subscription) {\n        this.subscription = subscription;\n        const { message: trainable_items } = await frappe.call({\n          method:\n            'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',\n          args: { subscription },\n        });\n        if (trainable_items) {\n          this.item_name = trainable_items.items[0];\n          this.start_date = frappe.datetime.str_to_user(\n            trainable_items.from_date\n          );\n          this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);\n          this.get_schedules(subscription);\n        }\n      } else {\n        this.subscription = null;\n        this.item_name = null;\n        this.start_date = null;\n        this.end_date = null;\n      }\n    },\n    get_schedules: async function() {\n      const { message: schedules = [] } = await frappe.call({\n        method:\n          'psd_customization.fitness_world.api.trainer_allocation.get_schedule',\n        args: { subscription: this.subscription },\n      });\n      this.schedules = schedules.map(\n        ({ name, from_date, to_date, training_slot, gym_trainer }) => ({\n          name,\n          from: frappe.datetime.str_to_user(from_date),\n          to: frappe.datetime.str_to_user(to_date),\n          slot: training_slot,\n          trainer: gym_trainer,\n        })\n      );\n    },\n    create: async function(start, end) {\n      const { value: trainer } = await frappeAsync.prompt(\n        make_dialog_field('trainer'),\n        'Select Trainer'\n      );\n      console.log(start, end);\n    },\n    update: async function(name, what) {\n      const field = make_dialog_field(what);\n      const { value } = await frappeAsync.prompt(\n        field,\n        field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot'\n      );\n      console.log(name, what, value);\n    },\n    remove: async function(name) {\n      const will_remove = await frappeAsync.confirm(\n        'Trainer for this period will be unassigned'\n      );\n      console.log(name, will_remove);\n    },\n  },\n};\n</script>\n\n<style scoped>\n.section {\n  display: flex;\n  flex-flow: row wrap;\n  padding-top: 12px;\n}\n.section > div {\n  margin: 0 8px;\n  box-sizing: border-box;\n  min-width: 196px;\n}\n.info-section > div {\n  min-height: 48px;\n}\n.info-section > div > span {\n  display: block;\n  white-space: nowrap;\n}\n.info-section > div > span:first-of-type {\n  font-size: 12px;\n  color: #8d99a6;\n}\n.info-section > div > span:last-of-type {\n  font-weight: bold;\n}\n.list-section button {\n  border: none;\n  background-color: inherit;\n  opacity: 0;\n}\n.list-section tr:hover button {\n  opacity: 1;\n}\n.list-section > table th {\n  color: #8d99a6;\n}\n.list-section > table button:hover {\n  color: #8d99a6;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-3298cab5_0", { source: "\n.section[data-v-3298cab5]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-3298cab5]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.info-section>div[data-v-3298cab5]{min-height:48px\n}\n.info-section>div>span[data-v-3298cab5]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-3298cab5]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-3298cab5]:last-of-type{font-weight:700\n}\n.list-section button[data-v-3298cab5]{border:none;background-color:inherit;opacity:0\n}\n.list-section tr:hover button[data-v-3298cab5]{opacity:1\n}\n.list-section>table th[data-v-3298cab5]{color:#8d99a6\n}\n.list-section>table button[data-v-3298cab5]:hover{color:#8d99a6\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-4dd22dde";
+    const __vue_scope_id__$2 = "data-v-3298cab5";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -10750,7 +9676,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/TrainingSchedule.vue";
+      component.__file = "TrainingSchedule.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -10808,6 +9734,17 @@ var psd = (function () {
 
           style.ids.push(id);
 
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
+
           if (isOldIE) {
             style.element = style.element || document.querySelector('style[data-group=' + group + ']');
           }
@@ -10860,6 +9797,299 @@ var psd = (function () {
       undefined
     );
 
+  var $find = _arrayMethods(5);
+  var KEY = 'find';
+  var forced = true; // Shouldn't skip holes
+
+  if (KEY in []) Array(1)[KEY](function () {
+    forced = false;
+  });
+  _export(_export.P + _export.F * forced, 'Array', {
+    find: function find(callbackfn
+    /* , that = undefined */
+    ) {
+      return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+    }
+  });
+  _addToUnscopables(KEY);
+
+  var _iterStep = function (done, value) {
+    return {
+      value: value,
+      done: !!done
+    };
+  };
+
+  var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
+    _anObject(O);
+    var keys = _objectKeys(Properties);
+    var length = keys.length;
+    var i = 0;
+    var P;
+
+    while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
+
+    return O;
+  };
+
+  var IE_PROTO$1 = _sharedKey('IE_PROTO');
+
+  var Empty = function () {
+    /* empty */
+  };
+
+  var PROTOTYPE$1 = 'prototype'; // Create object with fake `null` prototype: use iframe Object with cleared prototype
+
+  var createDict = function () {
+    // Thrash, waste and sodomy: IE GC bug
+    var iframe = _domCreate('iframe');
+    var i = _enumBugKeys.length;
+    var lt = '<';
+    var gt = '>';
+    var iframeDocument;
+    iframe.style.display = 'none';
+    _html.appendChild(iframe);
+    iframe.src = 'javascript:'; // eslint-disable-line no-script-url
+    // createDict = iframe.contentWindow.Object;
+    // html.removeChild(iframe);
+
+    iframeDocument = iframe.contentWindow.document;
+    iframeDocument.open();
+    iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
+    iframeDocument.close();
+    createDict = iframeDocument.F;
+
+    while (i--) delete createDict[PROTOTYPE$1][_enumBugKeys[i]];
+
+    return createDict();
+  };
+
+  var _objectCreate = Object.create || function create(O, Properties) {
+    var result;
+
+    if (O !== null) {
+      Empty[PROTOTYPE$1] = _anObject(O);
+      result = new Empty();
+      Empty[PROTOTYPE$1] = null; // add "__proto__" for Object.getPrototypeOf polyfill
+
+      result[IE_PROTO$1] = O;
+    } else result = createDict();
+
+    return Properties === undefined ? result : _objectDps(result, Properties);
+  };
+
+  var IteratorPrototype = {}; // 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
+
+  _hide(IteratorPrototype, _wks('iterator'), function () {
+    return this;
+  });
+
+  var _iterCreate = function (Constructor, NAME, next) {
+    Constructor.prototype = _objectCreate(IteratorPrototype, {
+      next: _propertyDesc(1, next)
+    });
+    _setToStringTag(Constructor, NAME + ' Iterator');
+  };
+
+  var IE_PROTO$2 = _sharedKey('IE_PROTO');
+  var ObjectProto = Object.prototype;
+
+  var _objectGpo = Object.getPrototypeOf || function (O) {
+    O = _toObject(O);
+    if (_has(O, IE_PROTO$2)) return O[IE_PROTO$2];
+
+    if (typeof O.constructor == 'function' && O instanceof O.constructor) {
+      return O.constructor.prototype;
+    }
+
+    return O instanceof Object ? ObjectProto : null;
+  };
+
+  var ITERATOR$3 = _wks('iterator');
+  var BUGGY = !([].keys && 'next' in [].keys()); // Safari has buggy iterators w/o `next`
+
+  var FF_ITERATOR = '@@iterator';
+  var KEYS = 'keys';
+  var VALUES = 'values';
+
+  var returnThis = function () {
+    return this;
+  };
+
+  var _iterDefine = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
+    _iterCreate(Constructor, NAME, next);
+
+    var getMethod = function (kind) {
+      if (!BUGGY && kind in proto) return proto[kind];
+
+      switch (kind) {
+        case KEYS:
+          return function keys() {
+            return new Constructor(this, kind);
+          };
+
+        case VALUES:
+          return function values() {
+            return new Constructor(this, kind);
+          };
+      }
+
+      return function entries() {
+        return new Constructor(this, kind);
+      };
+    };
+
+    var TAG = NAME + ' Iterator';
+    var DEF_VALUES = DEFAULT == VALUES;
+    var VALUES_BUG = false;
+    var proto = Base.prototype;
+    var $native = proto[ITERATOR$3] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
+    var $default = $native || getMethod(DEFAULT);
+    var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
+    var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
+    var methods, key, IteratorPrototype; // Fix native
+
+    if ($anyNative) {
+      IteratorPrototype = _objectGpo($anyNative.call(new Base()));
+
+      if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
+        // Set @@toStringTag to native iterators
+        _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
+
+        if (!_library && typeof IteratorPrototype[ITERATOR$3] != 'function') _hide(IteratorPrototype, ITERATOR$3, returnThis);
+      }
+    } // fix Array#{values, @@iterator}.name in V8 / FF
+
+
+    if (DEF_VALUES && $native && $native.name !== VALUES) {
+      VALUES_BUG = true;
+
+      $default = function values() {
+        return $native.call(this);
+      };
+    } // Define iterator
+
+
+    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR$3])) {
+      _hide(proto, ITERATOR$3, $default);
+    } // Plug for library
+
+
+    _iterators[NAME] = $default;
+    _iterators[TAG] = returnThis;
+
+    if (DEFAULT) {
+      methods = {
+        values: DEF_VALUES ? $default : getMethod(VALUES),
+        keys: IS_SET ? $default : getMethod(KEYS),
+        entries: $entries
+      };
+      if (FORCED) for (key in methods) {
+        if (!(key in proto)) _redefine(proto, key, methods[key]);
+      } else _export(_export.P + _export.F * (BUGGY || VALUES_BUG), NAME, methods);
+    }
+
+    return methods;
+  };
+
+  // 22.1.3.13 Array.prototype.keys()
+  // 22.1.3.29 Array.prototype.values()
+  // 22.1.3.30 Array.prototype[@@iterator]()
+
+
+  var es6_array_iterator = _iterDefine(Array, 'Array', function (iterated, kind) {
+    this._t = _toIobject(iterated); // target
+
+    this._i = 0; // next index
+
+    this._k = kind; // kind
+    // 22.1.5.2.1 %ArrayIteratorPrototype%.next()
+  }, function () {
+    var O = this._t;
+    var kind = this._k;
+    var index = this._i++;
+
+    if (!O || index >= O.length) {
+      this._t = undefined;
+      return _iterStep(1);
+    }
+
+    if (kind == 'keys') return _iterStep(0, index);
+    if (kind == 'values') return _iterStep(0, O[index]);
+    return _iterStep(0, [index, O[index]]);
+  }, 'values'); // argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
+
+  _iterators.Arguments = _iterators.Array;
+  _addToUnscopables('keys');
+  _addToUnscopables('values');
+  _addToUnscopables('entries');
+
+  var ITERATOR$4 = _wks('iterator');
+  var TO_STRING_TAG = _wks('toStringTag');
+  var ArrayValues = _iterators.Array;
+  var DOMIterables = {
+    CSSRuleList: true,
+    // TODO: Not spec compliant, should be false.
+    CSSStyleDeclaration: false,
+    CSSValueList: false,
+    ClientRectList: false,
+    DOMRectList: false,
+    DOMStringList: false,
+    DOMTokenList: true,
+    DataTransferItemList: false,
+    FileList: false,
+    HTMLAllCollection: false,
+    HTMLCollection: false,
+    HTMLFormElement: false,
+    HTMLSelectElement: false,
+    MediaList: true,
+    // TODO: Not spec compliant, should be false.
+    MimeTypeArray: false,
+    NamedNodeMap: false,
+    NodeList: true,
+    PaintRequestList: false,
+    Plugin: false,
+    PluginArray: false,
+    SVGLengthList: false,
+    SVGNumberList: false,
+    SVGPathSegList: false,
+    SVGPointList: false,
+    SVGStringList: false,
+    SVGTransformList: false,
+    SourceBufferList: false,
+    StyleSheetList: true,
+    // TODO: Not spec compliant, should be false.
+    TextTrackCueList: false,
+    TextTrackList: false,
+    TouchList: false
+  };
+
+  for (var collections = _objectKeys(DOMIterables), i = 0; i < collections.length; i++) {
+    var NAME$1 = collections[i];
+    var explicit = DOMIterables[NAME$1];
+    var Collection = _global[NAME$1];
+    var proto = Collection && Collection.prototype;
+    var key;
+
+    if (proto) {
+      if (!proto[ITERATOR$4]) _hide(proto, ITERATOR$4, ArrayValues);
+      if (!proto[TO_STRING_TAG]) _hide(proto, TO_STRING_TAG, NAME$1);
+      _iterators[NAME$1] = ArrayValues;
+      if (explicit) for (key in es6_array_iterator) if (!proto[key]) _redefine(proto, key, es6_array_iterator[key], true);
+    }
+  }
+
+  var $forEach = _arrayMethods(0);
+  var STRICT = _strictMethod([].forEach, true);
+  _export(_export.P + _export.F * !STRICT, 'Array', {
+    // 22.1.3.10 / 15.4.4.18 Array.prototype.forEach(callbackfn [, thisArg])
+    forEach: function forEach(callbackfn
+    /* , thisArg */
+    ) {
+      return $forEach(this, callbackfn, arguments[1]);
+    }
+  });
+
   //
   //
   //
@@ -10883,31 +10113,17 @@ var psd = (function () {
               const __vue_script__$3 = script$3;
               
   /* template */
-  var __vue_render__$3 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", { staticClass: "col-sm-3 psd-dashboard-item" }, [
-      _c("span", { class: _vm.indicator }),
-      _vm._v(" "),
-      _c("dl", [
-        _c("dt", [_vm._v(_vm._s(_vm.label))]),
-        _vm._v(" "),
-        _c("dd", [_vm._v(_vm._s(_vm.content))])
-      ])
-    ])
-  };
+  var __vue_render__$3 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"col-sm-3 psd-dashboard-item"},[_c('span',{class:_vm.indicator}),_vm._v(" "),_c('dl',[_c('dt',[_vm._v(_vm._s(_vm.label))]),_vm._v(" "),_c('dd',[_vm._v(_vm._s(_vm.content))])])])};
   var __vue_staticRenderFns__$3 = [];
-  __vue_render__$3._withStripped = true;
 
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-1e296a00_0", { source: "\n.psd-dashboard-item[data-v-1e296a00] {\n  display: flex;\n  flex-flow: row nowrap;\n}\n.psd-dashboard-item dt[data-v-1e296a00] {\n  text-transform: uppercase;\n  font-size: 0.8em;\n  font-weight: normal;\n}\n.psd-dashboard-item dd[data-v-1e296a00] {\n  font-size: 1.2em;\n  font-weight: bold;\n}\n", map: {"version":3,"sources":["/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/DashboardItem.vue"],"names":[],"mappings":";AAsBA;EACA,cAAA;EACA,sBAAA;CACA;AACA;EACA,0BAAA;EACA,iBAAA;EACA,oBAAA;CACA;AACA;EACA,iBAAA;EACA,kBAAA;CACA","file":"DashboardItem.vue","sourcesContent":["<template>\n  <div class=\"col-sm-3 psd-dashboard-item\">\n    <span :class=\"indicator\" />\n    <dl>\n      <dt>{{ label }}</dt>\n      <dd>{{ content }}</dd>\n    </dl>\n  </div>\n</template>\n\n<script>\nexport default {\n  props: ['label', 'content', 'color'],\n  computed: {\n    indicator: function() {\n      return `indicator ${this.color}`;\n    },\n  },\n};\n</script>\n\n<style scoped>\n.psd-dashboard-item {\n  display: flex;\n  flex-flow: row nowrap;\n}\n.psd-dashboard-item dt {\n  text-transform: uppercase;\n  font-size: 0.8em;\n  font-weight: normal;\n}\n.psd-dashboard-item dd {\n  font-size: 1.2em;\n  font-weight: bold;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-639af32a_0", { source: "\n.psd-dashboard-item[data-v-639af32a]{display:flex;flex-flow:row nowrap\n}\n.psd-dashboard-item dt[data-v-639af32a]{text-transform:uppercase;font-size:.8em;font-weight:400\n}\n.psd-dashboard-item dd[data-v-639af32a]{font-size:1.2em;font-weight:700\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-1e296a00";
+    const __vue_scope_id__$3 = "data-v-639af32a";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -10921,7 +10137,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/DashboardItem.vue";
+      component.__file = "DashboardItem.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -10978,6 +10194,17 @@ var psd = (function () {
           let index = style.ids.length;
 
           style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
 
           if (isOldIE) {
             style.element = style.element || document.querySelector('style[data-group=' + group + ']');
@@ -11107,41 +10334,17 @@ var psd = (function () {
               const __vue_script__$4 = script$4;
               
   /* template */
-  var __vue_render__$4 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", { staticClass: "psd-current-sub" }, [
-      _c("div", { staticClass: "psd-current-sub-description" }, [
-        _c("span", { class: _vm.colorClass }),
-        _vm._v("\n    " + _vm._s(_vm.item_name) + "\n    "),
-        _vm.is_lifetime
-          ? _c("span", { staticClass: "badge psd-badge-info" }, [
-              _vm._v("\n      Lifetime\n    ")
-            ])
-          : _vm._e()
-      ]),
-      _vm._v(" "),
-      _c("div", { staticClass: "psd-current-sub-interval" }, [
-        _vm._v("\n    " + _vm._s(_vm.interval) + "\n  ")
-      ]),
-      _vm._v(" "),
-      _c("div", { staticClass: "psd-current-sub-remarks" }, [
-        _vm._v("\n    " + _vm._s(_vm.eta) + "\n  ")
-      ])
-    ])
-  };
+  var __vue_render__$4 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v("\n    "+_vm._s(_vm.item_name)+"\n    "),(_vm.is_lifetime)?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
   var __vue_staticRenderFns__$4 = [];
-  __vue_render__$4._withStripped = true;
 
     /* style */
     const __vue_inject_styles__$4 = function (inject) {
       if (!inject) return
-      inject("data-v-3078ad79_0", { source: "\n.psd-current-sub[data-v-3078ad79] {\n  display: flex;\n  flex-flow: row wrap;\n  font-size: 0.94em;\n}\n.psd-current-sub > div[data-v-3078ad79] {\n  flex: 0 0 30%;\n}\n.psd-current-sub > div[data-v-3078ad79]:first-of-type {\n  flex: auto;\n}\n.badge[data-v-3078ad79] {\n  font-variant: all-small-caps;\n}\n.psd-badge-info[data-v-3078ad79] {\n  background-color: #935eff;\n  color: #ffffff;\n}\n.psd-info_item-badge-warning[data-v-3078ad79] {\n  background-color: #ffa00a;\n}\n", map: {"version":3,"sources":["/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/CurrentSubscriptionItem.vue"],"names":[],"mappings":";AAsEA;EACA,cAAA;EACA,oBAAA;EACA,kBAAA;CACA;AACA;EACA,cAAA;CACA;AACA;EACA,WAAA;CACA;AACA;EACA,6BAAA;CACA;AACA;EACA,0BAAA;EACA,eAAA;CACA;AACA;EACA,0BAAA;CACA","file":"CurrentSubscriptionItem.vue","sourcesContent":["<template>\n  <div class=\"psd-current-sub\">\n    <div class=\"psd-current-sub-description\">\n      <span :class=\"colorClass\" />\n      {{ item_name }}\n      <span v-if=\"is_lifetime\" class=\"badge psd-badge-info\">\n        Lifetime\n      </span>\n    </div>\n    <div class=\"psd-current-sub-interval\">\n      {{ interval }}\n    </div>\n    <div class=\"psd-current-sub-remarks\">\n      {{ eta }}\n    </div>\n  </div>\n</template>\n\n<script>\nexport default {\n  props: ['item_name', 'is_lifetime', 'from_date', 'to_date'],\n  methods: {\n    get_color() {\n      const { is_lifetime, to_date } = this;\n      if (is_lifetime) {\n        return 'green';\n      }\n      if (!to_date) {\n        return 'darkgrey';\n      }\n      if (\n        moment()\n          .add(7, 'days')\n          .isBefore(to_date)\n      ) {\n        return 'green';\n      }\n      if (moment().isSameOrBefore(to_date)) {\n        return 'orange';\n      }\n      return 'red';\n    },\n  },\n  computed: {\n    colorClass: function() {\n      return `indicator ${this.get_color()}`;\n    },\n    interval: function() {\n      const { from_date, to_date } = this;\n      if (to_date) {\n        return `${frappe.datetime.str_to_user(\n          from_date\n        )} – ${frappe.datetime.str_to_user(to_date)}`;\n      }\n      return frappe.datetime.str_to_user(from_date);\n    },\n    eta: function() {\n      const { from_date, to_date, is_lifetime } = this;\n      if (is_lifetime && !to_date) {\n        return null;\n      }\n      return `${moment().isAfter(to_date) ? 'Expired' : 'Expires'} ${moment(\n        to_date\n      ).fromNow()}`;\n    },\n  },\n};\n</script>\n\n<style scoped>\n.psd-current-sub {\n  display: flex;\n  flex-flow: row wrap;\n  font-size: 0.94em;\n}\n.psd-current-sub > div {\n  flex: 0 0 30%;\n}\n.psd-current-sub > div:first-of-type {\n  flex: auto;\n}\n.badge {\n  font-variant: all-small-caps;\n}\n.psd-badge-info {\n  background-color: #935eff;\n  color: #ffffff;\n}\n.psd-info_item-badge-warning {\n  background-color: #ffa00a;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-3623c10f_0", { source: "\n.psd-current-sub[data-v-3623c10f]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-3623c10f]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-3623c10f]:first-of-type{flex:auto\n}\n.badge[data-v-3623c10f]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-3623c10f]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-3623c10f]{background-color:#ffa00a\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$4 = "data-v-3078ad79";
+    const __vue_scope_id__$4 = "data-v-3623c10f";
     /* module identifier */
     const __vue_module_identifier__$4 = undefined;
     /* functional template */
@@ -11155,7 +10358,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/CurrentSubscriptionItem.vue";
+      component.__file = "CurrentSubscriptionItem.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -11212,6 +10415,17 @@ var psd = (function () {
           let index = style.ids.length;
 
           style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
 
           if (isOldIE) {
             style.element = style.element || document.querySelector('style[data-group=' + group + ']');
@@ -11277,45 +10491,17 @@ var psd = (function () {
               const __vue_script__$5 = script$5;
               
   /* template */
-  var __vue_render__$5 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c("div", [
-      _c("h6", [_vm._v("Existing Subscriptions")]),
-      _vm._v(" "),
-      _vm.subscriptions && _vm.subscriptions.length > 0
-        ? _c(
-            "div",
-            _vm._l(_vm.subscriptions, function(subscription) {
-              return _c(
-                "div",
-                [
-                  _c(
-                    "current-subscription-item",
-                    _vm._b({}, "current-subscription-item", subscription, false)
-                  )
-                ],
-                1
-              )
-            })
-          )
-        : _c("div", { staticClass: "psd-no-data" }, [
-            _vm._v("\n    Currently none\n  ")
-          ])
-    ])
-  };
+  var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('h6',[_vm._v("Existing Subscriptions")]),_vm._v(" "),(_vm.subscriptions && _vm.subscriptions.length > 0)?_c('div',_vm._l((_vm.subscriptions),function(subscription){return _c('div',[_c('current-subscription-item',_vm._b({},'current-subscription-item',subscription,false))],1)})):_c('div',{staticClass:"psd-no-data"},[_vm._v("\n    Currently none\n  ")])])};
   var __vue_staticRenderFns__$5 = [];
-  __vue_render__$5._withStripped = true;
 
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-21ca518e_0", { source: "\n.psd-no-data[data-v-21ca518e] {\n  color: #8d99a6;\n}\n", map: {"version":3,"sources":["/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/CurrentSubscriptions.vue"],"names":[],"mappings":";AAuBA;EACA,eAAA;CACA","file":"CurrentSubscriptions.vue","sourcesContent":["<template>\n  <div>\n    <h6>Existing Subscriptions</h6>\n    <div v-if=\"subscriptions && subscriptions.length > 0\">\n      <div v-for=\"subscription in subscriptions\">\n        <current-subscription-item v-bind=\"subscription\" />\n      </div>\n    </div>\n    <div v-else class=\"psd-no-data\">\n      Currently none\n    </div>\n  </div>\n</template>\n\n<script>\nimport CurrentSubscriptionItem from './CurrentSubscriptionItem.vue';\nexport default {\n  props: ['subscriptions'],\n  components: { CurrentSubscriptionItem },\n};\n</script>\n\n<style scoped>\n.psd-no-data {\n  color: #8d99a6;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-243244e3_0", { source: "\n.psd-no-data[data-v-243244e3]{color:#8d99a6\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$5 = "data-v-21ca518e";
+    const __vue_scope_id__$5 = "data-v-243244e3";
     /* module identifier */
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
@@ -11329,7 +10515,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/components/CurrentSubscriptions.vue";
+      component.__file = "CurrentSubscriptions.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -11386,6 +10572,17 @@ var psd = (function () {
           let index = style.ids.length;
 
           style.ids.push(id);
+
+          if (css.map) {
+            // https://developer.chrome.com/devtools/docs/javascript-debugging
+            // this makes source maps inside style tags work properly in Chrome
+            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
+            // http://stackoverflow.com/a/26603875
+            code +=
+              '\n/*# sourceMappingURL=data:application/json;base64,' +
+              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
+              ' */';
+          }
 
           if (isOldIE) {
             style.element = style.element || document.querySelector('style[data-group=' + group + ']');
@@ -11456,7 +10653,7 @@ var psd = (function () {
       },
       invoices: function invoices() {
         return {
-          label: 'Invoices: All / Unpaid',
+          label: 'Invoices: Unpaid / All',
           content: "".concat(this.unpaid_invoices || '-', " / ").concat(this.total_invoices || '-'),
           color: this.unpaid_invoices ? 'orange' : 'green'
         };
@@ -11468,39 +10665,8 @@ var psd = (function () {
               const __vue_script__$6 = script$6;
               
   /* template */
-  var __vue_render__$6 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c(
-      "div",
-      [
-        _c(
-          "div",
-          { staticClass: "row" },
-          [
-            _c(
-              "dashboard-item",
-              _vm._b({}, "dashboard-item", _vm.outstanding_cpt, false)
-            ),
-            _vm._v(" "),
-            _c(
-              "dashboard-item",
-              _vm._b({}, "dashboard-item", _vm.invoices, false)
-            )
-          ],
-          1
-        ),
-        _vm._v(" "),
-        _c("current-subscriptions", {
-          attrs: { subscriptions: _vm.subscriptions }
-        })
-      ],
-      1
-    )
-  };
+  var __vue_render__$6 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.outstanding_cpt,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoices,false))],1),_vm._v(" "),_c('current-subscriptions',{attrs:{"subscriptions":_vm.subscriptions}})],1)};
   var __vue_staticRenderFns__$6 = [];
-  __vue_render__$6._withStripped = true;
 
     /* style */
     const __vue_inject_styles__$6 = undefined;
@@ -11519,7 +10685,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/MemberDashboard.vue";
+      component.__file = "MemberDashboard.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -11539,7 +10705,7 @@ var psd = (function () {
     
 
     
-    var MemberDashboard = __vue_normalize__$6(
+    var MemberDashboard$1 = __vue_normalize__$6(
       { render: __vue_render__$6, staticRenderFns: __vue_staticRenderFns__$6 },
       __vue_inject_styles__$6,
       __vue_script__$6,
@@ -11549,6 +10715,169 @@ var psd = (function () {
       undefined,
       undefined
     );
+
+  function set_queries(frm) {
+    ['notification_contact', 'emergency_contact'].forEach(function (contact) {
+      frm.set_query(contact, function (doc) {
+        return {
+          query: 'psd_customization.fitness_world.api.gym_member.get_member_contacts',
+          filters: {
+            member: doc.name
+          }
+        };
+      });
+    });
+  }
+
+  function make_dialog(doctype) {
+    return new frappe.ui.Dialog({
+      title: "Select ".concat(doctype),
+      fields: [{
+        fieldname: 'docname',
+        fieldtype: 'Link',
+        options: doctype
+      }],
+      primary_action: function () {
+        var _primary_action = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee() {
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _context.next = 2;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.gym_member.link_member_to_doctype',
+                    args: {
+                      member: frm.doc['name'],
+                      doctype: doctype,
+                      docname: this.get_value('docname')
+                    }
+                  });
+
+                case 2:
+                  frm.reload_doc();
+                  this.hide();
+
+                case 4:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        }));
+
+        return function primary_action() {
+          return _primary_action.apply(this, arguments);
+        };
+      }()
+    });
+  }
+
+  function render_address_and_contact(frm) {
+    frappe.contacts.render_address_and_contact(frm);
+    var address_dialog = make_dialog('Address');
+    var $link_btn_address = $('<button class="btn btn-xs btn-default btn-link-address">Link Address</button>').on('click', function () {
+      address_dialog.show();
+    });
+    $(frm.fields_dict['address_html'].wrapper).find('.btn-address').after($link_btn_address);
+    var contact_dialog = make_dialog('Contact');
+    var $link_btn_contact = $('<button class="btn btn-xs btn-default btn-link-contact">Link Contact</button>').on('click', function () {
+      contact_dialog.show();
+    });
+    $(frm.fields_dict['contact_html'].wrapper).find('.btn-contact').unbind('click').on('click', function () {
+      frappe.new_doc('Contact');
+    }).after($link_btn_contact);
+  }
+
+  function render_subscription_details(frm) {
+    if (frm.doc.__onload) {
+      var subscriptions = frm.doc.__onload.subscriptions;
+
+      var _ref = frm.doc.__onload['subscription_details'] || {},
+          total_invoices = _ref.total_invoices,
+          unpaid_invoices = _ref.unpaid_invoices,
+          outstanding = _ref.outstanding;
+
+      var node = frm.dashboard.add_section('<div />').children()[0];
+      new Vue({
+        el: node,
+        render: function render(h) {
+          return h(MemberDashboard$1, {
+            props: {
+              total_invoices: total_invoices,
+              unpaid_invoices: unpaid_invoices,
+              outstanding: outstanding,
+              subscriptions: subscriptions
+            }
+          });
+        }
+      });
+    }
+  }
+
+  function add_actions(frm) {
+    frm.add_custom_button('Make Payment', function () {
+      frappe.model.open_mapped_doc({
+        frm: frm,
+        method: 'psd_customization.fitness_world.api.gym_member.make_payment_entry'
+      });
+    }).toggleClass('btn-primary', frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']);
+  }
+
+  var gym_member = {
+    setup: function setup(frm) {
+      set_queries(frm);
+    },
+    refresh: function refresh(frm) {
+      frm.toggle_display('member_id', frm.doc.__islocal);
+      frm.toggle_enable('enrollment_date', frm.doc.__islocal);
+
+      if (frm.doc.__islocal) {
+        frm.set_value('enrollment_date', frappe.datetime.get_today());
+      }
+
+      frappe.dynamic_link = {
+        doc: frm.doc,
+        fieldname: 'name',
+        doctype: 'Gym Member'
+      };
+      frm.toggle_display(['contact_section', 'address_html', 'contact_html', 'notification_contact', 'emergency_contact'], !frm.doc.__islocal);
+      frm.toggle_enable('customer', frm.doc.__islocal);
+
+      if (!frm.doc.__islocal) {
+        render_address_and_contact(frm);
+        render_subscription_details(frm);
+        add_actions(frm);
+      } else {
+        frappe.contacts.clear_address_and_contact(frm);
+      }
+    },
+    notification_contact: function () {
+      var _notification_contact = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee2(frm) {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (!frm.doc['notification_contact']) {
+                  frm.set_value('notification_number', null);
+                }
+
+              case 1:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      return function notification_contact(_x) {
+        return _notification_contact.apply(this, arguments);
+      };
+    }()
+  };
 
   //
 
@@ -11592,21 +10921,8 @@ var psd = (function () {
               const __vue_script__$7 = script$7;
               
   /* template */
-  var __vue_render__$7 = function() {
-    var _vm = this;
-    var _h = _vm.$createElement;
-    var _c = _vm._self._c || _h;
-    return _c(
-      "div",
-      { staticClass: "row" },
-      [
-        _c("dashboard-item", _vm._b({}, "dashboard-item", _vm.invoice_cpt, false))
-      ],
-      1
-    )
-  };
+  var __vue_render__$7 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoice_cpt,false))],1)};
   var __vue_staticRenderFns__$7 = [];
-  __vue_render__$7._withStripped = true;
 
     /* style */
     const __vue_inject_styles__$7 = undefined;
@@ -11625,7 +10941,7 @@ var psd = (function () {
       const component = (typeof script === 'function' ? script.options : script) || {};
 
       // For security concerns, we use only base name in production mode.
-      component.__file = "/home/sun/Development/frappe/frappe_docker_alt/frappe-bench/apps/psd_customization/src/SubscriptionDashboard.vue";
+      component.__file = "SubscriptionDashboard.vue";
 
       if (!component.render) {
         component.render = template.render;
@@ -11645,7 +10961,7 @@ var psd = (function () {
     
 
     
-    var SubscriptionDashboard = __vue_normalize__$7(
+    __vue_normalize__$7(
       { render: __vue_render__$7, staticRenderFns: __vue_staticRenderFns__$7 },
       __vue_inject_styles__$7,
       __vue_script__$7,
@@ -11655,6 +10971,99 @@ var psd = (function () {
       undefined,
       undefined
     );
+
+  // Copyright (c) 2018, Libermatic and contributors
+
+  function set_dates(frm) {
+    var from_date = frappe.datetime.get_today();
+    var to_date = frappe.datetime.add_days(frappe.datetime.add_months(from_date, 1), -1);
+    frm.set_value('from_date', from_date);
+    frm.set_value('to_date', to_date);
+  }
+
+  function add_actions$1(frm) {
+    if (frm.doc.docstatus === 1) {
+      var get_invoice_props = function get_invoice_props() {
+        if (frm.doc['reference_invoice']) {
+          return {
+            label: 'Make Payment',
+            method: 'psd_customization.fitness_world.api.gym_subscription.make_payment_entry'
+          };
+        }
+
+        return {
+          label: 'Make Invoice',
+          method: 'psd_customization.fitness_world.api.gym_subscription.make_sales_invoice'
+        };
+      };
+
+      var get_button_state = function get_button_state() {
+        var _frm$doc = frm.doc,
+            is_opening = _frm$doc.is_opening,
+            reference_invoice = _frm$doc.reference_invoice,
+            __onload = _frm$doc.__onload;
+
+        if (is_opening) {
+          return true;
+        }
+
+        if (reference_invoice && __onload && __onload.invoice && __onload.invoice.status === 'Paid') {
+          return true;
+        }
+
+        return false;
+      };
+
+      var _get_invoice_props = get_invoice_props(),
+          label = _get_invoice_props.label,
+          method = _get_invoice_props.method;
+
+      frm.add_custom_button(label, function () {
+        frappe.model.open_mapped_doc({
+          frm: frm,
+          method: method
+        });
+      }).addClass('btn-primary').toggleClass('disabled', get_button_state());
+    }
+  }
+
+  function render_subscription_details$1(frm) {
+    if (frm.doc.__onload) {
+      var invoice = frm.doc.__onload.invoice;
+      var node = frm.dashboard.add_section('<div />').children()[0];
+      frm.dashboard.show();
+      new Vue({
+        el: node,
+        render: function render(h) {
+          return h(MemberDashboard, {
+            props: {
+              invoice: invoice
+            }
+          });
+        }
+      });
+    }
+  }
+
+  var gym_subscription = {
+    refresh: function refresh(frm) {
+      if (frm.doc.__islocal && frm.doc['amended_from']) {
+        frm.set_value('reference_invoice', null);
+      }
+
+      if (frm.doc.__islocal) {
+        set_dates(frm);
+      }
+
+      add_actions$1(frm);
+      render_subscription_details$1(frm);
+    },
+    subscription_item: function subscription_item(frm) {
+      if (!frm.doc['subscription_item']) {
+        frm.set_value('subscription_name', null);
+      }
+    }
+  };
 
   // Copyright (c) 2018, Libermatic and contributors
   // For license information, please see license.txt
@@ -11680,7 +11089,7 @@ var psd = (function () {
     month_diff_dec: month_diff_dec
   };
 
-  function render_subscription_details(_x) {
+  function render_subscription_details$2(_x) {
     return _render_subscription_details.apply(this, arguments);
   }
 
@@ -11774,7 +11183,7 @@ var psd = (function () {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                render_subscription_details(frm);
+                render_subscription_details$2(frm);
                 gym_member = frm.doc.gym_member;
 
                 if (!gym_member) {
@@ -11885,7 +11294,9 @@ var psd = (function () {
 
   var scripts = {
     sales_invoice: sales_invoice,
-    sales_invoice_item: sales_invoice_item
+    sales_invoice_item: sales_invoice_item,
+    gym_member: gym_member,
+    gym_subscription: gym_subscription
   };
 
   var utils = {
@@ -11893,26 +11304,6 @@ var psd = (function () {
   };
 
   var index$1 = {
-    make_member_dashboard: function make_member_dashboard(node, props) {
-      return new Vue({
-        el: node,
-        render: function render(h) {
-          return h(MemberDashboard, {
-            props: props
-          });
-        }
-      });
-    },
-    make_subscription_dashboard: function make_subscription_dashboard(node, props) {
-      return new Vue({
-        el: node,
-        render: function render(h) {
-          return h(SubscriptionDashboard, {
-            props: props
-          });
-        }
-      });
-    },
     make_training_schedule_page: function make_training_schedule_page(node) {
       return new Vue({
         el: node,
