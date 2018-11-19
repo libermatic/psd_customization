@@ -7435,7 +7435,7 @@ var psd = (function () {
       return store[key] || (store[key] = value !== undefined ? value : {});
     })('versions', []).push({
       version: _core.version,
-      mode: 'global',
+      mode: _library ? 'pure' : 'global',
       copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
     });
   });
@@ -8303,28 +8303,6 @@ var psd = (function () {
         _next(undefined);
       });
     };
-  }
-
-  function _classCallCheck(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
-    }
-  }
-
-  function _defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  function _createClass(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties(Constructor, staticProps);
-    return Constructor;
   }
 
   var _toIobject = function (it) {
@@ -9331,10 +9309,10 @@ var psd = (function () {
       return capability.promise;
     }
   });
-  _export(_export.S + _export.F * (_library || !USE_NATIVE), PROMISE, {
+  _export(_export.S + _export.F * (!USE_NATIVE), PROMISE, {
     // 25.4.4.6 Promise.resolve(x)
     resolve: function resolve(x) {
-      return _promiseResolve(_library && this === Wrapper ? $Promise : this, x);
+      return _promiseResolve(this, x);
     }
   });
   _export(_export.S + _export.F * !(USE_NATIVE && _iterDetect(function (iter) {
@@ -9818,6 +9796,299 @@ var psd = (function () {
       __vue_create_injector__,
       undefined
     );
+
+  var $find = _arrayMethods(5);
+  var KEY = 'find';
+  var forced = true; // Shouldn't skip holes
+
+  if (KEY in []) Array(1)[KEY](function () {
+    forced = false;
+  });
+  _export(_export.P + _export.F * forced, 'Array', {
+    find: function find(callbackfn
+    /* , that = undefined */
+    ) {
+      return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+    }
+  });
+  _addToUnscopables(KEY);
+
+  var _iterStep = function (done, value) {
+    return {
+      value: value,
+      done: !!done
+    };
+  };
+
+  var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
+    _anObject(O);
+    var keys = _objectKeys(Properties);
+    var length = keys.length;
+    var i = 0;
+    var P;
+
+    while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
+
+    return O;
+  };
+
+  var IE_PROTO$1 = _sharedKey('IE_PROTO');
+
+  var Empty = function () {
+    /* empty */
+  };
+
+  var PROTOTYPE$1 = 'prototype'; // Create object with fake `null` prototype: use iframe Object with cleared prototype
+
+  var createDict = function () {
+    // Thrash, waste and sodomy: IE GC bug
+    var iframe = _domCreate('iframe');
+    var i = _enumBugKeys.length;
+    var lt = '<';
+    var gt = '>';
+    var iframeDocument;
+    iframe.style.display = 'none';
+    _html.appendChild(iframe);
+    iframe.src = 'javascript:'; // eslint-disable-line no-script-url
+    // createDict = iframe.contentWindow.Object;
+    // html.removeChild(iframe);
+
+    iframeDocument = iframe.contentWindow.document;
+    iframeDocument.open();
+    iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
+    iframeDocument.close();
+    createDict = iframeDocument.F;
+
+    while (i--) delete createDict[PROTOTYPE$1][_enumBugKeys[i]];
+
+    return createDict();
+  };
+
+  var _objectCreate = Object.create || function create(O, Properties) {
+    var result;
+
+    if (O !== null) {
+      Empty[PROTOTYPE$1] = _anObject(O);
+      result = new Empty();
+      Empty[PROTOTYPE$1] = null; // add "__proto__" for Object.getPrototypeOf polyfill
+
+      result[IE_PROTO$1] = O;
+    } else result = createDict();
+
+    return Properties === undefined ? result : _objectDps(result, Properties);
+  };
+
+  var IteratorPrototype = {}; // 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
+
+  _hide(IteratorPrototype, _wks('iterator'), function () {
+    return this;
+  });
+
+  var _iterCreate = function (Constructor, NAME, next) {
+    Constructor.prototype = _objectCreate(IteratorPrototype, {
+      next: _propertyDesc(1, next)
+    });
+    _setToStringTag(Constructor, NAME + ' Iterator');
+  };
+
+  var IE_PROTO$2 = _sharedKey('IE_PROTO');
+  var ObjectProto = Object.prototype;
+
+  var _objectGpo = Object.getPrototypeOf || function (O) {
+    O = _toObject(O);
+    if (_has(O, IE_PROTO$2)) return O[IE_PROTO$2];
+
+    if (typeof O.constructor == 'function' && O instanceof O.constructor) {
+      return O.constructor.prototype;
+    }
+
+    return O instanceof Object ? ObjectProto : null;
+  };
+
+  var ITERATOR$3 = _wks('iterator');
+  var BUGGY = !([].keys && 'next' in [].keys()); // Safari has buggy iterators w/o `next`
+
+  var FF_ITERATOR = '@@iterator';
+  var KEYS = 'keys';
+  var VALUES = 'values';
+
+  var returnThis = function () {
+    return this;
+  };
+
+  var _iterDefine = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
+    _iterCreate(Constructor, NAME, next);
+
+    var getMethod = function (kind) {
+      if (!BUGGY && kind in proto) return proto[kind];
+
+      switch (kind) {
+        case KEYS:
+          return function keys() {
+            return new Constructor(this, kind);
+          };
+
+        case VALUES:
+          return function values() {
+            return new Constructor(this, kind);
+          };
+      }
+
+      return function entries() {
+        return new Constructor(this, kind);
+      };
+    };
+
+    var TAG = NAME + ' Iterator';
+    var DEF_VALUES = DEFAULT == VALUES;
+    var VALUES_BUG = false;
+    var proto = Base.prototype;
+    var $native = proto[ITERATOR$3] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
+    var $default = $native || getMethod(DEFAULT);
+    var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
+    var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
+    var methods, key, IteratorPrototype; // Fix native
+
+    if ($anyNative) {
+      IteratorPrototype = _objectGpo($anyNative.call(new Base()));
+
+      if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
+        // Set @@toStringTag to native iterators
+        _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
+
+        if (!_library && typeof IteratorPrototype[ITERATOR$3] != 'function') _hide(IteratorPrototype, ITERATOR$3, returnThis);
+      }
+    } // fix Array#{values, @@iterator}.name in V8 / FF
+
+
+    if (DEF_VALUES && $native && $native.name !== VALUES) {
+      VALUES_BUG = true;
+
+      $default = function values() {
+        return $native.call(this);
+      };
+    } // Define iterator
+
+
+    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR$3])) {
+      _hide(proto, ITERATOR$3, $default);
+    } // Plug for library
+
+
+    _iterators[NAME] = $default;
+    _iterators[TAG] = returnThis;
+
+    if (DEFAULT) {
+      methods = {
+        values: DEF_VALUES ? $default : getMethod(VALUES),
+        keys: IS_SET ? $default : getMethod(KEYS),
+        entries: $entries
+      };
+      if (FORCED) for (key in methods) {
+        if (!(key in proto)) _redefine(proto, key, methods[key]);
+      } else _export(_export.P + _export.F * (BUGGY || VALUES_BUG), NAME, methods);
+    }
+
+    return methods;
+  };
+
+  // 22.1.3.13 Array.prototype.keys()
+  // 22.1.3.29 Array.prototype.values()
+  // 22.1.3.30 Array.prototype[@@iterator]()
+
+
+  var es6_array_iterator = _iterDefine(Array, 'Array', function (iterated, kind) {
+    this._t = _toIobject(iterated); // target
+
+    this._i = 0; // next index
+
+    this._k = kind; // kind
+    // 22.1.5.2.1 %ArrayIteratorPrototype%.next()
+  }, function () {
+    var O = this._t;
+    var kind = this._k;
+    var index = this._i++;
+
+    if (!O || index >= O.length) {
+      this._t = undefined;
+      return _iterStep(1);
+    }
+
+    if (kind == 'keys') return _iterStep(0, index);
+    if (kind == 'values') return _iterStep(0, O[index]);
+    return _iterStep(0, [index, O[index]]);
+  }, 'values'); // argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
+
+  _iterators.Arguments = _iterators.Array;
+  _addToUnscopables('keys');
+  _addToUnscopables('values');
+  _addToUnscopables('entries');
+
+  var ITERATOR$4 = _wks('iterator');
+  var TO_STRING_TAG = _wks('toStringTag');
+  var ArrayValues = _iterators.Array;
+  var DOMIterables = {
+    CSSRuleList: true,
+    // TODO: Not spec compliant, should be false.
+    CSSStyleDeclaration: false,
+    CSSValueList: false,
+    ClientRectList: false,
+    DOMRectList: false,
+    DOMStringList: false,
+    DOMTokenList: true,
+    DataTransferItemList: false,
+    FileList: false,
+    HTMLAllCollection: false,
+    HTMLCollection: false,
+    HTMLFormElement: false,
+    HTMLSelectElement: false,
+    MediaList: true,
+    // TODO: Not spec compliant, should be false.
+    MimeTypeArray: false,
+    NamedNodeMap: false,
+    NodeList: true,
+    PaintRequestList: false,
+    Plugin: false,
+    PluginArray: false,
+    SVGLengthList: false,
+    SVGNumberList: false,
+    SVGPathSegList: false,
+    SVGPointList: false,
+    SVGStringList: false,
+    SVGTransformList: false,
+    SourceBufferList: false,
+    StyleSheetList: true,
+    // TODO: Not spec compliant, should be false.
+    TextTrackCueList: false,
+    TextTrackList: false,
+    TouchList: false
+  };
+
+  for (var collections = _objectKeys(DOMIterables), i = 0; i < collections.length; i++) {
+    var NAME$1 = collections[i];
+    var explicit = DOMIterables[NAME$1];
+    var Collection = _global[NAME$1];
+    var proto = Collection && Collection.prototype;
+    var key;
+
+    if (proto) {
+      if (!proto[ITERATOR$4]) _hide(proto, ITERATOR$4, ArrayValues);
+      if (!proto[TO_STRING_TAG]) _hide(proto, TO_STRING_TAG, NAME$1);
+      _iterators[NAME$1] = ArrayValues;
+      if (explicit) for (key in es6_array_iterator) if (!proto[key]) _redefine(proto, key, es6_array_iterator[key], true);
+    }
+  }
+
+  var $forEach = _arrayMethods(0);
+  var STRICT = _strictMethod([].forEach, true);
+  _export(_export.P + _export.F * !STRICT, 'Array', {
+    // 22.1.3.10 / 15.4.4.18 Array.prototype.forEach(callbackfn [, thisArg])
+    forEach: function forEach(callbackfn
+    /* , thisArg */
+    ) {
+      return $forEach(this, callbackfn, arguments[1]);
+    }
+  });
 
   //
   //
@@ -10382,7 +10653,7 @@ var psd = (function () {
       },
       invoices: function invoices() {
         return {
-          label: 'Invoices: All / Unpaid',
+          label: 'Invoices: Unpaid / All',
           content: "".concat(this.unpaid_invoices || '-', " / ").concat(this.total_invoices || '-'),
           color: this.unpaid_invoices ? 'orange' : 'green'
         };
@@ -10434,7 +10705,7 @@ var psd = (function () {
     
 
     
-    var MemberDashboard = __vue_normalize__$6(
+    var MemberDashboard$1 = __vue_normalize__$6(
       { render: __vue_render__$6, staticRenderFns: __vue_staticRenderFns__$6 },
       __vue_inject_styles__$6,
       __vue_script__$6,
@@ -10444,6 +10715,169 @@ var psd = (function () {
       undefined,
       undefined
     );
+
+  function set_queries(frm) {
+    ['notification_contact', 'emergency_contact'].forEach(function (contact) {
+      frm.set_query(contact, function (doc) {
+        return {
+          query: 'psd_customization.fitness_world.api.gym_member.get_member_contacts',
+          filters: {
+            member: doc.name
+          }
+        };
+      });
+    });
+  }
+
+  function make_dialog(doctype) {
+    return new frappe.ui.Dialog({
+      title: "Select ".concat(doctype),
+      fields: [{
+        fieldname: 'docname',
+        fieldtype: 'Link',
+        options: doctype
+      }],
+      primary_action: function () {
+        var _primary_action = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee() {
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _context.next = 2;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.gym_member.link_member_to_doctype',
+                    args: {
+                      member: frm.doc['name'],
+                      doctype: doctype,
+                      docname: this.get_value('docname')
+                    }
+                  });
+
+                case 2:
+                  frm.reload_doc();
+                  this.hide();
+
+                case 4:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        }));
+
+        return function primary_action() {
+          return _primary_action.apply(this, arguments);
+        };
+      }()
+    });
+  }
+
+  function render_address_and_contact(frm) {
+    frappe.contacts.render_address_and_contact(frm);
+    var address_dialog = make_dialog('Address');
+    var $link_btn_address = $('<button class="btn btn-xs btn-default btn-link-address">Link Address</button>').on('click', function () {
+      address_dialog.show();
+    });
+    $(frm.fields_dict['address_html'].wrapper).find('.btn-address').after($link_btn_address);
+    var contact_dialog = make_dialog('Contact');
+    var $link_btn_contact = $('<button class="btn btn-xs btn-default btn-link-contact">Link Contact</button>').on('click', function () {
+      contact_dialog.show();
+    });
+    $(frm.fields_dict['contact_html'].wrapper).find('.btn-contact').unbind('click').on('click', function () {
+      frappe.new_doc('Contact');
+    }).after($link_btn_contact);
+  }
+
+  function render_subscription_details(frm) {
+    if (frm.doc.__onload) {
+      var subscriptions = frm.doc.__onload.subscriptions;
+
+      var _ref = frm.doc.__onload['subscription_details'] || {},
+          total_invoices = _ref.total_invoices,
+          unpaid_invoices = _ref.unpaid_invoices,
+          outstanding = _ref.outstanding;
+
+      var node = frm.dashboard.add_section('<div />').children()[0];
+      new Vue({
+        el: node,
+        render: function render(h) {
+          return h(MemberDashboard$1, {
+            props: {
+              total_invoices: total_invoices,
+              unpaid_invoices: unpaid_invoices,
+              outstanding: outstanding,
+              subscriptions: subscriptions
+            }
+          });
+        }
+      });
+    }
+  }
+
+  function add_actions(frm) {
+    frm.add_custom_button('Make Payment', function () {
+      frappe.model.open_mapped_doc({
+        frm: frm,
+        method: 'psd_customization.fitness_world.api.gym_member.make_payment_entry'
+      });
+    }).toggleClass('btn-primary', frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']);
+  }
+
+  var gym_member = {
+    setup: function setup(frm) {
+      set_queries(frm);
+    },
+    refresh: function refresh(frm) {
+      frm.toggle_display('member_id', frm.doc.__islocal);
+      frm.toggle_enable('enrollment_date', frm.doc.__islocal);
+
+      if (frm.doc.__islocal) {
+        frm.set_value('enrollment_date', frappe.datetime.get_today());
+      }
+
+      frappe.dynamic_link = {
+        doc: frm.doc,
+        fieldname: 'name',
+        doctype: 'Gym Member'
+      };
+      frm.toggle_display(['contact_section', 'address_html', 'contact_html', 'notification_contact', 'emergency_contact'], !frm.doc.__islocal);
+      frm.toggle_enable('customer', frm.doc.__islocal);
+
+      if (!frm.doc.__islocal) {
+        render_address_and_contact(frm);
+        render_subscription_details(frm);
+        add_actions(frm);
+      } else {
+        frappe.contacts.clear_address_and_contact(frm);
+      }
+    },
+    notification_contact: function () {
+      var _notification_contact = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee2(frm) {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (!frm.doc['notification_contact']) {
+                  frm.set_value('notification_number', null);
+                }
+
+              case 1:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      return function notification_contact(_x) {
+        return _notification_contact.apply(this, arguments);
+      };
+    }()
+  };
 
   //
 
@@ -10527,7 +10961,7 @@ var psd = (function () {
     
 
     
-    var SubscriptionDashboard = __vue_normalize__$7(
+    __vue_normalize__$7(
       { render: __vue_render__$7, staticRenderFns: __vue_staticRenderFns__$7 },
       __vue_inject_styles__$7,
       __vue_script__$7,
@@ -10537,6 +10971,99 @@ var psd = (function () {
       undefined,
       undefined
     );
+
+  // Copyright (c) 2018, Libermatic and contributors
+
+  function set_dates(frm) {
+    var from_date = frappe.datetime.get_today();
+    var to_date = frappe.datetime.add_days(frappe.datetime.add_months(from_date, 1), -1);
+    frm.set_value('from_date', from_date);
+    frm.set_value('to_date', to_date);
+  }
+
+  function add_actions$1(frm) {
+    if (frm.doc.docstatus === 1) {
+      var get_invoice_props = function get_invoice_props() {
+        if (frm.doc['reference_invoice']) {
+          return {
+            label: 'Make Payment',
+            method: 'psd_customization.fitness_world.api.gym_subscription.make_payment_entry'
+          };
+        }
+
+        return {
+          label: 'Make Invoice',
+          method: 'psd_customization.fitness_world.api.gym_subscription.make_sales_invoice'
+        };
+      };
+
+      var get_button_state = function get_button_state() {
+        var _frm$doc = frm.doc,
+            is_opening = _frm$doc.is_opening,
+            reference_invoice = _frm$doc.reference_invoice,
+            __onload = _frm$doc.__onload;
+
+        if (is_opening) {
+          return true;
+        }
+
+        if (reference_invoice && __onload && __onload.invoice && __onload.invoice.status === 'Paid') {
+          return true;
+        }
+
+        return false;
+      };
+
+      var _get_invoice_props = get_invoice_props(),
+          label = _get_invoice_props.label,
+          method = _get_invoice_props.method;
+
+      frm.add_custom_button(label, function () {
+        frappe.model.open_mapped_doc({
+          frm: frm,
+          method: method
+        });
+      }).addClass('btn-primary').toggleClass('disabled', get_button_state());
+    }
+  }
+
+  function render_subscription_details$1(frm) {
+    if (frm.doc.__onload) {
+      var invoice = frm.doc.__onload.invoice;
+      var node = frm.dashboard.add_section('<div />').children()[0];
+      frm.dashboard.show();
+      new Vue({
+        el: node,
+        render: function render(h) {
+          return h(MemberDashboard, {
+            props: {
+              invoice: invoice
+            }
+          });
+        }
+      });
+    }
+  }
+
+  var gym_subscription = {
+    refresh: function refresh(frm) {
+      if (frm.doc.__islocal && frm.doc['amended_from']) {
+        frm.set_value('reference_invoice', null);
+      }
+
+      if (frm.doc.__islocal) {
+        set_dates(frm);
+      }
+
+      add_actions$1(frm);
+      render_subscription_details$1(frm);
+    },
+    subscription_item: function subscription_item(frm) {
+      if (!frm.doc['subscription_item']) {
+        frm.set_value('subscription_name', null);
+      }
+    }
+  };
 
   // Copyright (c) 2018, Libermatic and contributors
   // For license information, please see license.txt
@@ -10558,274 +11085,225 @@ var psd = (function () {
     var days_in_month = frappe.datetime.get_day_diff(next_start, cur_start);
     return cur_months + rem_days / days_in_month;
   }
+  var datetime = {
+    month_diff_dec: month_diff_dec
+  };
 
-  function get_to_date(date, freq) {
-    return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
+  function render_subscription_details$2(_x) {
+    return _render_subscription_details.apply(this, arguments);
   }
 
-  function get_description(_ref) {
-    var item_name = _ref.item_name,
-        frequency = _ref.frequency,
-        from_date = _ref.from_date,
-        to_date = _ref.to_date;
+  function _render_subscription_details() {
+    _render_subscription_details = _asyncToGenerator(
+    /*#__PURE__*/
+    regeneratorRuntime.mark(function _callee3(frm) {
+      var _ref3, _ref3$message, subscriptions, node;
 
-    if (frequency === 'Lifetime') {
-      return "".concat(item_name, ": Lifetime validity, starting ").concat(frappe.datetime.str_to_user(from_date));
-    }
+      return regeneratorRuntime.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              if (frm.subscription_details) {
+                frm.subscription_details.$destroy();
+              }
 
-    return "".concat(item_name, ": Valid from ").concat(frappe.datetime.str_to_user(from_date), " to ").concat(frappe.datetime.str_to_user(to_date));
+              frm.fields_dict['gym_subscription_details_html'].$wrapper.empty();
+
+              if (!(frm.doc['gym_member'] && frm.doc.__islocal)) {
+                _context3.next = 10;
+                break;
+              }
+
+              _context3.next = 5;
+              return frappe.call({
+                method: 'psd_customization.fitness_world.api.gym_subscription.get_currents',
+                args: {
+                  member: frm.doc['gym_member']
+                }
+              });
+
+            case 5:
+              _ref3 = _context3.sent;
+              _ref3$message = _ref3.message;
+              subscriptions = _ref3$message === void 0 ? [] : _ref3$message;
+              node = frm.fields_dict['gym_subscription_details_html'].$wrapper.append('<div />').children()[0];
+              frm.susbcription_details = new Vue({
+                el: node,
+                render: function render(h) {
+                  return h(CurrentSubscriptions, {
+                    props: {
+                      subscriptions: subscriptions
+                    }
+                  });
+                }
+              });
+
+            case 10:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3, this);
+    }));
+    return _render_subscription_details.apply(this, arguments);
   }
 
-  var SubscriptionDialog =
-  /*#__PURE__*/
-  function () {
-    function SubscriptionDialog() {
-      _classCallCheck(this, SubscriptionDialog);
+  var sales_invoice = {
+    setup: function setup(frm) {
+      var has_gym_role = frappe.user.has_role('Gym User') || frappe.user.has_role('Gym Manager');
+      frm.toggle_display(['gym_member'], has_gym_role);
 
-      var today = frappe.datetime.nowdate();
-      this.dialog = new frappe.ui.Dialog({
-        title: 'Select Subscription Period',
-        fields: [{
-          fieldname: 'ht',
-          fieldtype: 'HTML'
+      if (has_gym_role) {
+        frm.get_field('items').grid.editable_fields = [{
+          fieldname: 'item_code',
+          columns: 3
         }, {
-          fieldtype: 'Section Break'
+          fieldname: 'gym_from_date',
+          columns: 2
         }, {
-          label: 'Frequency',
-          fieldname: 'frequency',
-          fieldtype: 'Select',
-          options: 'Monthly\nQuarterly\nHalf-Yearly\nYearly\nLifetime',
-          default: 'Monthly'
+          fieldname: 'gym_to_date',
+          columns: 2
         }, {
-          fieldtype: 'Column Break'
+          fieldname: 'qty',
+          columns: 1
         }, {
-          label: 'From Date',
-          fieldname: 'from_date',
-          fieldtype: 'Date',
-          default: today
-        }, {
-          label: 'To Date',
-          fieldname: 'to_date',
-          fieldtype: 'Date',
-          default: get_to_date(today, 1)
-        }]
-      });
+          fieldname: 'amount',
+          columns: 2
+        }];
+        frm.get_field('items').grid.toggle_enable('qty', 0);
+      }
+    },
+    gym_member: function () {
+      var _gym_member = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee(frm) {
+        var gym_member, _ref, _ref$message, doc;
 
-      this._setup();
-    }
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                render_subscription_details$2(frm);
+                gym_member = frm.doc.gym_member;
 
-    _createClass(SubscriptionDialog, [{
-      key: "_setup",
-      value: function _setup() {
-        var _this = this;
+                if (!gym_member) {
+                  _context.next = 11;
+                  break;
+                }
 
-        var months = {
-          Monthly: 1,
-          Quarterly: 3,
-          'Half-Yearly': 6,
-          Yearly: 12,
-          Lifetime: 60
-        };
+                _context.next = 5;
+                return frappe.db.get_value('Gym Member', gym_member, 'customer');
 
-        var handle_to_date = function handle_to_date() {
-          var _this$dialog$get_valu = _this.dialog.get_values(),
-              frequency = _this$dialog$get_valu.frequency,
-              from_date = _this$dialog$get_valu.from_date;
+              case 5:
+                _ref = _context.sent;
+                _ref$message = _ref.message;
+                doc = _ref$message === void 0 ? {} : _ref$message;
+                frm.set_value('customer', doc['customer']);
+                _context.next = 13;
+                break;
 
-          if (from_date && frequency && months[frequency]) {
-            if (frequency === 'Lifetime') {
-              _this.dialog.set_value('to_date', null);
+              case 11:
+                frm.set_value('gym_member_name', null);
+                frm.set_value('customer', null);
 
-              _this.dialog.fields_dict['to_date'].toggle(false);
-            } else {
-              _this.dialog.fields_dict['to_date'].toggle(true);
-
-              _this.dialog.set_value('to_date', get_to_date(from_date, months[frequency]));
+              case 13:
+              case "end":
+                return _context.stop();
             }
           }
-        };
+        }, _callee, this);
+      }));
 
-        this.dialog.fields_dict['frequency'].$input.on('input', handle_to_date);
-        this.dialog.fields_dict['from_date'].$input.on('blur', handle_to_date);
-      }
-    }, {
-      key: "load_priors",
-      value: function () {
-        var _load_priors = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee(member) {
-          var _ref2, _ref2$message, subscriptions;
+      return function gym_member(_x2) {
+        return _gym_member.apply(this, arguments);
+      };
+    }()
+  };
 
-          return regeneratorRuntime.wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  if (this.vm) {
-                    this.vm.$destroy();
-                  }
+  function get_description(_ref2) {
+    var item_name = _ref2.item_name,
+        gym_is_lifetime = _ref2.gym_is_lifetime,
+        gym_from_date = _ref2.gym_from_date,
+        gym_to_date = _ref2.gym_to_date;
 
-                  this.dialog.fields_dict['ht'].$wrapper.empty();
-                  _context.next = 4;
-                  return frappe.call({
-                    method: 'psd_customization.fitness_world.api.gym_subscription.get_currents',
-                    args: {
-                      member: member
-                    }
-                  });
+    if (gym_is_lifetime) {
+      return "".concat(item_name, ": Lifetime validity, starting ").concat(frappe.datetime.str_to_user(gym_from_date));
+    }
 
-                case 4:
-                  _ref2 = _context.sent;
-                  _ref2$message = _ref2.message;
-                  subscriptions = _ref2$message === void 0 ? [] : _ref2$message;
-                  this.vm = new Vue({
-                    el: $('<div />').appendTo(this.dialog.fields_dict['ht'].$wrapper)[0],
-                    render: function render(h) {
-                      return h(CurrentSubscriptions, {
-                        props: {
-                          subscriptions: subscriptions
-                        }
-                      });
-                    }
-                  });
+    return "".concat(item_name, ": Valid from ").concat(frappe.datetime.str_to_user(gym_from_date), " to ").concat(frappe.datetime.str_to_user(gym_to_date));
+  }
 
-                case 8:
-                case "end":
-                  return _context.stop();
-              }
+  function set_qty(frm, cdt, cdn) {
+    var _frappe$get_doc = frappe.get_doc(cdt, cdn),
+        item_name = _frappe$get_doc.item_name,
+        gym_from_date = _frappe$get_doc.gym_from_date,
+        gym_to_date = _frappe$get_doc.gym_to_date,
+        gym_is_lifetime = _frappe$get_doc.gym_is_lifetime;
+
+    if (gym_from_date && (gym_to_date || gym_is_lifetime)) {
+      frappe.model.set_value(cdt, cdn, 'qty', gym_is_lifetime ? 60 : month_diff_dec(gym_from_date, gym_to_date));
+      frappe.model.set_value(cdt, cdn, 'description', get_description({
+        item_name: item_name,
+        gym_from_date: gym_from_date,
+        gym_to_date: gym_to_date,
+        gym_is_lifetime: gym_is_lifetime
+      }));
+    }
+  }
+
+  var sales_invoice_item = {
+    item_code: function item_code(frm, cdt, cdn) {
+      var today = frappe.datetime.nowdate();
+      frappe.model.set_value(cdt, cdn, 'gym_from_date', today);
+      frappe.model.set_value(cdt, cdn, 'gym_to_date', frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1));
+    },
+    gym_from_date: set_qty,
+    gym_to_date: set_qty,
+    gym_is_lifetime: function () {
+      var _gym_is_lifetime = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee2(frm, cdt, cdn) {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (!frm.doc.gym_is_lifetime) {
+                  _context2.next = 3;
+                  break;
+                }
+
+                _context2.next = 3;
+                return frappe.model.set_value(cdt, cdn, 'gym_to_date', null);
+
+              case 3:
+                set_qty(frm, cdt, cdn);
+
+              case 4:
+              case "end":
+                return _context2.stop();
             }
-          }, _callee, this);
-        }));
+          }
+        }, _callee2, this);
+      }));
 
-        return function load_priors(_x) {
-          return _load_priors.apply(this, arguments);
-        };
-      }()
-    }, {
-      key: "register",
-      value: function () {
-        var _register = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee2(frm, cdt, cdn) {
-          var _this2 = this;
+      return function gym_is_lifetime(_x3, _x4, _x5) {
+        return _gym_is_lifetime.apply(this, arguments);
+      };
+    }()
+  };
 
-          var row, _ref3, sub_item, item_name;
+  var scripts = {
+    sales_invoice: sales_invoice,
+    sales_invoice_item: sales_invoice_item,
+    gym_member: gym_member,
+    gym_subscription: gym_subscription
+  };
 
-          return regeneratorRuntime.wrap(function _callee2$(_context2) {
-            while (1) {
-              switch (_context2.prev = _context2.next) {
-                case 0:
-                  row = frappe.get_doc(cdt, cdn) || {};
-
-                  if (row.item_code) {
-                    _context2.next = 3;
-                    break;
-                  }
-
-                  return _context2.abrupt("return", false);
-
-                case 3:
-                  _context2.next = 5;
-                  return frappe.call({
-                    method: 'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
-                    args: {
-                      item_code: row.item_code
-                    }
-                  });
-
-                case 5:
-                  _ref3 = _context2.sent;
-                  sub_item = _ref3.message;
-
-                  if (sub_item) {
-                    _context2.next = 9;
-                    break;
-                  }
-
-                  return _context2.abrupt("return", false);
-
-                case 9:
-                  item_name = sub_item.item_name;
-
-                  if (item_name) {
-                    this.dialog.set_title("Select Period for ".concat(item_name));
-                  }
-
-                  this.dialog.set_primary_action('OK', function () {
-                    var _this2$dialog$get_val = _this2.dialog.get_values(),
-                        frequency = _this2$dialog$get_val.frequency,
-                        from_date = _this2$dialog$get_val.from_date,
-                        to_date = _this2$dialog$get_val.to_date;
-
-                    frappe.model.set_value(cdt, cdn, 'qty', frequency === 'Lifetime' ? 60 : month_diff_dec(from_date, to_date));
-                    frappe.model.set_value(cdt, cdn, 'description', get_description({
-                      frequency: frequency,
-                      from_date: from_date,
-                      to_date: to_date,
-                      item_name: item_name || row.item_name
-                    }));
-                    frappe.model.set_value(cdt, cdn, 'is_gym_subscription', 1);
-
-                    if (frequency === 'Lifetime') {
-                      frappe.model.set_value(cdt, cdn, 'gym_is_lifetime', 1);
-                      frappe.model.set_value(cdt, cdn, 'gym_from_date', from_date);
-                    } else {
-                      frappe.model.set_value(cdt, cdn, 'gym_from_date', from_date);
-                      frappe.model.set_value(cdt, cdn, 'gym_to_date', to_date);
-                    }
-
-                    _this2.dialog.hide();
-
-                    _this2.dialog.get_primary_btn().off('click');
-                  });
-                  return _context2.abrupt("return", true);
-
-                case 13:
-                case "end":
-                  return _context2.stop();
-              }
-            }
-          }, _callee2, this);
-        }));
-
-        return function register(_x2, _x3, _x4) {
-          return _register.apply(this, arguments);
-        };
-      }()
-    }, {
-      key: "show",
-      value: function show() {
-        this.dialog.show();
-      }
-    }]);
-
-    return SubscriptionDialog;
-  }();
-
-  var components = {
-    SubscriptionSelector: SubscriptionDialog
+  var utils = {
+    datetime: datetime
   };
 
   var index$1 = {
-    make_member_dashboard: function make_member_dashboard(node, props) {
-      return new Vue({
-        el: node,
-        render: function render(h) {
-          return h(MemberDashboard, {
-            props: props
-          });
-        }
-      });
-    },
-    make_subscription_dashboard: function make_subscription_dashboard(node, props) {
-      return new Vue({
-        el: node,
-        render: function render(h) {
-          return h(SubscriptionDashboard, {
-            props: props
-          });
-        }
-      });
-    },
     make_training_schedule_page: function make_training_schedule_page(node) {
       return new Vue({
         el: node,
@@ -10834,7 +11312,8 @@ var psd = (function () {
         }
       });
     },
-    components: components
+    scripts: scripts,
+    utils: utils
   };
 
   return index$1;

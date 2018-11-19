@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import DashboardItem from './components/DashboardItem.vue';
+import DashboardItem from './DashboardItem.vue';
 
 function get_color(status) {
   if (status === 'Paid') {

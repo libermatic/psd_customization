@@ -9,8 +9,8 @@
 </template>
 
 <script>
-import DashboardItem from './components/DashboardItem.vue';
-import CurrentSubscriptions from './components/CurrentSubscriptions.vue';
+import DashboardItem from './DashboardItem.vue';
+import CurrentSubscriptions from './CurrentSubscriptions.vue';
 
 export default {
   props: ['outstanding', 'total_invoices', 'unpaid_invoices', 'subscriptions'],
@@ -30,7 +30,7 @@ export default {
     },
     invoices: function() {
       return {
-        label: 'Invoices: All / Unpaid',
+        label: 'Invoices: Unpaid / All',
         content: `${this.unpaid_invoices || '-'} / ${this.total_invoices ||
           '-'}`,
         color: this.unpaid_invoices ? 'orange' : 'green',
