@@ -61,7 +61,7 @@ function render_subscription_details(frm) {
     frm.dashboard.show();
     new Vue({
       el: node,
-      render: h => h(MemberDashboard, { props: { invoice } }),
+      render: h => h(SubscriptionDashboard, { props: { invoice } }),
     });
   }
 }

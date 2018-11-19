@@ -10705,7 +10705,7 @@ var psd = (function () {
     
 
     
-    var MemberDashboard$1 = __vue_normalize__$6(
+    var MemberDashboard = __vue_normalize__$6(
       { render: __vue_render__$6, staticRenderFns: __vue_staticRenderFns__$6 },
       __vue_inject_styles__$6,
       __vue_script__$6,
@@ -10803,7 +10803,7 @@ var psd = (function () {
       new Vue({
         el: node,
         render: function render(h) {
-          return h(MemberDashboard$1, {
+          return h(MemberDashboard, {
             props: {
               total_invoices: total_invoices,
               unpaid_invoices: unpaid_invoices,
@@ -10961,7 +10961,7 @@ var psd = (function () {
     
 
     
-    __vue_normalize__$7(
+    var SubscriptionDashboard = __vue_normalize__$7(
       { render: __vue_render__$7, staticRenderFns: __vue_staticRenderFns__$7 },
       __vue_inject_styles__$7,
       __vue_script__$7,
@@ -11035,7 +11035,7 @@ var psd = (function () {
       new Vue({
         el: node,
         render: function render(h) {
-          return h(MemberDashboard, {
+          return h(SubscriptionDashboard, {
             props: {
               invoice: invoice
             }
