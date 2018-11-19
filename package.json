@@ -1,10 +1,13 @@
 {
   "name": "psd_customization",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "Customizations for PSD SELF",
   "entry": "src/index.js",
   "main": "psd_customization/public/js/psd_customization.iife.js",
   "scripts": {
+    "watch": "rollup -c --watch",
+    "build": "rollup -c --environment NODE_ENV:production",
+    "version": "sed -i \"s/__version__.*/__version__ = '$npm_package_version'/\" psd_customization/__init__.py && git add -A psd_customization/__init__.py",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
