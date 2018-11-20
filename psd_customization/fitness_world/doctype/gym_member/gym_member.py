@@ -51,8 +51,6 @@ class GymMember(Document):
 
     def before_save(self):
         self.flags.is_new_doc = self.is_new()
-        if not self.auto_renew:
-            self.auto_renew = 'No'
         if not self.customer:
             self.customer = self.create_customer()
         if not self.notification_contact:

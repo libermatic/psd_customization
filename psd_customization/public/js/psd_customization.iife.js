@@ -11154,8 +11154,6 @@ var psd = (function () {
 
   var sales_invoice = {
     setup: function setup(frm) {
-      frm.toggle_display(['gym_member'], has_gym_role());
-
       if (has_gym_role()) {
         frm.get_field('items').grid.editable_fields = [{
           fieldname: 'item_code',
@@ -11236,22 +11234,59 @@ var psd = (function () {
     return "".concat(item_name, ": Valid from ").concat(frappe.datetime.str_to_user(gym_from_date), " to ").concat(frappe.datetime.str_to_user(gym_to_date));
   }
 
-  function set_qty(frm, cdt, cdn) {
-    var _frappe$get_doc = frappe.get_doc(cdt, cdn),
-        item_name = _frappe$get_doc.item_name,
-        gym_from_date = _frappe$get_doc.gym_from_date,
-        gym_to_date = _frappe$get_doc.gym_to_date,
-        gym_is_lifetime = _frappe$get_doc.gym_is_lifetime;
+  function set_qty(_x3, _x4, _x5) {
+    return _set_qty.apply(this, arguments);
+  }
 
-    if (gym_from_date && (gym_to_date || gym_is_lifetime)) {
-      frappe.model.set_value(cdt, cdn, 'qty', gym_is_lifetime ? 60 : month_diff_dec(gym_from_date, gym_to_date));
-      frappe.model.set_value(cdt, cdn, 'description', get_description({
-        item_name: item_name,
-        gym_from_date: gym_from_date,
-        gym_to_date: gym_to_date,
-        gym_is_lifetime: gym_is_lifetime
-      }));
-    }
+  function _set_qty() {
+    _set_qty = _asyncToGenerator(
+    /*#__PURE__*/
+    regeneratorRuntime.mark(function _callee5(frm, cdt, cdn) {
+      var _frappe$get_doc4, item_code, item_name, gym_from_date, gym_to_date, gym_is_lifetime, _ref4, _ref4$message, sub_item;
+
+      return regeneratorRuntime.wrap(function _callee5$(_context5) {
+        while (1) {
+          switch (_context5.prev = _context5.next) {
+            case 0:
+              _frappe$get_doc4 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc4.item_code, item_name = _frappe$get_doc4.item_name, gym_from_date = _frappe$get_doc4.gym_from_date, gym_to_date = _frappe$get_doc4.gym_to_date, gym_is_lifetime = _frappe$get_doc4.gym_is_lifetime;
+
+              if (!gym_is_lifetime) {
+                _context5.next = 10;
+                break;
+              }
+
+              _context5.next = 4;
+              return frappe.db.get_value('Gym Subscription Item', item_code, 'quantity_for_lifetime');
+
+            case 4:
+              _ref4 = _context5.sent;
+              _ref4$message = _ref4.message;
+              sub_item = _ref4$message === void 0 ? {} : _ref4$message;
+              frappe.model.set_value(cdt, cdn, 'qty', sub_item.quantity_for_lifetime || 1);
+              _context5.next = 11;
+              break;
+
+            case 10:
+              if (gym_from_date && gym_to_date) {
+                frappe.model.set_value(cdt, cdn, 'qty', month_diff_dec(gym_from_date, gym_to_date));
+              }
+
+            case 11:
+              frappe.model.set_value(cdt, cdn, 'description', get_description({
+                item_name: item_name,
+                gym_from_date: gym_from_date,
+                gym_to_date: gym_to_date,
+                gym_is_lifetime: gym_is_lifetime
+              }));
+
+            case 12:
+            case "end":
+              return _context5.stop();
+          }
+        }
+      }, _callee5, this);
+    }));
+    return _set_qty.apply(this, arguments);
   }
 
   var sales_invoice_item = {
@@ -11259,7 +11294,7 @@ var psd = (function () {
       var _item_code = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee2(frm, cdt, cdn) {
-        var _frappe$get_doc2, item_code, is_gym_subscription;
+        var _frappe$get_doc, item_code, is_gym_subscription;
 
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
@@ -11270,7 +11305,7 @@ var psd = (function () {
                   break;
                 }
 
-                _frappe$get_doc2 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc2.item_code;
+                _frappe$get_doc = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc.item_code;
 
                 if (!item_code) {
                   _context2.next = 9;
@@ -11297,13 +11332,13 @@ var psd = (function () {
         }, _callee2, this);
       }));
 
-      return function item_code(_x3, _x4, _x5) {
+      return function item_code(_x6, _x7, _x8) {
         return _item_code.apply(this, arguments);
       };
     }(),
     is_gym_subscription: function is_gym_subscription(frm, cdt, cdn) {
-      var _frappe$get_doc3 = frappe.get_doc(cdt, cdn),
-          is_gym_subscription = _frappe$get_doc3.is_gym_subscription;
+      var _frappe$get_doc2 = frappe.get_doc(cdt, cdn),
+          is_gym_subscription = _frappe$get_doc2.is_gym_subscription;
 
       if (is_gym_subscription) {
         var today = frappe.datetime.nowdate();
@@ -11321,22 +11356,26 @@ var psd = (function () {
       var _gym_is_lifetime = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee3(frm, cdt, cdn) {
+        var _frappe$get_doc3, gym_is_lifetime;
+
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
               case 0:
-                if (!frm.doc.gym_is_lifetime) {
-                  _context3.next = 3;
+                _frappe$get_doc3 = frappe.get_doc(cdt, cdn), gym_is_lifetime = _frappe$get_doc3.gym_is_lifetime;
+
+                if (!gym_is_lifetime) {
+                  _context3.next = 4;
                   break;
                 }
 
-                _context3.next = 3;
+                _context3.next = 4;
                 return frappe.model.set_value(cdt, cdn, 'gym_to_date', null);
 
-              case 3:
+              case 4:
                 set_qty(frm, cdt, cdn);
 
-              case 4:
+              case 5:
               case "end":
                 return _context3.stop();
             }
@@ -11344,7 +11383,7 @@ var psd = (function () {
         }, _callee3, this);
       }));
 
-      return function gym_is_lifetime(_x6, _x7, _x8) {
+      return function gym_is_lifetime(_x9, _x10, _x11) {
         return _gym_is_lifetime.apply(this, arguments);
       };
     }()

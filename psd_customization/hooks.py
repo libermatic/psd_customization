@@ -25,7 +25,6 @@ fixtures = [
             'Purchase Invoice Item-rate-columns',
             'Purchase Invoice Item-batch_no-in_list_view',
             'Purchase Invoice Item-batch_no-columns',
-            'Sales Invoice-update_stock-default',
             'Sales Invoice-subscription_section-collapsible',
             'Sales Invoice Item-item_code-columns',
             'Sales Invoice Item-warehouse-in_list_view',
@@ -51,6 +50,10 @@ fixtures = [
             'Purchase Receipt Item-parse_serial',
             'Purchase Invoice Item-parse_serial',
         ]]]
+    },
+    {
+        'doctype': 'Custom DocPerm',
+        'filters': [['role', 'in', ['Gym User', 'Gym Manager']]],
     },
 ]
 
