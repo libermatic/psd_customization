@@ -79,32 +79,45 @@ function get_description({
   )} to ${frappe.datetime.str_to_user(gym_to_date)}`;
 }
 
-function set_qty(frm, cdt, cdn) {
+async function set_qty(frm, cdt, cdn) {
   const {
+    item_code,
     item_name,
     gym_from_date,
     gym_to_date,
     gym_is_lifetime,
   } = frappe.get_doc(cdt, cdn);
-  if (gym_from_date && (gym_to_date || gym_is_lifetime)) {
+  if (gym_is_lifetime) {
+    const { message: sub_item = {} } = await frappe.db.get_value(
+      'Gym Subscription Item',
+      item_code,
+      'quantity_for_lifetime'
+    );
     frappe.model.set_value(
       cdt,
       cdn,
       'qty',
-      gym_is_lifetime ? 60 : month_diff_dec(gym_from_date, gym_to_date)
+      sub_item.quantity_for_lifetime || 1
     );
+  } else if (gym_from_date && gym_to_date) {
     frappe.model.set_value(
       cdt,
       cdn,
-      'description',
-      get_description({
-        item_name,
-        gym_from_date,
-        gym_to_date,
-        gym_is_lifetime,
-      })
+      'qty',
+      month_diff_dec(gym_from_date, gym_to_date)
     );
   }
+  frappe.model.set_value(
+    cdt,
+    cdn,
+    'description',
+    get_description({
+      item_name,
+      gym_from_date,
+      gym_to_date,
+      gym_is_lifetime,
+    })
+  );
 }
 
 export const sales_invoice_item = {
@@ -147,7 +160,8 @@ export const sales_invoice_item = {
   gym_from_date: set_qty,
   gym_to_date: set_qty,
   gym_is_lifetime: async function(frm, cdt, cdn) {
-    if (frm.doc.gym_is_lifetime) {
+    const { gym_is_lifetime } = frappe.get_doc(cdt, cdn);
+    if (gym_is_lifetime) {
       await frappe.model.set_value(cdt, cdn, 'gym_to_date', null);
     }
     set_qty(frm, cdt, cdn);
