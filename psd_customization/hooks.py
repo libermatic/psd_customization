@@ -25,7 +25,6 @@ fixtures = [
             'Purchase Invoice Item-rate-columns',
             'Purchase Invoice Item-batch_no-in_list_view',
             'Purchase Invoice Item-batch_no-columns',
-            'Sales Invoice-update_stock-default',
             'Sales Invoice-subscription_section-collapsible',
             'Sales Invoice Item-item_code-columns',
             'Sales Invoice Item-warehouse-in_list_view',
