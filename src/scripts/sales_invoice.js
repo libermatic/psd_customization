@@ -6,6 +6,12 @@ import Vue from 'vue';
 import CurrentSubscriptions from '../components/CurrentSubscriptions.vue';
 import { month_diff_dec } from '../utils/datetime';
 
+function has_gym_role() {
+  return (
+    frappe.user.has_role('Gym User') || frappe.user.has_role('Gym Manager')
+  );
+}
+
 async function render_subscription_details(frm) {
   if (frm.subscription_details) {
     frm.subscription_details.$destroy();
@@ -29,10 +35,8 @@ async function render_subscription_details(frm) {
 
 export const sales_invoice = {
   setup: function(frm) {
-    const has_gym_role =
-      frappe.user.has_role('Gym User') || frappe.user.has_role('Gym Manager');
-    frm.toggle_display(['gym_member'], has_gym_role);
-    if (has_gym_role) {
+    frm.toggle_display(['gym_member'], has_gym_role());
+    if (has_gym_role()) {
       frm.get_field('items').grid.editable_fields = [
         { fieldname: 'item_code', columns: 3 },
         { fieldname: 'gym_from_date', columns: 2 },
@@ -105,15 +109,41 @@ function set_qty(frm, cdt, cdn) {
 }
 
 export const sales_invoice_item = {
-  item_code: function(frm, cdt, cdn) {
-    const today = frappe.datetime.nowdate();
-    frappe.model.set_value(cdt, cdn, 'gym_from_date', today);
-    frappe.model.set_value(
-      cdt,
-      cdn,
-      'gym_to_date',
-      frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1)
-    );
+  item_code: async function(frm, cdt, cdn) {
+    if (has_gym_role()) {
+      const { item_code } = frappe.get_doc(cdt, cdn);
+      if (item_code) {
+        const is_gym_subscription = await frappe.db.exists(
+          'Gym Subscription Item',
+          item_code
+        );
+        frappe.model.set_value(
+          cdt,
+          cdn,
+          'is_gym_subscription',
+          is_gym_subscription ? 1 : 0
+        );
+      } else {
+        frappe.model.set_value(cdt, cdn, 'is_gym_subscription', 0);
+      }
+    }
+  },
+  is_gym_subscription: function(frm, cdt, cdn) {
+    const { is_gym_subscription } = frappe.get_doc(cdt, cdn);
+    if (is_gym_subscription) {
+      const today = frappe.datetime.nowdate();
+      frappe.model.set_value(cdt, cdn, 'gym_from_date', today);
+      frappe.model.set_value(
+        cdt,
+        cdn,
+        'gym_to_date',
+        frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1)
+      );
+    } else {
+      ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach(field =>
+        frappe.model.set_value(cdt, cdn, field, null)
+      );
+    }
   },
   gym_from_date: set_qty,
   gym_to_date: set_qty,
