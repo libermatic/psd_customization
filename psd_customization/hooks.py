@@ -52,6 +52,10 @@ fixtures = [
             'Purchase Invoice Item-parse_serial',
         ]]]
     },
+    {
+        'doctype': 'Custom DocPerm',
+        'filters': [['role', 'in', ['Gym User', 'Gym Manager']]],
+    },
 ]
 
 # Includes in <head>

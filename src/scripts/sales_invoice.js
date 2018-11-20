@@ -35,7 +35,6 @@ async function render_subscription_details(frm) {
 
 export const sales_invoice = {
   setup: function(frm) {
-    frm.toggle_display(['gym_member'], has_gym_role());
     if (has_gym_role()) {
       frm.get_field('items').grid.editable_fields = [
         { fieldname: 'item_code', columns: 3 },
