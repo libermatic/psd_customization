@@ -7,6 +7,7 @@
   "scripts": {
     "watch": "rollup -c --watch",
     "build": "rollup -c --environment NODE_ENV:production",
+    "preversion": "npm run build; git add psd_customization/public/js/psd_customization.iife.js",
     "version": "sed -i \"s/__version__.*/__version__ = 'v$npm_package_version'/\" psd_customization/__init__.py && git add -A psd_customization/__init__.py",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
