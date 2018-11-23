@@ -52,6 +52,24 @@ function add_actions(frm) {
       })
       .addClass('btn-primary')
       .toggleClass('disabled', get_button_state());
+
+    const { status, name: subscription } = frm.doc;
+    if (['Active', 'Stopped'].includes(status)) {
+      frm.add_custom_button(
+        status === 'Active' ? 'Stop' : 'Resume',
+        async function() {
+          await frappe.call({
+            method:
+              'psd_customization.fitness_world.api.gym_subscription.update_status',
+            args: {
+              subscription,
+              status: status === 'Active' ? 'Stopped' : 'Active',
+            },
+          });
+          frm.reload_doc();
+        }
+      );
+    }
   }
 }
 function render_subscription_details(frm) {
@@ -84,4 +102,33 @@ export const gym_subscription = {
   },
 };
 
-export default { gym_subscription };
+export const gym_subscription_list = {
+  add_fields: ['status', 'is_lifetime', 'from_date', 'to_date'],
+  get_indicator: function({ status, is_lifetime, from_date, to_date }) {
+    if (
+      to_date &&
+      frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 0
+    ) {
+      return ['Expired', 'red', 'to_date,<,Today'];
+    }
+    if (status === 'Stopped') {
+      return ['Stopped', 'darkgrey', 'status,=,Stopped|to_date,>=,Today'];
+    }
+    if (
+      to_date &&
+      frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 7
+    ) {
+      return [
+        'Expiring',
+        'orange',
+        `status,=,Active|to_date,>=,Today|to_date,<,${frappe.datetime.add_days(
+          frappe.datetime.get_today(),
+          7
+        )}`,
+      ];
+    }
+    return ['Active', 'green', 'status,=,Active|to_date,>=,Today'];
+  },
+};
+
+export default { gym_subscription, gym_subscription_list };

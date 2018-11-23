@@ -10972,8 +10972,6 @@ var psd = (function () {
       undefined
     );
 
-  // Copyright (c) 2018, Libermatic and contributors
-
   function set_dates(frm) {
     var from_date = frappe.datetime.get_today();
     var to_date = frappe.datetime.add_days(frappe.datetime.add_months(from_date, 1), -1);
@@ -11024,6 +11022,40 @@ var psd = (function () {
           method: method
         });
       }).addClass('btn-primary').toggleClass('disabled', get_button_state());
+      var _frm$doc2 = frm.doc,
+          status = _frm$doc2.status,
+          subscription = _frm$doc2.name;
+
+      if (['Active', 'Stopped'].includes(status)) {
+        frm.add_custom_button(status === 'Active' ? 'Stop' : 'Resume',
+        /*#__PURE__*/
+        _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee() {
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _context.next = 2;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.gym_subscription.update_status',
+                    args: {
+                      subscription: subscription,
+                      status: status === 'Active' ? 'Stopped' : 'Active'
+                    }
+                  });
+
+                case 2:
+                  frm.reload_doc();
+
+                case 3:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        })));
+      }
     }
   }
 
@@ -11062,6 +11094,29 @@ var psd = (function () {
       if (!frm.doc['subscription_item']) {
         frm.set_value('subscription_name', null);
       }
+    }
+  };
+  var gym_subscription_list = {
+    add_fields: ['status', 'is_lifetime', 'from_date', 'to_date'],
+    get_indicator: function get_indicator(_ref2) {
+      var status = _ref2.status,
+          is_lifetime = _ref2.is_lifetime,
+          from_date = _ref2.from_date,
+          to_date = _ref2.to_date;
+
+      if (to_date && frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 0) {
+        return ['Expired', 'red', 'to_date,<,Today'];
+      }
+
+      if (status === 'Stopped') {
+        return ['Stopped', 'darkgrey', 'status,=,Stopped|to_date,>=,Today'];
+      }
+
+      if (to_date && frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 7) {
+        return ['Expiring', 'orange', "status,=,Active|to_date,>=,Today|to_date,<,".concat(frappe.datetime.add_days(frappe.datetime.get_today(), 7))];
+      }
+
+      return ['Active', 'green', 'status,=,Active|to_date,>=,Today'];
     }
   };
 
@@ -11393,7 +11448,8 @@ var psd = (function () {
     sales_invoice: sales_invoice,
     sales_invoice_item: sales_invoice_item,
     gym_member: gym_member,
-    gym_subscription: gym_subscription
+    gym_subscription: gym_subscription,
+    gym_subscription_list: gym_subscription_list
   };
 
   var utils = {
