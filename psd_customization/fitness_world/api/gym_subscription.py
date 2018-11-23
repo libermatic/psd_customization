@@ -641,3 +641,13 @@ def get_currents(member):
         values={'member': member},
         as_dict=1,
     )
+
+
+@frappe.whitelist()
+def update_status(subscription, status):
+    if status in ['Active', 'Stopped']:
+        doc = frappe.get_doc('Gym Subscription', subscription)
+        if doc.status == 'Expired':
+            return frappe.throw('Cannot set status for expired Subscriptions')
+        doc.status = status
+        doc.save()
