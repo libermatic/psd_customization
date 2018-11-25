@@ -14,28 +14,13 @@ frappe.query_reports['Gym Subscription Status'] = {
       fieldname: 'subscription_item',
       label: 'Subscription Item',
       fieldtype: 'Link',
-      options: 'Item',
-      get_query: function() {
-        let item_group = null;
-        frappe.call({
-          method: 'frappe.client.get_value',
-          args: { doctype: 'Gym Settings', fieldname: 'default_item_group' },
-          async: false,
-          callback: function({ message = {} }) {
-            item_group = message['default_item_group'];
-          },
-        });
-        return {
-          doctype: 'Item',
-          filters: { item_group, is_gym_subscription_item: 1 },
-        };
-      },
+      options: 'Gym Subscription Item',
     },
     {
       fieldname: 'status',
-      label: 'Invoice Status',
+      label: 'Status',
       fieldtype: 'Select',
-      options: '\nPaid\nUnpaid',
+      options: 'Active\nStopped\nExpired',
     },
   ],
 };
