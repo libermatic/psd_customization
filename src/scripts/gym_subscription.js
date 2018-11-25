@@ -105,29 +105,25 @@ export const gym_subscription = {
 export const gym_subscription_list = {
   add_fields: ['status', 'is_lifetime', 'from_date', 'to_date'],
   get_indicator: function({ status, is_lifetime, from_date, to_date }) {
-    if (
-      to_date &&
-      frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 0
-    ) {
-      return ['Expired', 'red', 'to_date,<,Today'];
+    const expiry_in_days =
+      to_date && !is_lifetime
+        ? frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today())
+        : 1800;
+    if (expiry_in_days < 0) {
+      return ['Expired', 'red', 'is_lifetime,!=,1|to_date,<,Today'];
     }
     if (status === 'Stopped') {
       return ['Stopped', 'darkgrey', 'status,=,Stopped|to_date,>=,Today'];
     }
-    if (
-      to_date &&
-      frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 7
-    ) {
+    const warn_date = frappe.datetime.add_days(frappe.datetime.get_today(), 7);
+    if (expiry_in_days < 7) {
       return [
-        'Expiring',
+        'Active',
         'orange',
-        `status,=,Active|to_date,>=,Today|to_date,<,${frappe.datetime.add_days(
-          frappe.datetime.get_today(),
-          7
-        )}`,
+        `status,=,Active|to_date,>=,Today|to_date,<,${warn_date}`,
       ];
     }
-    return ['Active', 'green', 'status,=,Active|to_date,>=,Today'];
+    return ['Active', 'green', `status,=,Active|to_date,>=,${warn_date}`];
   },
 };
 
