@@ -11103,20 +11103,23 @@ var psd = (function () {
           is_lifetime = _ref2.is_lifetime,
           from_date = _ref2.from_date,
           to_date = _ref2.to_date;
+      var expiry_in_days = to_date && !is_lifetime ? frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) : 1800;
 
-      if (to_date && frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 0) {
-        return ['Expired', 'red', 'to_date,<,Today'];
+      if (expiry_in_days < 0) {
+        return ['Expired', 'red', 'is_lifetime,!=,1|to_date,<,Today'];
       }
 
       if (status === 'Stopped') {
         return ['Stopped', 'darkgrey', 'status,=,Stopped|to_date,>=,Today'];
       }
 
-      if (to_date && frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today()) < 7) {
-        return ['Expiring', 'orange', "status,=,Active|to_date,>=,Today|to_date,<,".concat(frappe.datetime.add_days(frappe.datetime.get_today(), 7))];
+      var warn_date = frappe.datetime.add_days(frappe.datetime.get_today(), 7);
+
+      if (expiry_in_days < 7) {
+        return ['Active', 'orange', "status,=,Active|to_date,>=,Today|to_date,<,".concat(warn_date)];
       }
 
-      return ['Active', 'green', 'status,=,Active|to_date,>=,Today'];
+      return ['Active', 'green', "status,=,Active|to_date,>=,".concat(warn_date)];
     }
   };
 
