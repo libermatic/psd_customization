@@ -63,26 +63,9 @@ export const sales_invoice = {
   },
 };
 
-function get_description({
-  item_name,
-  gym_is_lifetime,
-  gym_from_date,
-  gym_to_date,
-}) {
-  if (gym_is_lifetime) {
-    return `${item_name}: Lifetime validity, starting ${frappe.datetime.str_to_user(
-      gym_from_date
-    )}`;
-  }
-  return `${item_name}: Valid from ${frappe.datetime.str_to_user(
-    gym_from_date
-  )} to ${frappe.datetime.str_to_user(gym_to_date)}`;
-}
-
 async function set_qty(frm, cdt, cdn) {
   const {
     item_code,
-    item_name,
     gym_from_date,
     gym_to_date,
     gym_is_lifetime,
@@ -107,17 +90,6 @@ async function set_qty(frm, cdt, cdn) {
       month_diff_dec(gym_from_date, gym_to_date)
     );
   }
-  frappe.model.set_value(
-    cdt,
-    cdn,
-    'description',
-    get_description({
-      item_name,
-      gym_from_date,
-      gym_to_date,
-      gym_is_lifetime,
-    })
-  );
 }
 
 export const sales_invoice_item = {
