@@ -50,6 +50,11 @@ def get_data():
                 },
                 {
                     "type": "doctype",
+                    "name": "Training Slot",
+                    "label": "Training Slot",
+                },
+                {
+                    "type": "doctype",
                     "name": "Gym Settings",
                     "label": "Gym Settings",
                 },
