@@ -33,6 +33,11 @@ def get_data():
                     "name": "Gym Subscription Item",
                     "label": "Subscription Item",
                 },
+                {
+                    "type": "doctype",
+                    "name": "Gym Trainer",
+                    "label": "Trainer",
+                },
             ]
         },
         {
