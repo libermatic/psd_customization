@@ -8476,49 +8476,351 @@ var psd = (function () {
     }
   });
 
+  var _iterStep = function (done, value) {
+    return {
+      value: value,
+      done: !!done
+    };
+  };
+
+  var _iterators = {};
+
+  var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
+    _anObject(O);
+    var keys = _objectKeys(Properties);
+    var length = keys.length;
+    var i = 0;
+    var P;
+
+    while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
+
+    return O;
+  };
+
+  var document$2 = _global.document;
+
+  var _html = document$2 && document$2.documentElement;
+
+  var IE_PROTO$1 = _sharedKey('IE_PROTO');
+
+  var Empty = function () {
+    /* empty */
+  };
+
+  var PROTOTYPE$1 = 'prototype'; // Create object with fake `null` prototype: use iframe Object with cleared prototype
+
+  var createDict = function () {
+    // Thrash, waste and sodomy: IE GC bug
+    var iframe = _domCreate('iframe');
+    var i = _enumBugKeys.length;
+    var lt = '<';
+    var gt = '>';
+    var iframeDocument;
+    iframe.style.display = 'none';
+    _html.appendChild(iframe);
+    iframe.src = 'javascript:'; // eslint-disable-line no-script-url
+    // createDict = iframe.contentWindow.Object;
+    // html.removeChild(iframe);
+
+    iframeDocument = iframe.contentWindow.document;
+    iframeDocument.open();
+    iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
+    iframeDocument.close();
+    createDict = iframeDocument.F;
+
+    while (i--) delete createDict[PROTOTYPE$1][_enumBugKeys[i]];
+
+    return createDict();
+  };
+
+  var _objectCreate = Object.create || function create(O, Properties) {
+    var result;
+
+    if (O !== null) {
+      Empty[PROTOTYPE$1] = _anObject(O);
+      result = new Empty();
+      Empty[PROTOTYPE$1] = null; // add "__proto__" for Object.getPrototypeOf polyfill
+
+      result[IE_PROTO$1] = O;
+    } else result = createDict();
+
+    return Properties === undefined ? result : _objectDps(result, Properties);
+  };
+
+  var def$1 = _objectDp.f;
+  var TAG = _wks('toStringTag');
+
+  var _setToStringTag = function (it, tag, stat) {
+    if (it && !_has(it = stat ? it : it.prototype, TAG)) def$1(it, TAG, {
+      configurable: true,
+      value: tag
+    });
+  };
+
+  var IteratorPrototype = {}; // 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
+
+  _hide(IteratorPrototype, _wks('iterator'), function () {
+    return this;
+  });
+
+  var _iterCreate = function (Constructor, NAME, next) {
+    Constructor.prototype = _objectCreate(IteratorPrototype, {
+      next: _propertyDesc(1, next)
+    });
+    _setToStringTag(Constructor, NAME + ' Iterator');
+  };
+
+  var IE_PROTO$2 = _sharedKey('IE_PROTO');
+  var ObjectProto = Object.prototype;
+
+  var _objectGpo = Object.getPrototypeOf || function (O) {
+    O = _toObject(O);
+    if (_has(O, IE_PROTO$2)) return O[IE_PROTO$2];
+
+    if (typeof O.constructor == 'function' && O instanceof O.constructor) {
+      return O.constructor.prototype;
+    }
+
+    return O instanceof Object ? ObjectProto : null;
+  };
+
+  var ITERATOR = _wks('iterator');
+  var BUGGY = !([].keys && 'next' in [].keys()); // Safari has buggy iterators w/o `next`
+
+  var FF_ITERATOR = '@@iterator';
+  var KEYS = 'keys';
+  var VALUES = 'values';
+
+  var returnThis = function () {
+    return this;
+  };
+
+  var _iterDefine = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
+    _iterCreate(Constructor, NAME, next);
+
+    var getMethod = function (kind) {
+      if (!BUGGY && kind in proto) return proto[kind];
+
+      switch (kind) {
+        case KEYS:
+          return function keys() {
+            return new Constructor(this, kind);
+          };
+
+        case VALUES:
+          return function values() {
+            return new Constructor(this, kind);
+          };
+      }
+
+      return function entries() {
+        return new Constructor(this, kind);
+      };
+    };
+
+    var TAG = NAME + ' Iterator';
+    var DEF_VALUES = DEFAULT == VALUES;
+    var VALUES_BUG = false;
+    var proto = Base.prototype;
+    var $native = proto[ITERATOR] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
+    var $default = $native || getMethod(DEFAULT);
+    var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
+    var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
+    var methods, key, IteratorPrototype; // Fix native
+
+    if ($anyNative) {
+      IteratorPrototype = _objectGpo($anyNative.call(new Base()));
+
+      if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
+        // Set @@toStringTag to native iterators
+        _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
+
+        if (!_library && typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
+      }
+    } // fix Array#{values, @@iterator}.name in V8 / FF
+
+
+    if (DEF_VALUES && $native && $native.name !== VALUES) {
+      VALUES_BUG = true;
+
+      $default = function values() {
+        return $native.call(this);
+      };
+    } // Define iterator
+
+
+    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
+      _hide(proto, ITERATOR, $default);
+    } // Plug for library
+
+
+    _iterators[NAME] = $default;
+    _iterators[TAG] = returnThis;
+
+    if (DEFAULT) {
+      methods = {
+        values: DEF_VALUES ? $default : getMethod(VALUES),
+        keys: IS_SET ? $default : getMethod(KEYS),
+        entries: $entries
+      };
+      if (FORCED) for (key in methods) {
+        if (!(key in proto)) _redefine(proto, key, methods[key]);
+      } else _export(_export.P + _export.F * (BUGGY || VALUES_BUG), NAME, methods);
+    }
+
+    return methods;
+  };
+
+  // 22.1.3.13 Array.prototype.keys()
+  // 22.1.3.29 Array.prototype.values()
+  // 22.1.3.30 Array.prototype[@@iterator]()
+
+
+  var es6_array_iterator = _iterDefine(Array, 'Array', function (iterated, kind) {
+    this._t = _toIobject(iterated); // target
+
+    this._i = 0; // next index
+
+    this._k = kind; // kind
+    // 22.1.5.2.1 %ArrayIteratorPrototype%.next()
+  }, function () {
+    var O = this._t;
+    var kind = this._k;
+    var index = this._i++;
+
+    if (!O || index >= O.length) {
+      this._t = undefined;
+      return _iterStep(1);
+    }
+
+    if (kind == 'keys') return _iterStep(0, index);
+    if (kind == 'values') return _iterStep(0, O[index]);
+    return _iterStep(0, [index, O[index]]);
+  }, 'values'); // argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
+
+  _iterators.Arguments = _iterators.Array;
+  _addToUnscopables('keys');
+  _addToUnscopables('values');
+  _addToUnscopables('entries');
+
+  var _objectSap = function (KEY, exec) {
+    var fn = (_core.Object || {})[KEY] || Object[KEY];
+    var exp = {};
+    exp[KEY] = exec(fn);
+    _export(_export.S + _export.F * _fails(function () {
+      fn(1);
+    }), 'Object', exp);
+  };
+
+  _objectSap('keys', function () {
+    return function keys(it) {
+      return _objectKeys(_toObject(it));
+    };
+  });
+
+  var ITERATOR$1 = _wks('iterator');
+  var TO_STRING_TAG = _wks('toStringTag');
+  var ArrayValues = _iterators.Array;
+  var DOMIterables = {
+    CSSRuleList: true,
+    // TODO: Not spec compliant, should be false.
+    CSSStyleDeclaration: false,
+    CSSValueList: false,
+    ClientRectList: false,
+    DOMRectList: false,
+    DOMStringList: false,
+    DOMTokenList: true,
+    DataTransferItemList: false,
+    FileList: false,
+    HTMLAllCollection: false,
+    HTMLCollection: false,
+    HTMLFormElement: false,
+    HTMLSelectElement: false,
+    MediaList: true,
+    // TODO: Not spec compliant, should be false.
+    MimeTypeArray: false,
+    NamedNodeMap: false,
+    NodeList: true,
+    PaintRequestList: false,
+    Plugin: false,
+    PluginArray: false,
+    SVGLengthList: false,
+    SVGNumberList: false,
+    SVGPathSegList: false,
+    SVGPointList: false,
+    SVGStringList: false,
+    SVGTransformList: false,
+    SourceBufferList: false,
+    StyleSheetList: true,
+    // TODO: Not spec compliant, should be false.
+    TextTrackCueList: false,
+    TextTrackList: false,
+    TouchList: false
+  };
+
+  for (var collections = _objectKeys(DOMIterables), i = 0; i < collections.length; i++) {
+    var NAME$1 = collections[i];
+    var explicit = DOMIterables[NAME$1];
+    var Collection = _global[NAME$1];
+    var proto = Collection && Collection.prototype;
+    var key;
+
+    if (proto) {
+      if (!proto[ITERATOR$1]) _hide(proto, ITERATOR$1, ArrayValues);
+      if (!proto[TO_STRING_TAG]) _hide(proto, TO_STRING_TAG, NAME$1);
+      _iterators[NAME$1] = ArrayValues;
+      if (explicit) for (key in es6_array_iterator) if (!proto[key]) _redefine(proto, key, es6_array_iterator[key], true);
+    }
+  }
+
+  var $forEach = _arrayMethods(0);
+  var STRICT = _strictMethod([].forEach, true);
+  _export(_export.P + _export.F * !STRICT, 'Array', {
+    // 22.1.3.10 / 15.4.4.18 Array.prototype.forEach(callbackfn [, thisArg])
+    forEach: function forEach(callbackfn
+    /* , thisArg */
+    ) {
+      return $forEach(this, callbackfn, arguments[1]);
+    }
+  });
+
   //
   //
   //
   //
   var script = {
     props: {
-      fieldtype: String,
-      fieldname: String,
-      label: String,
-      options: String,
-      get_query: Object,
-      onblur: Function
+      df: Object,
+      events: Object,
+      value: String
     },
     mounted: function mounted() {
-      var fieldtype = this.fieldtype,
-          fieldname = this.fieldname,
-          label = this.label,
-          get_query = this.get_query,
-          options = this.options,
-          _this$onblur = this.onblur,
-          onblur = _this$onblur === void 0 ? function () {} : _this$onblur;
+      var _this = this;
+
       var field = frappe.ui.form.make_control({
         parent: this.$el,
-        df: {
-          fieldtype: fieldtype,
-          fieldname: fieldname,
-          label: label,
-          get_query: get_query,
-          options: options
-        }
+        df: this.df
       });
       field.refresh();
-      field.$input.on('blur', function () {
-        onblur(field.get_value());
+      Object.keys(this.events).forEach(function (evt) {
+        field.$input.on(evt, _this.events[evt]);
       });
       this.$once('hook:beforeDestroy', function () {
-        field.$input.off('blur');
+        var _this2 = this;
+
+        Object.keys(this.events).forEach(function (evt) {
+          field.$input.off(evt, _this2.events[evt]);
+        });
         field.$wrapper.remove();
       });
-      this.$watch('get_query', function (query) {
+      this.$watch('df.get_query', function (query) {
         field.get_query = query;
         field.set_custom_query({});
       });
+
+      if (this.value) {
+        field.set_value(this.value);
+      }
     }
   };
 
@@ -8582,14 +8884,42 @@ var psd = (function () {
     components: {
       Field: Field
     },
-    props: ['fieldname', 'label', 'options', 'get_query', 'onchange']
+    props: ['fieldname', 'value', 'label', 'options', 'get_query', 'onchange'],
+    computed: {
+      df: function df() {
+        var fieldname = this.fieldname,
+            label = this.label,
+            options = this.options,
+            get_query = this.get_query;
+        var fieldtype = 'Link';
+        return {
+          fieldname: fieldname,
+          fieldtype: fieldtype,
+          label: label,
+          options: options,
+          get_query: get_query
+        };
+      },
+      events: function events() {
+        var _this = this;
+
+        return {
+          'awesomplete-selectcomplete': function awesompleteSelectcomplete(e) {
+            _this.onchange({
+              fieldname: _this.fieldname,
+              value: e.target.value
+            });
+          }
+        };
+      }
+    }
   };
 
   /* script */
               const __vue_script__$1 = script$1;
               
   /* template */
-  var __vue_render__$1 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('field',_vm._b({attrs:{"onblur":_vm.onchange,"fieldtype":'Link'}},'field',{ fieldname: _vm.fieldname, label: _vm.label, options: _vm.options, get_query: _vm.get_query },false))};
+  var __vue_render__$1 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('field',_vm._b({},'field',{ df: _vm.df, events: _vm.events, value: _vm.value },false))};
   var __vue_staticRenderFns__$1 = [];
 
     /* style */
@@ -8640,7 +8970,7 @@ var psd = (function () {
       undefined
     );
 
-  var TAG = _wks('toStringTag'); // ES3 wrong here
+  var TAG$1 = _wks('toStringTag'); // ES3 wrong here
 
   var ARG = _cof(function () {
     return arguments;
@@ -8657,7 +8987,7 @@ var psd = (function () {
   var _classof = function (it) {
     var O, T, B;
     return it === undefined ? 'Undefined' : it === null ? 'Null' // @@toStringTag case
-    : typeof (T = tryGet(O = Object(it), TAG)) == 'string' ? T // builtinTag case
+    : typeof (T = tryGet(O = Object(it), TAG$1)) == 'string' ? T // builtinTag case
     : ARG ? _cof(O) // ES3 arguments fallback
     : (B = _cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
   };
@@ -8680,19 +9010,17 @@ var psd = (function () {
     }
   };
 
-  var _iterators = {};
-
-  var ITERATOR = _wks('iterator');
+  var ITERATOR$2 = _wks('iterator');
   var ArrayProto$1 = Array.prototype;
 
   var _isArrayIter = function (it) {
-    return it !== undefined && (_iterators.Array === it || ArrayProto$1[ITERATOR] === it);
+    return it !== undefined && (_iterators.Array === it || ArrayProto$1[ITERATOR$2] === it);
   };
 
-  var ITERATOR$1 = _wks('iterator');
+  var ITERATOR$3 = _wks('iterator');
 
   var core_getIteratorMethod = _core.getIteratorMethod = function (it) {
-    if (it != undefined) return it[ITERATOR$1] || it['@@iterator'] || _iterators[_classof(it)];
+    if (it != undefined) return it[ITERATOR$3] || it['@@iterator'] || _iterators[_classof(it)];
   };
 
   var _forOf = createCommonjsModule(function (module) {
@@ -8752,10 +9080,6 @@ var psd = (function () {
 
     return fn.apply(that, args);
   };
-
-  var document$2 = _global.document;
-
-  var _html = document$2 && document$2.documentElement;
 
   var process = _global.process;
   var setTask = _global.setImmediate;
@@ -8979,16 +9303,6 @@ var psd = (function () {
     return target;
   };
 
-  var def$1 = _objectDp.f;
-  var TAG$1 = _wks('toStringTag');
-
-  var _setToStringTag = function (it, tag, stat) {
-    if (it && !_has(it = stat ? it : it.prototype, TAG$1)) def$1(it, TAG$1, {
-      configurable: true,
-      value: tag
-    });
-  };
-
   var SPECIES$2 = _wks('species');
 
   var _setSpecies = function (KEY) {
@@ -9001,11 +9315,11 @@ var psd = (function () {
     });
   };
 
-  var ITERATOR$2 = _wks('iterator');
+  var ITERATOR$4 = _wks('iterator');
   var SAFE_CLOSING = false;
 
   try {
-    var riter = [7][ITERATOR$2]();
+    var riter = [7][ITERATOR$4]();
 
     riter['return'] = function () {
       SAFE_CLOSING = true;
@@ -9020,7 +9334,7 @@ var psd = (function () {
 
     try {
       var arr = [7];
-      var iter = arr[ITERATOR$2]();
+      var iter = arr[ITERATOR$4]();
 
       iter.next = function () {
         return {
@@ -9028,7 +9342,7 @@ var psd = (function () {
         };
       };
 
-      arr[ITERATOR$2] = function () {
+      arr[ITERATOR$4] = function () {
         return iter;
       };
 
@@ -9392,7 +9706,8 @@ var psd = (function () {
   };
 
   var default_subscription_filter = {
-    docstatus: 1
+    docstatus: 1,
+    is_training: 1
   };
 
   function make_dialog_field(what) {
@@ -9428,12 +9743,17 @@ var psd = (function () {
   }
 
   var script$2 = {
+    props: {
+      defaults: Object
+    },
     data: function data() {
+      var _this$defaults = this.defaults,
+          member = _this$defaults.member,
+          subscription = _this$defaults.subscription;
       return {
-        subscription_query: {
-          filters: default_subscription_filter
-        },
-        subscription: null,
+        member: member,
+        member_name: null,
+        subscription: subscription,
         item_name: null,
         start_date: null,
         end_date: null,
@@ -9443,59 +9763,66 @@ var psd = (function () {
     components: {
       FieldLink: FieldLink
     },
-    methods: {
-      set_subscription_query: function set_subscription_query(member) {
-        this.subscription_query = {
-          filters: member ? Object.assign({}, default_subscription_filter, {
-            member: member
-          }) : default_subscription_filter
+    computed: {
+      subscription_query: function subscription_query() {
+        var member = this.member;
+
+        if (member) {
+          return {
+            filters: Object.assign({}, default_subscription_filter, {
+              member: member
+            })
+          };
+        }
+
+        return {
+          filters: default_subscription_filter
         };
+      }
+    },
+    watch: {
+      subscription: function subscription(value, prev_value) {
+        if (value && value !== prev_value) {
+          this.set_details();
+          this.set_schedules();
+        }
+      }
+    },
+    methods: {
+      handle_field: function handle_field(_ref) {
+        var fieldname = _ref.fieldname,
+            value = _ref.value;
+
+        if (fieldname === 'member') {
+          this.member = value;
+        } else if (fieldname === 'subscription') {
+          this.subscription = value;
+        }
       },
-      get_subscription: function () {
-        var _get_subscription = _asyncToGenerator(
+      set_details: function () {
+        var _set_details = _asyncToGenerator(
         /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee(subscription) {
-          var _ref, trainable_items;
+        regeneratorRuntime.mark(function _callee() {
+          var _ref2, _ref2$message, member_name, subscription_name, from_date, to_date;
 
           return regeneratorRuntime.wrap(function _callee$(_context) {
             while (1) {
               switch (_context.prev = _context.next) {
                 case 0:
-                  if (!subscription) {
-                    _context.next = 9;
-                    break;
-                  }
+                  _context.next = 2;
+                  return frappe.db.get_value('Gym Subscription', this.subscription, ['member_name', 'subscription_name', 'from_date', 'to_date']);
 
-                  this.subscription = subscription;
-                  _context.next = 4;
-                  return frappe.call({
-                    method: 'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
-                    args: {
-                      subscription: subscription
-                    }
-                  });
+                case 2:
+                  _ref2 = _context.sent;
+                  _ref2$message = _ref2.message;
+                  _ref2$message = _ref2$message === void 0 ? {} : _ref2$message;
+                  member_name = _ref2$message.member_name, subscription_name = _ref2$message.subscription_name, from_date = _ref2$message.from_date, to_date = _ref2$message.to_date;
+                  this.member_name = member_name;
+                  this.item_name = subscription_name;
+                  this.start_date = frappe.datetime.str_to_user(from_date);
+                  this.end_date = frappe.datetime.str_to_user(to_date);
 
-                case 4:
-                  _ref = _context.sent;
-                  trainable_items = _ref.message;
-
-                  if (trainable_items) {
-                    this.item_name = trainable_items.items[0];
-                    this.start_date = frappe.datetime.str_to_user(trainable_items.from_date);
-                    this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);
-                    this.get_schedules(subscription);
-                  }
-
-                  _context.next = 13;
-                  break;
-
-                case 9:
-                  this.subscription = null;
-                  this.item_name = null;
-                  this.start_date = null;
-                  this.end_date = null;
-
-                case 13:
+                case 10:
                 case "end":
                   return _context.stop();
               }
@@ -9503,15 +9830,15 @@ var psd = (function () {
           }, _callee, this);
         }));
 
-        return function get_subscription(_x) {
-          return _get_subscription.apply(this, arguments);
+        return function set_details() {
+          return _set_details.apply(this, arguments);
         };
       }(),
-      get_schedules: function () {
-        var _get_schedules = _asyncToGenerator(
+      set_schedules: function () {
+        var _set_schedules = _asyncToGenerator(
         /*#__PURE__*/
         regeneratorRuntime.mark(function _callee2() {
-          var _ref2, _ref2$message, schedules;
+          var _ref3, _ref3$message, schedules;
 
           return regeneratorRuntime.wrap(function _callee2$(_context2) {
             while (1) {
@@ -9526,21 +9853,23 @@ var psd = (function () {
                   });
 
                 case 2:
-                  _ref2 = _context2.sent;
-                  _ref2$message = _ref2.message;
-                  schedules = _ref2$message === void 0 ? [] : _ref2$message;
-                  this.schedules = schedules.map(function (_ref3) {
-                    var name = _ref3.name,
-                        from_date = _ref3.from_date,
-                        to_date = _ref3.to_date,
-                        training_slot = _ref3.training_slot,
-                        gym_trainer = _ref3.gym_trainer;
+                  _ref3 = _context2.sent;
+                  _ref3$message = _ref3.message;
+                  schedules = _ref3$message === void 0 ? [] : _ref3$message;
+                  this.schedules = schedules.map(function (_ref4) {
+                    var name = _ref4.name,
+                        from_date = _ref4.from_date,
+                        to_date = _ref4.to_date,
+                        training_slot = _ref4.training_slot,
+                        gym_trainer = _ref4.gym_trainer,
+                        gym_trainer_name = _ref4.gym_trainer_name;
                     return {
                       name: name,
                       from: frappe.datetime.str_to_user(from_date),
                       to: frappe.datetime.str_to_user(to_date),
                       slot: training_slot,
-                      trainer: gym_trainer
+                      trainer: gym_trainer,
+                      trainer_name: gym_trainer_name
                     };
                   });
 
@@ -9552,15 +9881,15 @@ var psd = (function () {
           }, _callee2, this);
         }));
 
-        return function get_schedules() {
-          return _get_schedules.apply(this, arguments);
+        return function set_schedules() {
+          return _set_schedules.apply(this, arguments);
         };
       }(),
       create: function () {
         var _create = _asyncToGenerator(
         /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee3(start, end) {
-          var _ref4, trainer;
+        regeneratorRuntime.mark(function _callee3(from_date, to_date) {
+          var _ref5, trainer;
 
           return regeneratorRuntime.wrap(function _callee3$(_context3) {
             while (1) {
@@ -9570,11 +9899,24 @@ var psd = (function () {
                   return frappeAsync.prompt(make_dialog_field('trainer'), 'Select Trainer');
 
                 case 2:
-                  _ref4 = _context3.sent;
-                  trainer = _ref4.value;
-                  console.log(start, end);
+                  _ref5 = _context3.sent;
+                  trainer = _ref5.value;
+                  _context3.next = 6;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.trainer_allocation.create',
+                    args: {
+                      subscription: this.subscription,
+                      trainer: trainer,
+                      from_date: frappe.datetime.user_to_str(from_date),
+                      to_date: frappe.datetime.user_to_str(to_date)
+                    },
+                    freeze: true
+                  });
 
-                case 5:
+                case 6:
+                  this.get_schedules();
+
+                case 7:
                 case "end":
                   return _context3.stop();
               }
@@ -9582,30 +9924,42 @@ var psd = (function () {
           }, _callee3, this);
         }));
 
-        return function create(_x2, _x3) {
+        return function create(_x, _x2) {
           return _create.apply(this, arguments);
         };
       }(),
       update: function () {
         var _update = _asyncToGenerator(
         /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee4(name, what) {
-          var field, _ref5, value;
+        regeneratorRuntime.mark(function _callee4(name, key) {
+          var field, _ref6, value;
 
           return regeneratorRuntime.wrap(function _callee4$(_context4) {
             while (1) {
               switch (_context4.prev = _context4.next) {
                 case 0:
-                  field = make_dialog_field(what);
+                  field = make_dialog_field(key);
                   _context4.next = 3;
                   return frappeAsync.prompt(field, field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot');
 
                 case 3:
-                  _ref5 = _context4.sent;
-                  value = _ref5.value;
-                  console.log(name, what, value);
+                  _ref6 = _context4.sent;
+                  value = _ref6.value;
+                  _context4.next = 7;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.trainer_allocation.update',
+                    args: {
+                      name: name,
+                      key: key,
+                      value: value
+                    },
+                    freeze: true
+                  });
 
-                case 6:
+                case 7:
+                  this.get_schedules();
+
+                case 8:
                 case "end":
                   return _context4.stop();
               }
@@ -9613,7 +9967,7 @@ var psd = (function () {
           }, _callee4, this);
         }));
 
-        return function update(_x4, _x5) {
+        return function update(_x3, _x4) {
           return _update.apply(this, arguments);
         };
       }(),
@@ -9631,9 +9985,25 @@ var psd = (function () {
 
                 case 2:
                   will_remove = _context5.sent;
-                  console.log(name, will_remove);
 
-                case 4:
+                  if (!will_remove) {
+                    _context5.next = 6;
+                    break;
+                  }
+
+                  _context5.next = 6;
+                  return frappe.call({
+                    method: 'psd_customization.fitness_world.api.trainer_allocation.remove',
+                    args: {
+                      name: name
+                    },
+                    freeze: true
+                  });
+
+                case 6:
+                  this.get_schedules();
+
+                case 7:
                 case "end":
                   return _context5.stop();
               }
@@ -9641,10 +10011,16 @@ var psd = (function () {
           }, _callee5, this);
         }));
 
-        return function remove(_x6) {
+        return function remove(_x5) {
           return _remove.apply(this, arguments);
         };
       }()
+    },
+    mounted: function mounted() {
+      if (this.defaults.subscription) {
+        this.set_details();
+        this.set_schedules();
+      }
     }
   };
 
@@ -9652,17 +10028,17 @@ var psd = (function () {
               const __vue_script__$2 = script$2;
               
   /* template */
-  var __vue_render__$2 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"section"},[_c('FieldLink',{attrs:{"fieldname":"member","label":"Member","options":"Gym Member","onchange":_vm.set_subscription_query}}),_vm._v(" "),_c('FieldLink',{attrs:{"fieldname":"subscription","label":"Subscription","options":"Gym Subscription","get_query":_vm.subscription_query,"onchange":_vm.get_subscription}})],1),_vm._v(" "),(_vm.item_name)?_c('div',{staticClass:"section info-section"},[_c('div',[_c('span',[_vm._v("Item")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.item_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Start Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.start_date))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("End Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.end_date))])])]):_vm._e(),_vm._v(" "),_c('div',{staticClass:"list-section"},[(_vm.schedules.length > 0)?_c('table',{staticClass:"table"},[_vm._m(0),_vm._v(" "),_c('tbody',_vm._l((_vm.schedules),function(schedule){return _c('tr',[_c('td',[_vm._v("\n            "+_vm._s(schedule.from)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_from_date"},on:{"click":function($event){_vm.update(schedule.name, 'from_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.to)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_to_date"},on:{"click":function($event){_vm.update(schedule.name, 'to_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.slot || '-')+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_slot"},on:{"click":function($event){_vm.update(schedule.name, 'slot');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.trainer || 'Unallocated')+"\n            "),_c('button',{attrs:{"type":"button","name":"create"},on:{"click":function($event){_vm.create(schedule.from, schedule.to);}}},[_c('i',{staticClass:"fa fa-plus"})]),_vm._v(" "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"remove"},on:{"click":function($event){_vm.remove(schedule.name);}}},[_c('i',{staticClass:"fa fa-remove"})]):_vm._e()])])}))]):_vm._e()])])};
+  var __vue_render__$2 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"section"},[_c('FieldLink',{attrs:{"fieldname":"member","label":"Member","options":"Gym Member","value":_vm.member,"onchange":_vm.handle_field}}),_vm._v(" "),_c('FieldLink',{attrs:{"fieldname":"subscription","label":"Subscription","options":"Gym Subscription","value":_vm.subscription,"get_query":_vm.subscription_query,"onchange":_vm.handle_field}})],1),_vm._v(" "),(_vm.item_name)?_c('div',{staticClass:"section info-section"},[_c('div',[_c('span',[_vm._v("Member Name")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.member_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Item")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.item_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Start Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.start_date))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("End Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.end_date))])])]):_vm._e(),_vm._v(" "),_c('div',{staticClass:"list-section"},[(_vm.schedules.length > 0)?_c('table',{staticClass:"table"},[_vm._m(0),_vm._v(" "),_c('tbody',_vm._l((_vm.schedules),function(schedule){return _c('tr',[_c('td',[_vm._v("\n            "+_vm._s(schedule.from)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_from_date"},on:{"click":function($event){_vm.update(schedule.name, 'from_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.to)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_to_date"},on:{"click":function($event){_vm.update(schedule.name, 'to_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.slot || '-')+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_slot"},on:{"click":function($event){_vm.update(schedule.name, 'slot');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.trainer_name || 'Unallocated')+"\n            "),(!schedule.name)?_c('button',{attrs:{"type":"button","name":"create"},on:{"click":function($event){_vm.create(schedule.from, schedule.to);}}},[_c('i',{staticClass:"fa fa-plus"})]):_c('button',{attrs:{"type":"button","name":"remove"},on:{"click":function($event){_vm.remove(schedule.name);}}},[_c('i',{staticClass:"fa fa-remove"})])])])}))]):_vm._e()])])};
   var __vue_staticRenderFns__$2 = [function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('thead',[_c('tr',[_c('th',[_vm._v("From")]),_vm._v(" "),_c('th',[_vm._v("To")]),_vm._v(" "),_c('th',[_vm._v("Slot")]),_vm._v(" "),_c('th',[_vm._v("Trainer")]),_vm._v(" "),_c('th')])])}];
 
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-3298cab5_0", { source: "\n.section[data-v-3298cab5]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-3298cab5]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.info-section>div[data-v-3298cab5]{min-height:48px\n}\n.info-section>div>span[data-v-3298cab5]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-3298cab5]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-3298cab5]:last-of-type{font-weight:700\n}\n.list-section button[data-v-3298cab5]{border:none;background-color:inherit;opacity:0\n}\n.list-section tr:hover button[data-v-3298cab5]{opacity:1\n}\n.list-section>table th[data-v-3298cab5]{color:#8d99a6\n}\n.list-section>table button[data-v-3298cab5]:hover{color:#8d99a6\n}", map: undefined, media: undefined });
+      inject("data-v-7cbee375_0", { source: "\n.section[data-v-7cbee375]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-7cbee375]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.info-section>div[data-v-7cbee375]{min-height:48px\n}\n.info-section>div>span[data-v-7cbee375]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-7cbee375]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-7cbee375]:last-of-type{font-weight:700\n}\n.list-section button[data-v-7cbee375]{border:none;background-color:inherit;opacity:0\n}\n.list-section tr:hover button[data-v-7cbee375]{opacity:1\n}\n.list-section>table th[data-v-7cbee375]{color:#8d99a6\n}\n.list-section>table button[data-v-7cbee375]:hover{color:#8d99a6\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-3298cab5";
+    const __vue_scope_id__$2 = "data-v-7cbee375";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -9812,283 +10188,6 @@ var psd = (function () {
     }
   });
   _addToUnscopables(KEY);
-
-  var _iterStep = function (done, value) {
-    return {
-      value: value,
-      done: !!done
-    };
-  };
-
-  var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
-    _anObject(O);
-    var keys = _objectKeys(Properties);
-    var length = keys.length;
-    var i = 0;
-    var P;
-
-    while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
-
-    return O;
-  };
-
-  var IE_PROTO$1 = _sharedKey('IE_PROTO');
-
-  var Empty = function () {
-    /* empty */
-  };
-
-  var PROTOTYPE$1 = 'prototype'; // Create object with fake `null` prototype: use iframe Object with cleared prototype
-
-  var createDict = function () {
-    // Thrash, waste and sodomy: IE GC bug
-    var iframe = _domCreate('iframe');
-    var i = _enumBugKeys.length;
-    var lt = '<';
-    var gt = '>';
-    var iframeDocument;
-    iframe.style.display = 'none';
-    _html.appendChild(iframe);
-    iframe.src = 'javascript:'; // eslint-disable-line no-script-url
-    // createDict = iframe.contentWindow.Object;
-    // html.removeChild(iframe);
-
-    iframeDocument = iframe.contentWindow.document;
-    iframeDocument.open();
-    iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
-    iframeDocument.close();
-    createDict = iframeDocument.F;
-
-    while (i--) delete createDict[PROTOTYPE$1][_enumBugKeys[i]];
-
-    return createDict();
-  };
-
-  var _objectCreate = Object.create || function create(O, Properties) {
-    var result;
-
-    if (O !== null) {
-      Empty[PROTOTYPE$1] = _anObject(O);
-      result = new Empty();
-      Empty[PROTOTYPE$1] = null; // add "__proto__" for Object.getPrototypeOf polyfill
-
-      result[IE_PROTO$1] = O;
-    } else result = createDict();
-
-    return Properties === undefined ? result : _objectDps(result, Properties);
-  };
-
-  var IteratorPrototype = {}; // 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
-
-  _hide(IteratorPrototype, _wks('iterator'), function () {
-    return this;
-  });
-
-  var _iterCreate = function (Constructor, NAME, next) {
-    Constructor.prototype = _objectCreate(IteratorPrototype, {
-      next: _propertyDesc(1, next)
-    });
-    _setToStringTag(Constructor, NAME + ' Iterator');
-  };
-
-  var IE_PROTO$2 = _sharedKey('IE_PROTO');
-  var ObjectProto = Object.prototype;
-
-  var _objectGpo = Object.getPrototypeOf || function (O) {
-    O = _toObject(O);
-    if (_has(O, IE_PROTO$2)) return O[IE_PROTO$2];
-
-    if (typeof O.constructor == 'function' && O instanceof O.constructor) {
-      return O.constructor.prototype;
-    }
-
-    return O instanceof Object ? ObjectProto : null;
-  };
-
-  var ITERATOR$3 = _wks('iterator');
-  var BUGGY = !([].keys && 'next' in [].keys()); // Safari has buggy iterators w/o `next`
-
-  var FF_ITERATOR = '@@iterator';
-  var KEYS = 'keys';
-  var VALUES = 'values';
-
-  var returnThis = function () {
-    return this;
-  };
-
-  var _iterDefine = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
-    _iterCreate(Constructor, NAME, next);
-
-    var getMethod = function (kind) {
-      if (!BUGGY && kind in proto) return proto[kind];
-
-      switch (kind) {
-        case KEYS:
-          return function keys() {
-            return new Constructor(this, kind);
-          };
-
-        case VALUES:
-          return function values() {
-            return new Constructor(this, kind);
-          };
-      }
-
-      return function entries() {
-        return new Constructor(this, kind);
-      };
-    };
-
-    var TAG = NAME + ' Iterator';
-    var DEF_VALUES = DEFAULT == VALUES;
-    var VALUES_BUG = false;
-    var proto = Base.prototype;
-    var $native = proto[ITERATOR$3] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
-    var $default = $native || getMethod(DEFAULT);
-    var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
-    var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
-    var methods, key, IteratorPrototype; // Fix native
-
-    if ($anyNative) {
-      IteratorPrototype = _objectGpo($anyNative.call(new Base()));
-
-      if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
-        // Set @@toStringTag to native iterators
-        _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
-
-        if (!_library && typeof IteratorPrototype[ITERATOR$3] != 'function') _hide(IteratorPrototype, ITERATOR$3, returnThis);
-      }
-    } // fix Array#{values, @@iterator}.name in V8 / FF
-
-
-    if (DEF_VALUES && $native && $native.name !== VALUES) {
-      VALUES_BUG = true;
-
-      $default = function values() {
-        return $native.call(this);
-      };
-    } // Define iterator
-
-
-    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR$3])) {
-      _hide(proto, ITERATOR$3, $default);
-    } // Plug for library
-
-
-    _iterators[NAME] = $default;
-    _iterators[TAG] = returnThis;
-
-    if (DEFAULT) {
-      methods = {
-        values: DEF_VALUES ? $default : getMethod(VALUES),
-        keys: IS_SET ? $default : getMethod(KEYS),
-        entries: $entries
-      };
-      if (FORCED) for (key in methods) {
-        if (!(key in proto)) _redefine(proto, key, methods[key]);
-      } else _export(_export.P + _export.F * (BUGGY || VALUES_BUG), NAME, methods);
-    }
-
-    return methods;
-  };
-
-  // 22.1.3.13 Array.prototype.keys()
-  // 22.1.3.29 Array.prototype.values()
-  // 22.1.3.30 Array.prototype[@@iterator]()
-
-
-  var es6_array_iterator = _iterDefine(Array, 'Array', function (iterated, kind) {
-    this._t = _toIobject(iterated); // target
-
-    this._i = 0; // next index
-
-    this._k = kind; // kind
-    // 22.1.5.2.1 %ArrayIteratorPrototype%.next()
-  }, function () {
-    var O = this._t;
-    var kind = this._k;
-    var index = this._i++;
-
-    if (!O || index >= O.length) {
-      this._t = undefined;
-      return _iterStep(1);
-    }
-
-    if (kind == 'keys') return _iterStep(0, index);
-    if (kind == 'values') return _iterStep(0, O[index]);
-    return _iterStep(0, [index, O[index]]);
-  }, 'values'); // argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
-
-  _iterators.Arguments = _iterators.Array;
-  _addToUnscopables('keys');
-  _addToUnscopables('values');
-  _addToUnscopables('entries');
-
-  var ITERATOR$4 = _wks('iterator');
-  var TO_STRING_TAG = _wks('toStringTag');
-  var ArrayValues = _iterators.Array;
-  var DOMIterables = {
-    CSSRuleList: true,
-    // TODO: Not spec compliant, should be false.
-    CSSStyleDeclaration: false,
-    CSSValueList: false,
-    ClientRectList: false,
-    DOMRectList: false,
-    DOMStringList: false,
-    DOMTokenList: true,
-    DataTransferItemList: false,
-    FileList: false,
-    HTMLAllCollection: false,
-    HTMLCollection: false,
-    HTMLFormElement: false,
-    HTMLSelectElement: false,
-    MediaList: true,
-    // TODO: Not spec compliant, should be false.
-    MimeTypeArray: false,
-    NamedNodeMap: false,
-    NodeList: true,
-    PaintRequestList: false,
-    Plugin: false,
-    PluginArray: false,
-    SVGLengthList: false,
-    SVGNumberList: false,
-    SVGPathSegList: false,
-    SVGPointList: false,
-    SVGStringList: false,
-    SVGTransformList: false,
-    SourceBufferList: false,
-    StyleSheetList: true,
-    // TODO: Not spec compliant, should be false.
-    TextTrackCueList: false,
-    TextTrackList: false,
-    TouchList: false
-  };
-
-  for (var collections = _objectKeys(DOMIterables), i = 0; i < collections.length; i++) {
-    var NAME$1 = collections[i];
-    var explicit = DOMIterables[NAME$1];
-    var Collection = _global[NAME$1];
-    var proto = Collection && Collection.prototype;
-    var key;
-
-    if (proto) {
-      if (!proto[ITERATOR$4]) _hide(proto, ITERATOR$4, ArrayValues);
-      if (!proto[TO_STRING_TAG]) _hide(proto, TO_STRING_TAG, NAME$1);
-      _iterators[NAME$1] = ArrayValues;
-      if (explicit) for (key in es6_array_iterator) if (!proto[key]) _redefine(proto, key, es6_array_iterator[key], true);
-    }
-  }
-
-  var $forEach = _arrayMethods(0);
-  var STRICT = _strictMethod([].forEach, true);
-  _export(_export.P + _export.F * !STRICT, 'Array', {
-    // 22.1.3.10 / 15.4.4.18 Array.prototype.forEach(callbackfn [, thisArg])
-    forEach: function forEach(callbackfn
-    /* , thisArg */
-    ) {
-      return $forEach(this, callbackfn, arguments[1]);
-    }
-  });
 
   //
   //
@@ -11024,7 +11123,9 @@ var psd = (function () {
       }).addClass('btn-primary').toggleClass('disabled', get_button_state());
       var _frm$doc2 = frm.doc,
           status = _frm$doc2.status,
-          subscription = _frm$doc2.name;
+          subscription = _frm$doc2.name,
+          is_training = _frm$doc2.is_training,
+          member = _frm$doc2.member;
 
       if (['Active', 'Stopped'].includes(status)) {
         frm.add_custom_button(status === 'Active' ? 'Stop' : 'Resume',
@@ -11055,6 +11156,15 @@ var psd = (function () {
             }
           }, _callee, this);
         })));
+      }
+
+      if (parseInt(is_training)) {
+        frm.add_custom_button('Training Schedule', function () {
+          frappe.set_route('training-schedule', {
+            member: member,
+            subscription: subscription
+          });
+        });
       }
     }
   }
@@ -11159,7 +11269,7 @@ var psd = (function () {
     _render_subscription_details = _asyncToGenerator(
     /*#__PURE__*/
     regeneratorRuntime.mark(function _callee4(frm) {
-      var _ref3, _ref3$message, subscriptions, node;
+      var _ref2, _ref2$message, subscriptions, node;
 
       return regeneratorRuntime.wrap(function _callee4$(_context4) {
         while (1) {
@@ -11185,9 +11295,9 @@ var psd = (function () {
               });
 
             case 5:
-              _ref3 = _context4.sent;
-              _ref3$message = _ref3.message;
-              subscriptions = _ref3$message === void 0 ? [] : _ref3$message;
+              _ref2 = _context4.sent;
+              _ref2$message = _ref2.message;
+              subscriptions = _ref2$message === void 0 ? [] : _ref2$message;
               node = frm.fields_dict['gym_subscription_details_html'].$wrapper.append('<div />').children()[0];
               frm.susbcription_details = new Vue({
                 el: node,
@@ -11279,19 +11389,6 @@ var psd = (function () {
     }()
   };
 
-  function get_description(_ref2) {
-    var item_name = _ref2.item_name,
-        gym_is_lifetime = _ref2.gym_is_lifetime,
-        gym_from_date = _ref2.gym_from_date,
-        gym_to_date = _ref2.gym_to_date;
-
-    if (gym_is_lifetime) {
-      return "".concat(item_name, ": Lifetime validity, starting ").concat(frappe.datetime.str_to_user(gym_from_date));
-    }
-
-    return "".concat(item_name, ": Valid from ").concat(frappe.datetime.str_to_user(gym_from_date), " to ").concat(frappe.datetime.str_to_user(gym_to_date));
-  }
-
   function set_qty(_x3, _x4, _x5) {
     return _set_qty.apply(this, arguments);
   }
@@ -11300,13 +11397,13 @@ var psd = (function () {
     _set_qty = _asyncToGenerator(
     /*#__PURE__*/
     regeneratorRuntime.mark(function _callee5(frm, cdt, cdn) {
-      var _frappe$get_doc4, item_code, item_name, gym_from_date, gym_to_date, gym_is_lifetime, _ref4, _ref4$message, sub_item;
+      var _frappe$get_doc4, item_code, gym_from_date, gym_to_date, gym_is_lifetime, _ref3, _ref3$message, sub_item;
 
       return regeneratorRuntime.wrap(function _callee5$(_context5) {
         while (1) {
           switch (_context5.prev = _context5.next) {
             case 0:
-              _frappe$get_doc4 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc4.item_code, item_name = _frappe$get_doc4.item_name, gym_from_date = _frappe$get_doc4.gym_from_date, gym_to_date = _frappe$get_doc4.gym_to_date, gym_is_lifetime = _frappe$get_doc4.gym_is_lifetime;
+              _frappe$get_doc4 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc4.item_code, gym_from_date = _frappe$get_doc4.gym_from_date, gym_to_date = _frappe$get_doc4.gym_to_date, gym_is_lifetime = _frappe$get_doc4.gym_is_lifetime;
 
               if (!gym_is_lifetime) {
                 _context5.next = 10;
@@ -11317,9 +11414,9 @@ var psd = (function () {
               return frappe.db.get_value('Gym Subscription Item', item_code, 'quantity_for_lifetime');
 
             case 4:
-              _ref4 = _context5.sent;
-              _ref4$message = _ref4.message;
-              sub_item = _ref4$message === void 0 ? {} : _ref4$message;
+              _ref3 = _context5.sent;
+              _ref3$message = _ref3.message;
+              sub_item = _ref3$message === void 0 ? {} : _ref3$message;
               frappe.model.set_value(cdt, cdn, 'qty', sub_item.quantity_for_lifetime || 1);
               _context5.next = 11;
               break;
@@ -11330,14 +11427,6 @@ var psd = (function () {
               }
 
             case 11:
-              frappe.model.set_value(cdt, cdn, 'description', get_description({
-                item_name: item_name,
-                gym_from_date: gym_from_date,
-                gym_to_date: gym_to_date,
-                gym_is_lifetime: gym_is_lifetime
-              }));
-
-            case 12:
             case "end":
               return _context5.stop();
           }
@@ -11460,11 +11549,13 @@ var psd = (function () {
   };
 
   var index$1 = {
-    make_training_schedule_page: function make_training_schedule_page(node) {
+    make_training_schedule_page: function make_training_schedule_page(node, props) {
       return new Vue({
         el: node,
         render: function render(h) {
-          return h(TrainingSchedule);
+          return h(TrainingSchedule, {
+            props: props
+          });
         }
       });
     },
