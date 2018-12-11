@@ -41,6 +41,16 @@ def get_data():
             ]
         },
         {
+            "label": _("Tools"),
+            "items": [
+                {
+                    "type": "page",
+                    "name": "training-schedule",
+                    "label": "Training Schedule",
+                },
+            ]
+        },
+        {
             "label": _("Setup"),
             "items": [
                 {
