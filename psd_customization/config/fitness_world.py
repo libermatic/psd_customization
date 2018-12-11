@@ -33,6 +33,21 @@ def get_data():
                     "name": "Gym Subscription Item",
                     "label": "Subscription Item",
                 },
+                {
+                    "type": "doctype",
+                    "name": "Gym Trainer",
+                    "label": "Trainer",
+                },
+            ]
+        },
+        {
+            "label": _("Tools"),
+            "items": [
+                {
+                    "type": "page",
+                    "name": "training-schedule",
+                    "label": "Training Schedule",
+                },
             ]
         },
         {
@@ -42,6 +57,11 @@ def get_data():
                     "type": "doctype",
                     "name": "SMS Template",
                     "label": "SMS Template",
+                },
+                {
+                    "type": "doctype",
+                    "name": "Training Slot",
+                    "label": "Training Slot",
                 },
                 {
                     "type": "doctype",

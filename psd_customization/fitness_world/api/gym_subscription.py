@@ -29,19 +29,6 @@ def make_payment_entry(source_name):
     return get_payment_entry('Sales Invoice', reference_invoice)
 
 
-def _get_description(subscription):
-    if subscription.is_lifetime:
-        return '{}: Lifetime validity, starting {}'.format(
-            subscription.subscription_name,
-            subscription.get_formatted('from_date'),
-        )
-    return '{}: Valid from {} to {}'.format(
-        subscription.subscription_name,
-        subscription.get_formatted('from_date'),
-        subscription.get_formatted('to_date'),
-    )
-
-
 @frappe.whitelist()
 def make_sales_invoice(source_name):
     subscription = frappe.get_doc('Gym Subscription', source_name)
@@ -61,7 +48,6 @@ def make_sales_invoice(source_name):
         si.set(field, value)
     si.append('items', {
         'item_code': subscription.subscription_item,
-        'description': _get_description(subscription),
         'qty': 60 if subscription.is_lifetime else month_diff(
             subscription.from_date, subscription.to_date, as_dec=1
         ),

@@ -1,0 +1,23 @@
+{
+ "align_labels_right": 0, 
+ "creation": "2018-11-28 23:00:02.859158", 
+ "custom_format": 1, 
+ "disabled": 0, 
+ "doc_type": "Sales Invoice", 
+ "docstatus": 0, 
+ "doctype": "Print Format", 
+ "font": "Default", 
+ "html": "{% set is_landscape = False %}\n\n{% extends \"templates/includes/pf_fw_invoice.html\" %}", 
+ "idx": 0, 
+ "line_breaks": 0, 
+ "modified": "2018-12-05 13:33:57.838513", 
+ "modified_by": "Administrator", 
+ "module": "Fitness World", 
+ "name": "Fitness World Invoice", 
+ "owner": "Administrator", 
+ "parent": "Sales Invoice", 
+ "print_format_builder": 0, 
+ "print_format_type": "Server", 
+ "show_section_headings": 0, 
+ "standard": "Yes"
+}

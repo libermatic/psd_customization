@@ -5,38 +5,32 @@
 <script>
 export default {
   props: {
-    fieldtype: String,
-    fieldname: String,
-    label: String,
-    options: String,
-    get_query: Object,
-    onblur: Function,
+    df: Object,
+    events: Object,
+    value: String,
   },
   mounted() {
-    const {
-      fieldtype,
-      fieldname,
-      label,
-      get_query,
-      options,
-      onblur = () => {},
-    } = this;
     const field = frappe.ui.form.make_control({
       parent: this.$el,
-      df: { fieldtype, fieldname, label, get_query, options },
+      df: this.df,
     });
     field.refresh();
-    field.$input.on('blur', () => {
-      onblur(field.get_value());
+    Object.keys(this.events).forEach(evt => {
+      field.$input.on(evt, this.events[evt]);
     });
     this.$once('hook:beforeDestroy', function() {
-      field.$input.off('blur');
+      Object.keys(this.events).forEach(evt => {
+        field.$input.off(evt, this.events[evt]);
+      });
       field.$wrapper.remove();
     });
-    this.$watch('get_query', function(query) {
+    this.$watch('df.get_query', function(query) {
       field.get_query = query;
       field.set_custom_query({});
     });
+    if (this.value) {
+      field.set_value(this.value);
+    }
   },
 };
 </script>

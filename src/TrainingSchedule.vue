@@ -5,17 +5,23 @@
         fieldname="member"
         label="Member"
         options="Gym Member"
-        :onchange="set_subscription_query"
+        :value="member"
+        :onchange="handle_field"
       />
       <FieldLink
         fieldname="subscription"
         label="Subscription"
         options="Gym Subscription"
+        :value="subscription"
         :get_query="subscription_query"
-        :onchange="get_subscription"
+        :onchange="handle_field"
       />
     </div>
     <div v-if="item_name" class="section info-section">
+      <div>
+        <span>Member Name</span>
+        <span>{{ member_name }}</span>
+      </div>
       <div>
         <span>Item</span>
         <span>{{ item_name }}</span>
@@ -76,8 +82,9 @@
               </button>
             </td>
             <td>
-              {{ schedule.trainer || 'Unallocated' }}
+              {{ schedule.trainer_name || 'Unallocated' }}
               <button
+                v-if="!schedule.name"
                 type="button"
                 name="create"
                 @click="create(schedule.from, schedule.to)"
@@ -85,7 +92,7 @@
                 <i class="fa fa-plus" />
               </button>
               <button
-                v-if="schedule.name"
+                v-else
                 type="button"
                 name="remove"
                 @click="remove(schedule.name)"
@@ -104,7 +111,7 @@
 import FieldLink from './components/FieldLink.vue';
 import frappeAsync from './utils/frappe-async';
 
-const default_subscription_filter = { docstatus: 1 };
+const default_subscription_filter = { docstatus: 1, is_training: 1 };
 
 function make_dialog_field(what) {
   const field = { fieldname: 'value', reqd: 1 };
@@ -133,10 +140,13 @@ function make_dialog_field(what) {
 }
 
 export default {
+  props: { defaults: Object },
   data() {
+    const { member, subscription } = this.defaults;
     return {
-      subscription_query: { filters: default_subscription_filter },
-      subscription: null,
+      member,
+      member_name: null,
+      subscription,
       item_name: null,
       start_date: null,
       end_date: null,
@@ -144,74 +154,121 @@ export default {
     };
   },
   components: { FieldLink },
-  methods: {
-    set_subscription_query: function(member) {
-      this.subscription_query = {
-        filters: member
-          ? Object.assign({}, default_subscription_filter, { member })
-          : default_subscription_filter,
-      };
+  computed: {
+    subscription_query: function() {
+      const { member } = this;
+      if (member) {
+        return {
+          filters: Object.assign({}, default_subscription_filter, { member }),
+        };
+      }
+      return { filters: default_subscription_filter };
     },
-    get_subscription: async function(subscription) {
-      if (subscription) {
-        this.subscription = subscription;
-        const { message: trainable_items } = await frappe.call({
-          method:
-            'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
-          args: { subscription },
-        });
-        if (trainable_items) {
-          this.item_name = trainable_items.items[0];
-          this.start_date = frappe.datetime.str_to_user(
-            trainable_items.from_date
-          );
-          this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);
-          this.get_schedules(subscription);
-        }
-      } else {
-        this.subscription = null;
-        this.item_name = null;
-        this.start_date = null;
-        this.end_date = null;
+  },
+  watch: {
+    subscription: function(value, prev_value) {
+      if (value && value !== prev_value) {
+        this.set_details();
+        this.set_schedules();
       }
     },
-    get_schedules: async function() {
+  },
+  methods: {
+    handle_field: function({ fieldname, value }) {
+      if (fieldname === 'member') {
+        this.member = value;
+      } else if (fieldname === 'subscription') {
+        this.subscription = value;
+      }
+    },
+    set_details: async function() {
+      const {
+        message: { member_name, subscription_name, from_date, to_date } = {},
+      } = await frappe.db.get_value('Gym Subscription', this.subscription, [
+        'member_name',
+        'subscription_name',
+        'from_date',
+        'to_date',
+      ]);
+      this.member_name = member_name;
+      this.item_name = subscription_name;
+      this.start_date = frappe.datetime.str_to_user(from_date);
+      this.end_date = frappe.datetime.str_to_user(to_date);
+    },
+    set_schedules: async function() {
       const { message: schedules = [] } = await frappe.call({
         method:
           'psd_customization.fitness_world.api.trainer_allocation.get_schedule',
         args: { subscription: this.subscription },
       });
       this.schedules = schedules.map(
-        ({ name, from_date, to_date, training_slot, gym_trainer }) => ({
+        ({
+          name,
+          from_date,
+          to_date,
+          training_slot,
+          gym_trainer,
+          gym_trainer_name,
+        }) => ({
           name,
           from: frappe.datetime.str_to_user(from_date),
           to: frappe.datetime.str_to_user(to_date),
           slot: training_slot,
           trainer: gym_trainer,
+          trainer_name: gym_trainer_name,
         })
       );
     },
-    create: async function(start, end) {
+    create: async function(from_date, to_date) {
       const { value: trainer } = await frappeAsync.prompt(
         make_dialog_field('trainer'),
         'Select Trainer'
       );
-      console.log(start, end);
+      await frappe.call({
+        method: 'psd_customization.fitness_world.api.trainer_allocation.create',
+        args: {
+          subscription: this.subscription,
+          trainer,
+          from_date: frappe.datetime.user_to_str(from_date),
+          to_date: frappe.datetime.user_to_str(to_date),
+        },
+        freeze: true,
+      });
+      this.get_schedules();
     },
-    update: async function(name, what) {
-      const field = make_dialog_field(what);
+    update: async function(name, key) {
+      const field = make_dialog_field(key);
       const { value } = await frappeAsync.prompt(
         field,
         field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot'
       );
-      console.log(name, what, value);
+      await frappe.call({
+        method: 'psd_customization.fitness_world.api.trainer_allocation.update',
+        args: { name, key, value },
+        freeze: true,
+      });
+      this.get_schedules();
     },
     remove: async function(name) {
       const will_remove = await frappeAsync.confirm(
         'Trainer for this period will be unassigned'
       );
-      console.log(name, will_remove);
+      if (will_remove) {
+        await frappe.call({
+          method:
+            'psd_customization.fitness_world.api.trainer_allocation.remove',
+          args: { name },
+          freeze: true,
+        });
+      }
+      this.get_schedules();
     },
+  },
+  mounted() {
+    if (this.defaults.subscription) {
+      this.set_details();
+      this.set_schedules();
+    }
   },
 };
 </script>

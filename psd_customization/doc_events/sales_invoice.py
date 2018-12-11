@@ -63,7 +63,8 @@ def on_submit(doc, method):
                         subs.append(sub.name)
         if subs:
             frappe.msgprint(
-                'Gym Subscription(s) {} linked.'.format(', '.join(subs))
+                'Gym Subscription(s) {} linked.'.format(', '.join(subs)),
+                alert=True,
             )
         doc.reload()
 
@@ -100,7 +101,8 @@ def on_cancel(doc, method):
                 )
         if subs:
             frappe.msgprint(
-                'Gym Subscription(s) {} removed from Sales Invoice.'.format(
+                'Gym Subscription(s) {} removed from Sales Invoice.' .format(
                     ', '.join(subs)
-                )
+                ),
+                alert=True,
             )

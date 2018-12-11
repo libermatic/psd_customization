@@ -1,0 +1,158 @@
+<style>
+  @media screen {
+    .print-format {
+      min-height: {{ '148mm' if is_landscape else '210mm' }};
+      max-width: {{ '210mm' if is_landscape else '148mm' }};
+      padding: 10mm;
+    }
+  }
+
+  section.fw-inv-title > h1 {
+    font-size: 1.6em;
+    /* font-weight: bold; */
+    text-transform: uppercase;
+  }
+
+  section.fw-inv-details {
+    display: flex;
+    flex-flow: row wrap;
+  }
+  section.fw-inv-details > * {
+    width: 50%;
+    margin: 0;
+  }
+
+  section.fw-inv-details {
+    display: flex;
+    flex-flow: row wrap;
+  }
+
+
+  table.fw-items > thead > tr > td,
+  table.fw-items > tbody > tr > td,
+  table.fw-items > tfoot > tr > td {
+    padding: 3pt !important;
+  }
+  table.fw-items > tbody > tr > td,
+  table.fw-items > tfoot > tr > td {
+    border: none;
+  }
+  table.fw-items > tbody > tr:last-of-type > td {
+    border-bottom: 1px solid {{ style.border_color }};
+  }
+  table.fw-items > tfoot > tr > td {
+    padding: 2px 6px !important;
+  }
+  table.fw-items > tfoot > tr > td.fw-emphasized {
+    border-bottom: 1px solid {{ style.border_color }};
+  }
+
+  .fw-mono {
+    font-family: mono;
+  }
+  .fw-strong {
+    font-weight: bold;
+  }
+  .fw-emphasized {
+    font-style: italic;
+  }
+</style>
+
+<div class="fw-inv">
+  {% if not no_letterhead and doc.letter_head %}
+  {{ frappe.db.get_value('Letter Head', doc.letter_head, 'content') }}
+  {% endif %}
+  <section class="fw-inv-title">
+    <h1>Sales Invoice</h1>
+  </section>
+
+  <section class="fw-inv-details">
+    <dl>
+      <dt>Invoice #</dt>
+      <dd>
+        <span class="fw-mono">{{ doc.name }}</span>
+        <br />
+        {{ doc.get_formatted('posting_date') }}
+      </dd>
+    </dl>
+    <dl>
+      <dt>Member</dt>
+      <dd>
+        <span class="fw-mono">{{ doc.gym_member }}</span>
+        <br />
+        {{ doc.gym_member_name }}
+      </dd>
+    </dl>
+  </section>
+
+  <table class="table table-condensed fw-items">
+    <thead>
+      <tr>
+        <th>Particulars</th>
+        <th class="text-right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in doc.items %}
+      <tr>
+        <td>
+          {{ item.description }}
+          {% if item.gym_subscription %}
+          <span class="fw-mono">{{ item.gym_subscription }}</span>
+          <br />
+          Validity:
+          {% if item.gym_is_lifetime %}
+          <span class="fw-strong">Lifetime</span> starting {{ item.get_formatted('gym_from_date') }}
+          {% else %}
+          {{ item.get_formatted('gym_from_date') }} – {{ item.get_formatted('gym_to_date') }}
+          {% endif %}
+          {% endif %}
+        </td>
+        <td class="text-right">{{ item.get_formatted('amount', doc) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="text-right">
+          Total
+          {% if doc.total_taxes_and_charges %}
+          (Inclusive of GST {{ doc.get_formatted('total_taxes_and_charges') }})
+          {% endif %}
+        </td>
+        <td class="text-right">{{ doc.get_formatted('total') }}</td>
+      </tr>
+      <tr>
+        <td class="text-right">Discount</td>
+        <td class="text-right">{{ doc.get_formatted('discount_amount') }}</td>
+      </tr>
+      <tr>
+        <td class="text-right">
+          Grant Total
+          {% if doc.rounding_adjustment %}
+          (Round Off: {{ doc.get_formatted('rounding_adjustment') }})
+          {% endif %}
+        </td>
+        <td class="text-right fw-strong">{{ doc.get_formatted('rounded_total') }}</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="text-right fw-emphasized">{{ doc.in_words }}</td>
+      </tr>
+      <tr>
+        <td class="text-right">Paid</td>
+        <td class="text-right">{{ doc.get_formatted('paid_amount') }}</td>
+      </tr>
+      <tr>
+        <td class="text-right">Outstanding</td>
+        <td class="text-right fw-strong">{{ doc.get_formatted('outstanding_amount') }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  {% if doc.terms %}
+  <section>
+    {{ doc.terms }}
+  </section>
+  {% endif %}
+
+</div>

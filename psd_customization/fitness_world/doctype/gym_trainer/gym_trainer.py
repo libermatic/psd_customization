@@ -7,5 +7,5 @@ import frappe
 from frappe.model.document import Document
 
 
-class TrainingSlot(Document):
+class GymTrainer(Document):
     pass
