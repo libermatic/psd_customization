@@ -5,10 +5,10 @@ import scripts from './scripts';
 import utils from './utils';
 
 export default {
-  make_training_schedule_page: node =>
+  make_training_schedule_page: (node, props) =>
     new Vue({
       el: node,
-      render: h => h(TrainingSchedule),
+      render: h => h(TrainingSchedule, { props }),
     }),
   scripts,
   utils,

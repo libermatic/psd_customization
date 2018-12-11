@@ -5,12 +5,14 @@
         fieldname="member"
         label="Member"
         options="Gym Member"
+        :value="member"
         :onchange="handle_field"
       />
       <FieldLink
         fieldname="subscription"
         label="Subscription"
         options="Gym Subscription"
+        :value="subscription"
         :get_query="subscription_query"
         :onchange="handle_field"
       />
@@ -138,11 +140,13 @@ function make_dialog_field(what) {
 }
 
 export default {
+  props: { defaults: Object },
   data() {
+    const { member, subscription } = this.defaults;
     return {
-      member: null,
+      member,
       member_name: null,
-      subscription: null,
+      subscription,
       item_name: null,
       start_date: null,
       end_date: null,
@@ -259,6 +263,12 @@ export default {
       }
       this.get_schedules();
     },
+  },
+  mounted() {
+    if (this.defaults.subscription) {
+      this.set_details();
+      this.set_schedules();
+    }
   },
 };
 </script>
