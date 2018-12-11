@@ -86,7 +86,7 @@ class GymSubscription(Document):
                 add_days(self.to_date, 1),
                 self.from_date
             )
-            self.trainer_date = base_cost / flt(days)
+            self.trainer_rate = base_cost / flt(days)
 
     def before_update_after_submit(self):
         self.validate_opening()
