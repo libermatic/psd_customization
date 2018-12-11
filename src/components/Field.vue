@@ -7,6 +7,7 @@ export default {
   props: {
     df: Object,
     events: Object,
+    value: String,
   },
   mounted() {
     const field = frappe.ui.form.make_control({
@@ -27,6 +28,9 @@ export default {
       field.get_query = query;
       field.set_custom_query({});
     });
+    if (this.value) {
+      field.set_value(this.value);
+    }
   },
 };
 </script>

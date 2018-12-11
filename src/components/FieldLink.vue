@@ -1,12 +1,12 @@
 <template>
-  <field :df="df" :events="events" />
+  <field v-bind="{ df, events, value }" />
 </template>
 
 <script>
 import Field from './Field.vue';
 export default {
   components: { Field },
-  props: ['fieldname', 'label', 'options', 'get_query', 'onchange'],
+  props: ['fieldname', 'value', 'label', 'options', 'get_query', 'onchange'],
   computed: {
     df: function() {
       const { fieldname, label, options, get_query } = this;
