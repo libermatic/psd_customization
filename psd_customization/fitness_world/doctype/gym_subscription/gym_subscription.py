@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import cint, getdate
+from frappe.utils import cint, getdate, date_diff, add_days, flt
 from frappe.model.document import Document
 
 from psd_customization.fitness_world.api.gym_subscription \
@@ -74,6 +74,19 @@ class GymSubscription(Document):
         if self.flags.source_doc != 'Sales Invoice' \
                 and self.is_new() and self.reference_invoice:
             self.reference_invoice = None
+
+    def before_submit(self):
+        needs_trainer, base_cost = frappe.db.get_value(
+            'Gym Subscription Item',
+            self.subscription_item,
+            ['requires_trainer', 'base_trainer_cost'],
+        )
+        if cint(needs_trainer):
+            days = date_diff(
+                add_days(self.to_date, 1),
+                self.from_date
+            )
+            self.trainer_date = base_cost / flt(days)
 
     def before_update_after_submit(self):
         self.validate_opening()
