@@ -76,8 +76,9 @@
               </button>
             </td>
             <td>
-              {{ schedule.trainer || 'Unallocated' }}
+              {{ schedule.trainer_name || 'Unallocated' }}
               <button
+                v-if="!schedule.name"
                 type="button"
                 name="create"
                 @click="create(schedule.from, schedule.to)"
@@ -85,7 +86,7 @@
                 <i class="fa fa-plus" />
               </button>
               <button
-                v-if="schedule.name"
+                v-else
                 type="button"
                 name="remove"
                 @click="remove(schedule.name)"
@@ -155,19 +156,17 @@ export default {
     get_subscription: async function(subscription) {
       if (subscription) {
         this.subscription = subscription;
-        const { message: trainable_items } = await frappe.call({
-          method:
-            'psd_customization.fitness_world.api.trainer_allocation.get_trainable_items',
-          args: { subscription },
-        });
-        if (trainable_items) {
-          this.item_name = trainable_items.items[0];
-          this.start_date = frappe.datetime.str_to_user(
-            trainable_items.from_date
-          );
-          this.end_date = frappe.datetime.str_to_user(trainable_items.to_date);
-          this.get_schedules(subscription);
-        }
+        this.get_schedules();
+        const {
+          message: { subscription_name, from_date, to_date } = {},
+        } = await frappe.db.get_value('Gym Subscription', subscription, [
+          'subscription_name',
+          'from_date',
+          'to_date',
+        ]);
+        this.item_name = subscription_name;
+        this.start_date = frappe.datetime.str_to_user(from_date);
+        this.end_date = frappe.datetime.str_to_user(to_date);
       } else {
         this.subscription = null;
         this.item_name = null;
@@ -182,35 +181,66 @@ export default {
         args: { subscription: this.subscription },
       });
       this.schedules = schedules.map(
-        ({ name, from_date, to_date, training_slot, gym_trainer }) => ({
+        ({
+          name,
+          from_date,
+          to_date,
+          training_slot,
+          gym_trainer,
+          gym_trainer_name,
+        }) => ({
           name,
           from: frappe.datetime.str_to_user(from_date),
           to: frappe.datetime.str_to_user(to_date),
           slot: training_slot,
           trainer: gym_trainer,
+          trainer_name: gym_trainer_name,
         })
       );
     },
-    create: async function(start, end) {
+    create: async function(from_date, to_date) {
       const { value: trainer } = await frappeAsync.prompt(
         make_dialog_field('trainer'),
         'Select Trainer'
       );
-      console.log(start, end);
+      await frappe.call({
+        method: 'psd_customization.fitness_world.api.trainer_allocation.create',
+        args: {
+          subscription: this.subscription,
+          trainer,
+          from_date: frappe.datetime.user_to_str(from_date),
+          to_date: frappe.datetime.user_to_str(to_date),
+        },
+        freeze: true,
+      });
+      this.get_schedules();
     },
-    update: async function(name, what) {
-      const field = make_dialog_field(what);
+    update: async function(name, key) {
+      const field = make_dialog_field(key);
       const { value } = await frappeAsync.prompt(
         field,
         field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot'
       );
-      console.log(name, what, value);
+      await frappe.call({
+        method: 'psd_customization.fitness_world.api.trainer_allocation.update',
+        args: { name, key, value },
+        freeze: true,
+      });
+      this.get_schedules();
     },
     remove: async function(name) {
       const will_remove = await frappeAsync.confirm(
         'Trainer for this period will be unassigned'
       );
-      console.log(name, will_remove);
+      if (will_remove) {
+        await frappe.call({
+          method:
+            'psd_customization.fitness_world.api.trainer_allocation.remove',
+          args: { name },
+          freeze: true,
+        });
+      }
+      this.get_schedules();
     },
   },
 };

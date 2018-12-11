@@ -6,38 +6,6 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import getdate, add_days
 
-from functools import partial
-from toolz import pluck, compose
-
-
-@frappe.whitelist()
-def get_trainable_items(subscription):
-    doc = frappe.get_doc('Gym Subscription', subscription)
-    if not doc:
-        frappe.throw('Gym Subscription: {} not found'.format(subscription))
-    all_training_items = frappe.get_all(
-        'Item',
-        filters={
-            'item_group': frappe.db.get_value(
-                'Gym Settings', None, 'default_item_group'
-            ),
-            'is_gym_subscription_item': 1,
-        }
-    )
-    items = compose(
-        partial(map, lambda x: x.item_name),
-        partial(
-            filter, lambda x: x.item_code in pluck('name', all_training_items)
-        ),
-    )(doc.service_items)
-    if not items:
-        return None
-    return {
-        'items': items,
-        'from_date': doc.from_date,
-        'to_date': doc.to_date,
-    }
-
 
 def _generate_intervals(start_date, end_date, allocations):
     if not allocations:
@@ -68,7 +36,12 @@ def get_schedule(subscription, item=None):
     allocations = frappe.get_all(
         'Trainer Allocation',
         filters={'gym_subscription': subscription},
-        fields={'name', 'gym_trainer', 'from_date', 'to_date', 'training_slot'}
+        fields=[
+            'name', 'gym_trainer', 'gym_trainer_name',
+            'from_date', 'to_date',
+            'training_slot'
+        ],
+        order_by='from_date',
     )
     return _generate_intervals(sub_start, sub_end, allocations)
 
@@ -98,7 +71,7 @@ def update(name, key, value):
     allocation = frappe.get_doc('Trainer Allocation', name)
     field = _get_field(key)
     if field:
-        allocation.set_value(field, value)
+        allocation.set(field, value)
         allocation.save()
     return allocation
 
