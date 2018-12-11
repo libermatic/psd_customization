@@ -5,17 +5,21 @@
         fieldname="member"
         label="Member"
         options="Gym Member"
-        :onchange="set_subscription_query"
+        :onchange="handle_field"
       />
       <FieldLink
         fieldname="subscription"
         label="Subscription"
         options="Gym Subscription"
         :get_query="subscription_query"
-        :onchange="get_subscription"
+        :onchange="handle_field"
       />
     </div>
     <div v-if="item_name" class="section info-section">
+      <div>
+        <span>Member Name</span>
+        <span>{{ member_name }}</span>
+      </div>
       <div>
         <span>Item</span>
         <span>{{ item_name }}</span>
@@ -105,7 +109,7 @@
 import FieldLink from './components/FieldLink.vue';
 import frappeAsync from './utils/frappe-async';
 
-const default_subscription_filter = { docstatus: 1 };
+const default_subscription_filter = { docstatus: 1, is_training: 1 };
 
 function make_dialog_field(what) {
   const field = { fieldname: 'value', reqd: 1 };
@@ -136,7 +140,8 @@ function make_dialog_field(what) {
 export default {
   data() {
     return {
-      subscription_query: { filters: default_subscription_filter },
+      member: null,
+      member_name: null,
       subscription: null,
       item_name: null,
       start_date: null,
@@ -145,36 +150,48 @@ export default {
     };
   },
   components: { FieldLink },
-  methods: {
-    set_subscription_query: function(member) {
-      this.subscription_query = {
-        filters: member
-          ? Object.assign({}, default_subscription_filter, { member })
-          : default_subscription_filter,
-      };
+  computed: {
+    subscription_query: function() {
+      const { member } = this;
+      if (member) {
+        return {
+          filters: Object.assign({}, default_subscription_filter, { member }),
+        };
+      }
+      return { filters: default_subscription_filter };
     },
-    get_subscription: async function(subscription) {
-      if (subscription) {
-        this.subscription = subscription;
-        this.get_schedules();
-        const {
-          message: { subscription_name, from_date, to_date } = {},
-        } = await frappe.db.get_value('Gym Subscription', subscription, [
-          'subscription_name',
-          'from_date',
-          'to_date',
-        ]);
-        this.item_name = subscription_name;
-        this.start_date = frappe.datetime.str_to_user(from_date);
-        this.end_date = frappe.datetime.str_to_user(to_date);
-      } else {
-        this.subscription = null;
-        this.item_name = null;
-        this.start_date = null;
-        this.end_date = null;
+  },
+  watch: {
+    subscription: function(value, prev_value) {
+      if (value && value !== prev_value) {
+        this.set_details();
+        this.set_schedules();
       }
     },
-    get_schedules: async function() {
+  },
+  methods: {
+    handle_field: function({ fieldname, value }) {
+      if (fieldname === 'member') {
+        this.member = value;
+      } else if (fieldname === 'subscription') {
+        this.subscription = value;
+      }
+    },
+    set_details: async function() {
+      const {
+        message: { member_name, subscription_name, from_date, to_date } = {},
+      } = await frappe.db.get_value('Gym Subscription', this.subscription, [
+        'member_name',
+        'subscription_name',
+        'from_date',
+        'to_date',
+      ]);
+      this.member_name = member_name;
+      this.item_name = subscription_name;
+      this.start_date = frappe.datetime.str_to_user(from_date);
+      this.end_date = frappe.datetime.str_to_user(to_date);
+    },
+    set_schedules: async function() {
       const { message: schedules = [] } = await frappe.call({
         method:
           'psd_customization.fitness_world.api.trainer_allocation.get_schedule',
