@@ -76,17 +76,17 @@ class GymSubscription(Document):
             self.reference_invoice = None
 
     def before_submit(self):
-        needs_trainer, base_cost = frappe.db.get_value(
+        needs_trainer = frappe.db.get_value(
             'Gym Subscription Item',
             self.subscription_item,
-            ['requires_trainer', 'base_trainer_cost'],
+            'requires_trainer',
         )
         if cint(needs_trainer):
             days = date_diff(
                 add_days(self.to_date, 1),
                 self.from_date
             )
-            self.trainer_rate = base_cost / flt(days)
+            self.day_fraction = 1.0 / flt(days, 5)
 
     def before_update_after_submit(self):
         self.validate_opening()
