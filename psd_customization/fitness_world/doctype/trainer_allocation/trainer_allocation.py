@@ -32,16 +32,19 @@ class TrainerAllocation(Document):
             )
 
     def before_save(self):
-        self.gym_member, trainer_rate = frappe.db.get_value(
+        self.gym_member, sub_item, day_fraction = frappe.db.get_value(
             'Gym Subscription',
             self.gym_subscription,
-            ['member', 'trainer_rate'],
+            ['member', 'subscription_item', 'day_fraction'],
+        )
+        trainer_cost = frappe.db.get_value(
+            'Gym Subscription Item', sub_item, 'base_trainer_cost',
         )
         days = date_diff(
             add_days(self.to_date, 1),
             self.from_date
         )
-        self.cost = trainer_rate * flt(days)
+        self.cost = trainer_cost * day_fraction * flt(days)
         self.gym_trainer_name = frappe.db.get_value(
             'Gym Trainer', self.gym_trainer, 'trainer_name',
         )
