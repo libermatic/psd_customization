@@ -53,7 +53,8 @@ function add_actions(frm) {
       .addClass('btn-primary')
       .toggleClass('disabled', get_button_state());
 
-    const { status, name: subscription } = frm.doc;
+    const { status, name: subscription, is_training, member } = frm.doc;
+
     if (['Active', 'Stopped'].includes(status)) {
       frm.add_custom_button(
         status === 'Active' ? 'Stop' : 'Resume',
@@ -69,6 +70,12 @@ function add_actions(frm) {
           frm.reload_doc();
         }
       );
+    }
+
+    if (parseInt(is_training)) {
+      frm.add_custom_button('Training Schedule', function() {
+        frappe.set_route('training-schedule', { member, subscription });
+      });
     }
   }
 }
