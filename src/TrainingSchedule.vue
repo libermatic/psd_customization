@@ -35,7 +35,7 @@
         <span>{{ end_date }}</span>
       </div>
     </div>
-    <div class="list-section">
+    <div class="section list-section">
       <table v-if="schedules.length > 0" class="table">
         <thead>
           <tr>
@@ -82,6 +82,9 @@
               </button>
             </td>
             <td>
+              <span class="indicator">
+                <i :style="{ backgroundColor: schedule.color }" />
+              </span>
               {{ schedule.trainer_name || 'Unallocated' }}
               <button
                 v-if="!schedule.name"
@@ -103,13 +106,20 @@
           </tr>
         </tbody>
       </table>
+      <training-schedule-chart
+        class="chart"
+        v-if="schedules.length > 0"
+        v-bind="{ schedules }"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import FieldLink from './components/FieldLink.vue';
+import TrainingScheduleChart from './components/TrainingScheduleChart.vue';
 import frappeAsync from './utils/frappe-async';
+import { colorHash } from './utils/colors';
 
 const default_subscription_filter = { docstatus: 1, is_training: 1 };
 
@@ -153,7 +163,7 @@ export default {
       schedules: [],
     };
   },
-  components: { FieldLink },
+  components: { FieldLink, TrainingScheduleChart },
   computed: {
     subscription_query: function() {
       const { member } = this;
@@ -216,6 +226,7 @@ export default {
           slot: training_slot,
           trainer: gym_trainer,
           trainer_name: gym_trainer_name,
+          color: colorHash(gym_trainer_name),
         })
       );
     },
@@ -234,7 +245,7 @@ export default {
         },
         freeze: true,
       });
-      this.get_schedules();
+      this.set_schedules();
     },
     update: async function(name, key) {
       const field = make_dialog_field(key);
@@ -247,7 +258,7 @@ export default {
         args: { name, key, value },
         freeze: true,
       });
-      this.get_schedules();
+      this.set_schedules();
     },
     remove: async function(name) {
       const will_remove = await frappeAsync.confirm(
@@ -261,7 +272,7 @@ export default {
           freeze: true,
         });
       }
-      this.get_schedules();
+      this.set_schedules();
     },
   },
   mounted() {
@@ -303,6 +314,9 @@ export default {
   background-color: inherit;
   opacity: 0;
 }
+.list-section .chart {
+  width: 100%;
+}
 .list-section tr:hover button {
   opacity: 1;
 }
@@ -311,5 +325,15 @@ export default {
 }
 .list-section > table button:hover {
   color: #8d99a6;
+}
+.list-section .indicator > i {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 8px;
+  margin: 0 4px 0 0px;
+}
+.list-section .indicator::before {
+  display: none;
 }
 </style>
