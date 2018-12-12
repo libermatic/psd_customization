@@ -1,3 +1,4 @@
 import datetime from './datetime';
+import colors from './colors';
 
-export default { datetime };
+export default { datetime, colors };
