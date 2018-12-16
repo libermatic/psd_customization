@@ -7435,7 +7435,7 @@ var psd = (function () {
       return store[key] || (store[key] = value !== undefined ? value : {});
     })('versions', []).push({
       version: _core.version,
-      mode: _library ? 'pure' : 'global',
+      mode: 'global',
       copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
     });
   });
@@ -8704,7 +8704,7 @@ var psd = (function () {
         // Set @@toStringTag to native iterators
         _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
 
-        if (!_library && typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
+        if (typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
       }
     } // fix Array#{values, @@iterator}.name in V8 / FF
 
@@ -8718,7 +8718,7 @@ var psd = (function () {
     } // Define iterator
 
 
-    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
+    if (BUGGY || VALUES_BUG || !proto[ITERATOR]) {
       _hide(proto, ITERATOR, $default);
     } // Plug for library
 
@@ -9958,10 +9958,10 @@ var psd = (function () {
       return capability.promise;
     }
   });
-  _export(_export.S + _export.F * (!USE_NATIVE), PROMISE, {
+  _export(_export.S + _export.F * (_library || !USE_NATIVE), PROMISE, {
     // 25.4.4.6 Promise.resolve(x)
     resolve: function resolve(x) {
-      return _promiseResolve(this, x);
+      return _promiseResolve(_library && this === Wrapper ? $Promise : this, x);
     }
   });
   _export(_export.S + _export.F * !(USE_NATIVE && _iterDetect(function (iter) {
@@ -11570,6 +11570,43 @@ var psd = (function () {
     }
   };
 
+  // false -> String#codePointAt
+
+  var _stringAt = function (TO_STRING) {
+    return function (that, pos) {
+      var s = String(_defined(that));
+      var i = _toInteger(pos);
+      var l = s.length;
+      var a, b;
+      if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
+      a = s.charCodeAt(i);
+      return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff ? TO_STRING ? s.charAt(i) : a : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
+    };
+  };
+
+  var $at = _stringAt(true); // 21.1.3.27 String.prototype[@@iterator]()
+
+  _iterDefine(String, 'String', function (iterated) {
+    this._t = String(iterated); // target
+
+    this._i = 0; // next index
+    // 21.1.5.2.1 %StringIteratorPrototype%.next()
+  }, function () {
+    var O = this._t;
+    var index = this._i;
+    var point;
+    if (index >= O.length) return {
+      value: undefined,
+      done: true
+    };
+    point = $at(O, index);
+    this._i += point.length;
+    return {
+      value: point,
+      done: false
+    };
+  });
+
   // Copyright (c) 2018, Libermatic and contributors
   // For license information, please see license.txt
   function month_diff_dec(d1, d2) {
@@ -11594,6 +11631,155 @@ var psd = (function () {
     month_diff_dec: month_diff_dec
   };
 
+  function get_to_date(date, freq) {
+    return frappe.datetime.add_days(frappe.datetime.add_months(date, freq), -1);
+  }
+
+  var SubscriptionSelector =
+  /*#__PURE__*/
+  function () {
+    function SubscriptionSelector() {
+      _classCallCheck(this, SubscriptionSelector);
+
+      var today = frappe.datetime.nowdate();
+      this.dialog = new frappe.ui.Dialog({
+        title: 'Select Subscription Period',
+        fields: [{
+          label: 'Frequency',
+          fieldname: 'frequency',
+          fieldtype: 'Select',
+          options: 'Monthly\nQuarterly\nHalf-Yearly\nYearly\nLifetime',
+          default: 'Monthly'
+        }, {
+          label: 'Trainer',
+          fieldname: 'trainer',
+          fieldtype: 'Link',
+          options: 'Gym Trainer'
+        }, {
+          fieldtype: 'Column Break'
+        }, {
+          label: 'From Date',
+          fieldname: 'from_date',
+          fieldtype: 'Date',
+          default: today
+        }, {
+          label: 'To Date',
+          fieldname: 'to_date',
+          fieldtype: 'Date',
+          default: get_to_date(today, 1)
+        }]
+      });
+
+      this._setup();
+    }
+
+    _createClass(SubscriptionSelector, [{
+      key: "_setup",
+      value: function _setup() {
+        var _this = this;
+
+        var months = {
+          Monthly: 1,
+          Quarterly: 3,
+          'Half-Yearly': 6,
+          Yearly: 12,
+          Lifetime: 60
+        };
+
+        var handle_to_date = function handle_to_date() {
+          var _this$dialog$get_valu = _this.dialog.get_values(),
+              frequency = _this$dialog$get_valu.frequency,
+              from_date = _this$dialog$get_valu.from_date;
+
+          if (from_date && frequency && months[frequency]) {
+            if (frequency === 'Lifetime') {
+              _this.dialog.set_value('to_date', null);
+
+              _this.dialog.fields_dict['to_date'].toggle(false);
+            } else {
+              _this.dialog.fields_dict['to_date'].toggle(true);
+
+              _this.dialog.set_value('to_date', get_to_date(from_date, months[frequency]));
+            }
+          }
+        };
+
+        this.dialog.fields_dict['frequency'].$input.on('input', handle_to_date);
+        this.dialog.fields_dict['from_date'].$input.on('blur', handle_to_date);
+      }
+    }, {
+      key: "register",
+      value: function () {
+        var _register = _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee(frm, cdt, cdn) {
+          var _this2 = this;
+
+          var row;
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  row = frappe.get_doc(cdt, cdn) || {};
+
+                  if (row.item_code) {
+                    _context.next = 3;
+                    break;
+                  }
+
+                  return _context.abrupt("return", false);
+
+                case 3:
+                  this.dialog.get_primary_btn().off('click');
+                  this.dialog.set_primary_action('OK', function () {
+                    var _this2$dialog$get_val = _this2.dialog.get_values(),
+                        frequency = _this2$dialog$get_val.frequency,
+                        from_date = _this2$dialog$get_val.from_date,
+                        to_date = _this2$dialog$get_val.to_date,
+                        trainer = _this2$dialog$get_val.trainer;
+
+                    frappe.model.set_value(cdt, cdn, 'qty', frequency === 'Lifetime' ? 60 : month_diff_dec(from_date, to_date));
+
+                    if (frequency === 'Lifetime') {
+                      frappe.model.set_value(cdt, cdn, 'gym_is_lifetime', 1);
+                      frappe.model.set_value(cdt, cdn, 'gym_from_date', from_date);
+                    } else {
+                      frappe.model.set_value(cdt, cdn, 'gym_from_date', from_date);
+                      frappe.model.set_value(cdt, cdn, 'gym_to_date', to_date);
+                    }
+
+                    frappe.model.set_value(cdt, cdn, 'gym_trainer', trainer);
+
+                    _this2.dialog.hide();
+                  });
+                  return _context.abrupt("return", true);
+
+                case 6:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        }));
+
+        return function register(_x, _x2, _x3) {
+          return _register.apply(this, arguments);
+        };
+      }()
+    }, {
+      key: "show",
+      value: function show() {
+        var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            show_trainer = _ref.show_trainer;
+
+        this.dialog.fields_dict['trainer'].toggle(show_trainer);
+        this.dialog.show();
+      }
+    }]);
+
+    return SubscriptionSelector;
+  }();
+
   function has_gym_role() {
     return frappe.user.has_role('Gym User') || frappe.user.has_role('Gym Manager');
   }
@@ -11605,12 +11791,12 @@ var psd = (function () {
   function _render_subscription_details() {
     _render_subscription_details = _asyncToGenerator(
     /*#__PURE__*/
-    regeneratorRuntime.mark(function _callee4(frm) {
-      var _ref2, _ref2$message, subscriptions, node;
+    regeneratorRuntime.mark(function _callee5(frm) {
+      var _ref3, _ref3$message, subscriptions, node;
 
-      return regeneratorRuntime.wrap(function _callee4$(_context4) {
+      return regeneratorRuntime.wrap(function _callee5$(_context5) {
         while (1) {
-          switch (_context4.prev = _context4.next) {
+          switch (_context5.prev = _context5.next) {
             case 0:
               if (frm.subscription_details) {
                 frm.subscription_details.$destroy();
@@ -11619,11 +11805,11 @@ var psd = (function () {
               frm.fields_dict['gym_subscription_details_html'].$wrapper.empty();
 
               if (!(frm.doc['gym_member'] && frm.doc.__islocal)) {
-                _context4.next = 10;
+                _context5.next = 10;
                 break;
               }
 
-              _context4.next = 5;
+              _context5.next = 5;
               return frappe.call({
                 method: 'psd_customization.fitness_world.api.gym_subscription.get_currents',
                 args: {
@@ -11632,11 +11818,11 @@ var psd = (function () {
               });
 
             case 5:
-              _ref2 = _context4.sent;
-              _ref2$message = _ref2.message;
-              subscriptions = _ref2$message === void 0 ? [] : _ref2$message;
+              _ref3 = _context5.sent;
+              _ref3$message = _ref3.message;
+              subscriptions = _ref3$message === void 0 ? [] : _ref3$message;
               node = frm.fields_dict['gym_subscription_details_html'].$wrapper.append('<div />').children()[0];
-              frm.susbcription_details = new Vue({
+              frm.subscription_details = new Vue({
                 el: node,
                 render: function render(h) {
                   return h(CurrentSubscriptions, {
@@ -11649,10 +11835,10 @@ var psd = (function () {
 
             case 10:
             case "end":
-              return _context4.stop();
+              return _context5.stop();
           }
         }
-      }, _callee4, this);
+      }, _callee5, this);
     }));
     return _render_subscription_details.apply(this, arguments);
   }
@@ -11677,6 +11863,7 @@ var psd = (function () {
           columns: 2
         }];
         frm.get_field('items').grid.toggle_enable('qty', 0);
+        frm.subscription_selector = new SubscriptionSelector();
       }
     },
     gym_member: function () {
@@ -11733,29 +11920,29 @@ var psd = (function () {
   function _set_qty() {
     _set_qty = _asyncToGenerator(
     /*#__PURE__*/
-    regeneratorRuntime.mark(function _callee5(frm, cdt, cdn) {
-      var _frappe$get_doc4, item_code, gym_from_date, gym_to_date, gym_is_lifetime, _ref3, _ref3$message, sub_item;
+    regeneratorRuntime.mark(function _callee6(frm, cdt, cdn) {
+      var _frappe$get_doc4, item_code, gym_from_date, gym_to_date, gym_is_lifetime, _ref4, _ref4$message, sub_item;
 
-      return regeneratorRuntime.wrap(function _callee5$(_context5) {
+      return regeneratorRuntime.wrap(function _callee6$(_context6) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context6.prev = _context6.next) {
             case 0:
               _frappe$get_doc4 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc4.item_code, gym_from_date = _frappe$get_doc4.gym_from_date, gym_to_date = _frappe$get_doc4.gym_to_date, gym_is_lifetime = _frappe$get_doc4.gym_is_lifetime;
 
               if (!gym_is_lifetime) {
-                _context5.next = 10;
+                _context6.next = 10;
                 break;
               }
 
-              _context5.next = 4;
+              _context6.next = 4;
               return frappe.db.get_value('Gym Subscription Item', item_code, 'quantity_for_lifetime');
 
             case 4:
-              _ref3 = _context5.sent;
-              _ref3$message = _ref3.message;
-              sub_item = _ref3$message === void 0 ? {} : _ref3$message;
+              _ref4 = _context6.sent;
+              _ref4$message = _ref4.message;
+              sub_item = _ref4$message === void 0 ? {} : _ref4$message;
               frappe.model.set_value(cdt, cdn, 'qty', sub_item.quantity_for_lifetime || 1);
-              _context5.next = 11;
+              _context6.next = 11;
               break;
 
             case 10:
@@ -11765,10 +11952,10 @@ var psd = (function () {
 
             case 11:
             case "end":
-              return _context5.stop();
+              return _context6.stop();
           }
         }
-      }, _callee5, this);
+      }, _callee6, this);
     }));
     return _set_qty.apply(this, arguments);
   }
@@ -11785,14 +11972,14 @@ var psd = (function () {
             switch (_context2.prev = _context2.next) {
               case 0:
                 if (!has_gym_role()) {
-                  _context2.next = 10;
+                  _context2.next = 11;
                   break;
                 }
 
                 _frappe$get_doc = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc.item_code;
 
                 if (!item_code) {
-                  _context2.next = 9;
+                  _context2.next = 10;
                   break;
                 }
 
@@ -11802,13 +11989,14 @@ var psd = (function () {
               case 5:
                 is_gym_subscription = _context2.sent;
                 frappe.model.set_value(cdt, cdn, 'is_gym_subscription', is_gym_subscription ? 1 : 0);
-                _context2.next = 10;
+                frm.subscription_selector.register(frm, cdt, cdn);
+                _context2.next = 11;
                 break;
 
-              case 9:
+              case 10:
                 frappe.model.set_value(cdt, cdn, 'is_gym_subscription', 0);
 
-              case 10:
+              case 11:
               case "end":
                 return _context2.stop();
             }
@@ -11820,46 +12008,55 @@ var psd = (function () {
         return _item_code.apply(this, arguments);
       };
     }(),
-    is_gym_subscription: function is_gym_subscription(frm, cdt, cdn) {
-      var _frappe$get_doc2 = frappe.get_doc(cdt, cdn),
-          is_gym_subscription = _frappe$get_doc2.is_gym_subscription;
-
-      if (is_gym_subscription) {
-        var today = frappe.datetime.nowdate();
-        frappe.model.set_value(cdt, cdn, 'gym_from_date', today);
-        frappe.model.set_value(cdt, cdn, 'gym_to_date', frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1));
-      } else {
-        ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach(function (field) {
-          return frappe.model.set_value(cdt, cdn, field, null);
-        });
-      }
-    },
-    gym_from_date: set_qty,
-    gym_to_date: set_qty,
-    gym_is_lifetime: function () {
-      var _gym_is_lifetime = _asyncToGenerator(
+    is_gym_subscription: function () {
+      var _is_gym_subscription = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee3(frm, cdt, cdn) {
-        var _frappe$get_doc3, gym_is_lifetime;
+        var _frappe$get_doc2, item_code, is_gym_subscription, today, _ref2, subscription_item;
 
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
               case 0:
-                _frappe$get_doc3 = frappe.get_doc(cdt, cdn), gym_is_lifetime = _frappe$get_doc3.gym_is_lifetime;
+                _frappe$get_doc2 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc2.item_code, is_gym_subscription = _frappe$get_doc2.is_gym_subscription;
 
-                if (!gym_is_lifetime) {
-                  _context3.next = 4;
+                if (!is_gym_subscription) {
+                  _context3.next = 12;
                   break;
                 }
 
-                _context3.next = 4;
-                return frappe.model.set_value(cdt, cdn, 'gym_to_date', null);
-
-              case 4:
-                set_qty(frm, cdt, cdn);
+                today = frappe.datetime.nowdate();
+                _context3.next = 5;
+                return Promise.all([frappe.model.set_value(cdt, cdn, 'gym_from_date', today), frappe.model.set_value(cdt, cdn, 'gym_to_date', frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1))]);
 
               case 5:
+                _context3.next = 7;
+                return frappe.call({
+                  method: 'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
+                  args: {
+                    item_code: item_code
+                  }
+                });
+
+              case 7:
+                _ref2 = _context3.sent;
+                subscription_item = _ref2.message;
+
+                if (subscription_item) {
+                  frm.subscription_selector.show({
+                    show_trainer: cint(subscription_item.requires_trainer)
+                  });
+                }
+
+                _context3.next = 13;
+                break;
+
+              case 12:
+                ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach(function (field) {
+                  return frappe.model.set_value(cdt, cdn, field, null);
+                });
+
+              case 13:
               case "end":
                 return _context3.stop();
             }
@@ -11867,7 +12064,44 @@ var psd = (function () {
         }, _callee3, this);
       }));
 
-      return function gym_is_lifetime(_x9, _x10, _x11) {
+      return function is_gym_subscription(_x9, _x10, _x11) {
+        return _is_gym_subscription.apply(this, arguments);
+      };
+    }(),
+    gym_from_date: set_qty,
+    gym_to_date: set_qty,
+    gym_is_lifetime: function () {
+      var _gym_is_lifetime = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee4(frm, cdt, cdn) {
+        var _frappe$get_doc3, gym_is_lifetime;
+
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                _frappe$get_doc3 = frappe.get_doc(cdt, cdn), gym_is_lifetime = _frappe$get_doc3.gym_is_lifetime;
+
+                if (!gym_is_lifetime) {
+                  _context4.next = 4;
+                  break;
+                }
+
+                _context4.next = 4;
+                return frappe.model.set_value(cdt, cdn, 'gym_to_date', null);
+
+              case 4:
+                set_qty(frm, cdt, cdn);
+
+              case 5:
+              case "end":
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
+      }));
+
+      return function gym_is_lifetime(_x12, _x13, _x14) {
         return _gym_is_lifetime.apply(this, arguments);
       };
     }()
