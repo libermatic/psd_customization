@@ -9,6 +9,9 @@ from psd_customization.fitness_world.api.gym_subscription_item \
     import get_subscription_item
 from psd_customization.fitness_world.api.gym_subscription \
     import validate_dependencies
+from psd_customization.fitness_world.api.trainer_allocation \
+    import create as create_schedule
+
 
 
 def validate(doc, method):
@@ -60,6 +63,16 @@ def on_submit(doc, method):
                             'gym_subscription',
                             sub.name,
                         )
+                        if item.gym_trainer:
+                            if cint(sub_item.requires_trainer):
+                                _make_trainer_alloc(item, sub)
+                            else:
+                                frappe.db.set_value(
+                                    'Sales Invoice Item',
+                                    item.name,
+                                    'gym_trainer',
+                                    None,
+                                )
                         subs.append(sub.name)
         if subs:
             frappe.msgprint(
@@ -82,6 +95,15 @@ def _make_subscription(item, sub_item, invoice):
         'from_date': item.gym_from_date,
         'to_date': item.gym_to_date,
     })
+
+
+def _make_trainer_alloc(item, sub):
+    return create_schedule(
+        subscription=sub.name,
+        trainer=item.gym_trainer,
+        from_date=item.gym_from_date,
+        to_date=item.gym_to_date,
+    )
 
 
 def on_cancel(doc, method):
