@@ -1,0 +1,197 @@
+<style>
+  @media screen {
+    .print-format {
+      width: {{ preview_width or '80mm' }};
+      padding: {{ preview_margin or '10mm' }};
+    }
+  }
+  .psd-pos {
+    font-family: mono;
+    font-size: 9pt;
+    line-height: 1.5;
+  }
+  .psd-pos h1,
+  .psd-pos h2,
+  .psd-pos dl,
+  .psd-pos dt,
+  .psd-pos dd,
+  .psd-pos p {
+    margin: 0;
+  }
+  .psd-pos h1,
+  .psd-pos h2 {
+    text-transform: uppercase;
+  }
+  .psd-pos h1 {
+    font-size: 1.5em;
+  }
+  .psd-pos h2 {
+    font-size: 1.1em;
+  }
+  .psd-pos dl {
+    display: flex;
+    flex-flow: row nowrap;
+  }
+  .psd-pos dt {
+    font-weight: bold;
+    min-width: 33%;
+  }
+  .psd-pos dd {
+    margin-left: 0.5em;
+  }
+  .psd-pos header,
+  .psd-pos section,
+  .psd-pos footer {
+    padding: 0.4em 0;
+  }
+  .psd-pos header, .psd-pos .psd-pos-heading {
+    text-align: center;
+  }
+  .psd-pos section,
+  .psd-pos footer {
+    border-top: 1px solid {{ style.border_color }};
+  }
+  .psd-pos footer {
+    margin-top: 1em;
+  }
+  .psd-pos-items > div {
+    border-bottom: 1px solid {{ style.border_color }};
+    padding: 0.25em 0;
+  }
+  .psd-pos-items > div > div {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-end;
+  }
+  .psd-pos-items > div > div > div:first-of-type {
+    flex: 1 1 auto;
+  }
+  .psd-pos-items > div > div > div:first-of-type > span {
+    white-space: nowrap;
+  }
+  .psd-pos-items > div > div > div:first-of-type > span:last-of-type:before {
+    content: '@ ';
+  }
+  .psd-pos-items > div > div > div:last-of-type {
+    flex: 1 0 40%;
+    text-align: right;
+  }
+  .psd-pos-items > div:last-child {
+    border-bottom: none;
+  }
+  .psd-pos-items > .psd-pos-items-header {
+    font-weight: bold;
+  }
+  .psd-pos-items > .psd-pos-items-header,
+  .psd-pos-items > .psd-pos-items-summary {
+    margin-top: 0.6em;
+  }
+  .psd-pos-items .psd-pos-items-item_name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .psd-pos-strong {
+    font-weight: bold;
+  }
+  .psd-pos-em {
+    font-style: italic;
+  }
+</style>
+
+<div class="psd-pos">
+  <header>
+    {% block pos_header %}
+    <h1>{{ doc.company }}</h1>
+    {% endblock %}
+  </header>
+  <section class="psd-pos-heading">
+    <h2>Invoice</h2>
+  </section>
+  <section>
+    <dl>
+      <dt>Receipt #</dt>
+      <dd>{{ doc.name }}</dd>
+    </dl>
+    <dl>
+      <dt>Date</dt>
+      <dd>{{ doc.get_formatted('posting_date') }}</dd>
+    </dl>
+    <dl>
+      <dt>Customer</dt>
+      <dd>{{ doc.customer_name }}</dd>
+    </dl>
+  </section>
+  <section class="psd-pos-items">
+    <div class="psd-pos-items-header">
+      <div>
+        Item Description
+      </div>
+      <div>
+        <div>
+          <span>Qty</span>
+          <span>Rate</span>
+        </div>
+        <div>Amount</div>
+      </div>
+    </div>
+    {% for item in doc.items %}
+    <div>
+      <div class="psd-pos-items-item_name">{{ item.item_name }}</div>
+      <div>
+        <div>
+          <span>{{ item.get_formatted('qty') }} {{ item.uom }}</span>
+          <span>{{ item.get_formatted('rate') }}</span>
+        </div>
+        <div>{{ item.get_formatted('amount') }}</div>
+      </div>
+    </div>
+    {% endfor %}
+    <div class=psd-pos-items-summary>
+      {% if doc.discount_amount %}
+      <div>
+        <div>Discount</div>
+        <div>{{ doc.get_formatted('discount_amount') }}</div>
+      </div>
+      {% endif %}
+      {% if doc.rounding_adjustment %}
+      <div>
+        <div>Round Off</div>
+        <div>{{ doc.get_formatted('rounding_adjustment') }}</div>
+      </div>
+      {% endif %}
+      <div class="psd-pos-strong">
+        <div>Total</div>
+        <div>{{ doc.get_formatted('rounded_total') }}</div>
+      </div>
+      <div class="psd-pos-em">
+        {{ doc.in_words }}
+      </div>
+      {% if doc.total_taxes_and_charges %}
+      <div>
+        <div>Inclusive GST</div>
+        <div>{{ doc.get_formatted('total_taxes_and_charges') }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if doc.outstanding_amount %}
+    <div>
+      <div>
+        <div>Paid</div>
+        <div>{{ doc.get_formatted('paid_amount') }}</div>
+      </div>
+      <div class="psd-pos-strong">
+        <div>Outstanding</div>
+        <div>{{ doc.get_formatted('outstanding_amount') }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  <footer>
+    {% block pos_footer %}
+    <p>{{ doc.terms }}</p>
+    <p class="text-center">Thank you, please visit again.</p>
+    {% endblock %}
+  </footer>
+</div>
