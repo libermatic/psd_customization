@@ -81,6 +81,7 @@ class GymSubscription(Document):
             self.subscription_item,
             'requires_trainer',
         )
+        self.status = 'Active'
         if cint(needs_trainer):
             days = date_diff(
                 add_days(self.to_date, 1),

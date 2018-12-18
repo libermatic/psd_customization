@@ -9,7 +9,7 @@ from frappe.utils \
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
-from toolz import compose, merge, concat
+from toolz import compose, merge, concat, pluck
 
 from psd_customization.utils.datetime \
     import merge_intervals, pretty_date, month_diff
@@ -352,3 +352,24 @@ def update_status(subscription, status):
             return frappe.throw('Cannot set status for expired Subscriptions')
         doc.status = status
         doc.save()
+
+
+def _set_expiry(subscription):
+    doc = frappe.get_doc('Gym Subscription', subscription)
+    doc.status = 'Expired'
+    doc.save()
+
+
+def set_expired_susbcriptions(posting_date):
+    subscriptions = frappe.get_all(
+        'Gym Subscription',
+        filters=[
+            ['status', '!=', 'Expired'],
+            ['is_lifetime', '=', 0],
+            ['to_date', '<', posting_date]
+        ]
+    )
+    return compose(
+        partial(map, _set_expiry),
+        partial(pluck, 'name'),
+    )(subscriptions)
