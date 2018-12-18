@@ -5,22 +5,29 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.utils import fmt_money
+from toolz import merge
 
 
 @frappe.whitelist()
-def get_label_data(item_code):
+def get_label_data(item_code, company=None, price_list=None):
     item = frappe.get_doc('Item', item_code)
     if not item:
         return None
     settings = frappe.get_single('Retail Settings')
-    return {
-        'company': settings.barcode_company,
-        'item_code': item.item_code,
-        'item_name': item.item_name,
-        'barcode': item.barcode,
-        'price_formatted': _get_price(
-            item.item_code, settings.barcode_price_list, item.variant_of)
-    }
+    price = _get_price(
+        item.item_code,
+        price_list or settings.barcode_price_list,
+        item.variant_of,
+    )
+    return merge(
+        {
+            'company': company or settings.barcode_company,
+            'item_code': item.item_code,
+            'item_name': item.item_name,
+            'barcode': item.barcode,
+        },
+        _make_price(price),
+    )
 
 
 def _get_price(item_code, price_list, template_item_code=None):
@@ -30,7 +37,7 @@ def _get_price(item_code, price_list, template_item_code=None):
         filters={'price_list': price_list, 'item_code': item_code},
     )
     if price:
-        return fmt_money(price[0].price_list_rate, currency=price[0].currency)
+        return price[0]
     if template_item_code:
         price = frappe.get_all(
             'Item Price',
@@ -41,7 +48,16 @@ def _get_price(item_code, price_list, template_item_code=None):
             },
         )
         if price:
-            return fmt_money(
-                price[0].price_list_rate,
-                currency=price[0].currency,
-            )
+            return price[0]
+    return None
+
+
+def _make_price(price):
+    if not price:
+        return {}
+    return {
+        'price': price.price_list_rate,
+        'currency': price.currency,
+        'price_formatted': fmt_money(
+            price.price_list_rate, currency=price.currency)
+    }

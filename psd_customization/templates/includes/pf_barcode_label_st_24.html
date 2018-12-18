@@ -1,0 +1,122 @@
+<link rel="stylesheet" type="text/css" href="/assets/css/psd_customization.css">
+
+<style>
+  @page {
+    size: A4;
+    margin: 12.5mm 6mm;
+  }
+  .print-format td, .print-format th {
+    padding: 0 !important;
+  }
+  .psd-barcode-page {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-column-gap: 3mm;
+    grid-template-rows: repeat(8, auto);
+    border: 1px solid red;
+  }
+  @media screen {
+    .print-format {
+      padding: 12.5mm 6mm;
+    }
+    .psd-barcode > tbody > tr > td {
+      margin: 12.5mm 0;
+    }
+    .psd-barcode > tbody > tr:first-of-type > td {
+      margin-top: 0;
+    }
+    .psd-barcode > tbody > tr:last-of-type > td {
+      margin-bottom: 0;
+    }
+    .psd-barcode > tbody > tr {
+      border-bottom: 1px solid {{ style.border_color }};
+    }
+  }
+  .psd-barcode-label-container {
+    border-style: dashed;
+    border-radius: 3mm;
+  }
+  .psd-barcode-skip {
+    width: 64mm;
+    height: 34mm;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    font-weight: bold;
+    color: {{ style.border_color }};
+  }
+  @media print {
+    .psd-barcode-label-container {
+      border: none;
+    }
+    .psd-barcode-skip {
+      opacity: 0;
+    }
+  }
+</style>
+
+{% set items = [] %}
+{% for c in range(0, frappe.utils.cint(doc.skip) or 0) %}
+{% set _0 = items.append(None) %}
+{% endfor %}
+
+{% for item in doc.items %}
+{% for c in range(0, frappe.utils.cint(item.qty)) %}
+{% set _0 = items.append(item) %}
+{% endfor %}
+{% endfor %}
+
+<table class="psd-barcode">
+  <tbody>
+    {% for p in range(0, items|length, 24) %}
+    <tr>
+      <td class="psd-barcode-page">
+        {% for item in items[p: [items|length, p + 24]|min] %}
+        {% if item %}
+        <div class="psd-barcode-label-container">
+          <div class="psd-barcode-label">
+            <div class="psd-barcode-header">{{ doc.company }}</div>
+            <div class="psd-barcode-text">
+              <span class="psd-barcode-strong">{{ item.item_code }}</span>
+              {% if item.item_code != item.item_name %}
+              : <span>{{ item.item_name }}</span>
+              {% endif %}
+            </div>
+            <div class="psd-barcode-area">
+              {% if item.barcode %}
+              <svg class="barcode"
+                jsbarcode-format="ean13"
+                jsbarcode-margin="0"
+                jsbarcode-margintop="4"
+                jsbarcode-marginbottom="4"
+                jsbarcode-height="40"
+                jsbarcode-width="2"
+                jsbarcode-fontsize="11"
+                jsbarcode-value="{{ item.barcode }}"
+              />
+              {% else %}
+              <span>NO_DATA</span>
+              {% endif %}
+            </div>
+            <div class="psd-barcode-foot psd-barcode-strong psd-barcode-rotated">
+              {{ frappe.utils.fmt_money(item.price, currency=item.currency) }}
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="psd-barcode-skip">{{ loop.index }}</div>
+        {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+
+  </tbody>
+</table>
+
+<script src="/assets/frappe/js/lib/JsBarcode.all.min.js"></script>
+
+<script>
+JsBarcode('.barcode').init();
+</script>

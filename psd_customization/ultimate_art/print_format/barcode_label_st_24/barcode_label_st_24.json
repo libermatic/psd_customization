@@ -1,0 +1,22 @@
+{
+ "align_labels_right": 0, 
+ "creation": "2018-12-17 20:42:19.845802", 
+ "custom_format": 1, 
+ "disabled": 0, 
+ "doc_type": "Label Printer", 
+ "docstatus": 0, 
+ "doctype": "Print Format", 
+ "font": "Default", 
+ "html": "{% include \"templates/includes/pf_barcode_label_st_24.html\" %}", 
+ "idx": 0, 
+ "line_breaks": 0, 
+ "modified": "2018-12-18 00:16:23.623423", 
+ "modified_by": "Administrator", 
+ "module": "Ultimate Art", 
+ "name": "Barcode Label ST-24", 
+ "owner": "Administrator", 
+ "print_format_builder": 0, 
+ "print_format_type": "Server", 
+ "show_section_headings": 0, 
+ "standard": "Yes"
+}
