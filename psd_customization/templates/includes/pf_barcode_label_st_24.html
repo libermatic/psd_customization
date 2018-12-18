@@ -1,32 +1,33 @@
 <link rel="stylesheet" type="text/css" href="/assets/css/psd_customization.css">
 
+{% set page_margin_horz = 'calc((210mm - {cols} * {width} - ({cols} - 1) * {gap}) / 2)'.format(
+  cols=col_num or 1, width=label_width or '0mm', gap=column_gap or '0mm'
+) %}
+{% set page_margin_vert = 'calc((297mm - {rows} * {height} - ({rows} - 1) * {gap}) / 2)'.format(
+  rows=row_num or 1, height=label_height or '0mm', gap=row_gap or '0mm'
+) %}
+
 <style>
   @page {
     size: A4;
-    margin: 12.5mm 6mm;
+    margin: {{ page_margin_vert }} {{ page_margin_horz }};
+  }
+  .print-format {
+    padding: 0;
   }
   .print-format td, .print-format th {
     padding: 0 !important;
   }
   .psd-barcode-page {
     display: grid;
-    grid-template-columns: repeat(3, auto);
-    grid-column-gap: 3mm;
-    grid-template-rows: repeat(8, auto);
-    border: 1px solid red;
+    grid-template-columns: repeat({{ col_num }}, {{ label_width or '64mm' }});
+    grid-column-gap: {{ column_gap or 0 }};
+    grid-row-gap: {{ row_gap or 0 }};
+    grid-template-rows: repeat({{ row_num }}, {{ label_height or '34mm' }});
   }
   @media screen {
-    .print-format {
-      padding: 12.5mm 6mm;
-    }
     .psd-barcode > tbody > tr > td {
-      margin: 12.5mm 0;
-    }
-    .psd-barcode > tbody > tr:first-of-type > td {
-      margin-top: 0;
-    }
-    .psd-barcode > tbody > tr:last-of-type > td {
-      margin-bottom: 0;
+      margin: {{ page_margin_vert }} {{ page_margin_horz }};
     }
     .psd-barcode > tbody > tr {
       border-bottom: 1px solid {{ style.border_color }};
@@ -34,11 +35,11 @@
   }
   .psd-barcode-label-container {
     border-style: dashed;
-    border-radius: 3mm;
+    border-radius: {{ label_border_radius or 0 }};
   }
   .psd-barcode-skip {
-    width: 64mm;
-    height: 34mm;
+    width: {{ label_width or '64mm' }};
+    height: {{ label_height or '34mm' }};
     display: flex;
     justify-content: center;
     align-items: center;
@@ -67,12 +68,14 @@
 {% endfor %}
 {% endfor %}
 
+{% set num_of_labels = col_num * row_num if col_num and row_num else 1 %}
+
 <table class="psd-barcode">
   <tbody>
-    {% for p in range(0, items|length, 24) %}
+    {% for p in range(0, items|length, num_of_labels) %}
     <tr>
       <td class="psd-barcode-page">
-        {% for item in items[p: [items|length, p + 24]|min] %}
+        {% for item in items[p: [items|length, p + num_of_labels]|min] %}
         {% if item %}
         <div class="psd-barcode-label-container">
           <div class="psd-barcode-label">
