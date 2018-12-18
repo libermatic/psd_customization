@@ -12107,12 +12107,88 @@ var psd = (function () {
     }()
   };
 
+  // Copyright (c) 2018, Libermatic and contributors
+  // For license information, please see license.txt
+  function add_buttons(frm) {
+    frm.add_custom_button('Clear', function () {
+      ['company', 'price_list', 'print_dt', 'print_dn'].forEach(function (field) {
+        return frm.set_value(field, null);
+      });
+      frm.clear_table('items');
+      frm.refresh_field('items');
+    });
+  }
+
+  var label_printer = {
+    onload: function onload(frm) {
+      frm.set_query('print_dt', {
+        filters: [['name', 'in', 'Purchase Receipt, Purchase Invoice']]
+      });
+    },
+    refresh: function refresh(frm) {
+      add_buttons(frm);
+    },
+    print_dn: function () {
+      var _print_dn = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee(frm) {
+        var _frm$doc, print_dt, print_dn, company, price_list, _ref, items, _frm$get_field, grid;
+
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _frm$doc = frm.doc, print_dt = _frm$doc.print_dt, print_dn = _frm$doc.print_dn, company = _frm$doc.company, price_list = _frm$doc.price_list;
+
+                if (!(print_dt && print_dn)) {
+                  _context.next = 7;
+                  break;
+                }
+
+                _context.next = 4;
+                return frappe.call({
+                  method: 'psd_customization.ultimate_art.api.label_printer.get_items',
+                  args: {
+                    print_dt: print_dt,
+                    print_dn: print_dn,
+                    company: company,
+                    price_list: price_list
+                  }
+                });
+
+              case 4:
+                _ref = _context.sent;
+                items = _ref.message;
+
+                if (items) {
+                  _frm$get_field = frm.get_field('items'), grid = _frm$get_field.grid;
+                  items.forEach(function (item) {
+                    var child_doc = Object.assign(frappe.model.add_child(frm.doc, 'Label Printer Item', 'items'), item);
+                  });
+                  frm.refresh_field('items');
+                }
+
+              case 7:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      return function print_dn(_x) {
+        return _print_dn.apply(this, arguments);
+      };
+    }()
+  };
+
   var scripts = {
     sales_invoice: sales_invoice,
     sales_invoice_item: sales_invoice_item,
     gym_member: gym_member,
     gym_subscription: gym_subscription,
-    gym_subscription_list: gym_subscription_list
+    gym_subscription_list: gym_subscription_list,
+    label_printer: label_printer
   };
 
   var utils = {
