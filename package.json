@@ -1,6 +1,6 @@
 {
   "name": "psd_customization",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Customizations for PSD SELF",
   "entry": "src/index.js",
   "main": "psd_customization/public/js/psd_customization.iife.js",
