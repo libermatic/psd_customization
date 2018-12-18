@@ -6,7 +6,10 @@ frappe.ui.form.GymMemberQuickEntryForm = frappe.ui.form.QuickEntryForm.extend({
     this.mandatory = this.mandatory.concat(this.get_variant_fields());
     this._super();
   },
-
+  update_doc: function() {
+    this._super();
+    this.dialog.doc.enrollment_date = frappe.datetime.get_today();
+  },
   get_variant_fields: function() {
     return [
       {

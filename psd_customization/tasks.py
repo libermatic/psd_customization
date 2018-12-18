@@ -5,10 +5,10 @@ from __future__ import unicode_literals
 from frappe.utils import today
 
 from psd_customization.fitness_world.api.gym_subscription \
-    import generate_new_subscriptions_on, send_reminders
+    import send_reminders, set_expired_susbcriptions
 
 
 def daily():
     posting_date = today()
-    generate_new_subscriptions_on(posting_date)
+    set_expired_susbcriptions(posting_date)
     send_reminders(posting_date)
