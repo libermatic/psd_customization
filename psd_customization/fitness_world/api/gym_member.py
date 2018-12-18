@@ -80,19 +80,3 @@ def make_payment_entry(source_name):
             pe.append('references', ref)
     pe.set_amounts()
     return pe
-
-
-@frappe.whitelist()
-def get_members_by_customer(customer):
-    members = frappe.get_all('Gym Member', filters={'customer': customer})
-    return map(lambda x: x.get('name'), members)
-
-
-@frappe.whitelist()
-def set_auto_renew(name, auto_renew):
-    try:
-        member = frappe.get_doc('Gym Member', name)
-        member.auto_renew = auto_renew
-        member.save()
-    except AttributeError:
-        pass
