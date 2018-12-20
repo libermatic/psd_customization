@@ -2,7 +2,7 @@
   <div class="psd-current-sub">
     <div class="psd-current-sub-description">
       <span :class="colorClass" />
-      {{ item_name }}
+      <a :href="docUrl">{{ item_name }}</a>
       <span v-if="is_lifetime" class="badge psd-badge-info">
         Lifetime
       </span>
@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  props: ['item_name', 'is_lifetime', 'from_date', 'to_date'],
+  props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date'],
   methods: {
     get_color() {
       const { is_lifetime, to_date } = this;
@@ -42,6 +42,9 @@ export default {
     },
   },
   computed: {
+    docUrl: function() {
+      return `#Form/Gym Subscription/${this.name}`;
+    },
     colorClass: function() {
       return `indicator ${this.get_color()}`;
     },

@@ -3,12 +3,25 @@
 
 function add_buttons(frm) {
   frm.add_custom_button('Clear', function() {
-    ['company', 'price_list', 'print_dt', 'print_dn'].forEach(field =>
+    ['print_dt', 'print_dn', 'skip'].forEach(field =>
       frm.set_value(field, null)
     );
     frm.clear_table('items');
     frm.refresh_field('items');
   });
+  frm.add_custom_button('Set Missing', function() {
+    frm.save();
+  });
+  frm
+    .add_custom_button('Print', async function() {
+      await frm.save();
+      frm.print_doc();
+    })
+    .addClass('btn-primary');
+}
+
+function set_doc_query(frm) {
+  frm.set_query('print_dn', { filters: { company: frm.doc.company } });
 }
 
 export const label_printer = {
@@ -18,8 +31,12 @@ export const label_printer = {
     });
   },
   refresh: function(frm) {
+    frm.disable_save();
+    frm.toolbar.print_icon.hide();
     add_buttons(frm);
+    set_doc_query(frm);
   },
+  company: set_doc_query,
   print_dn: async function(frm) {
     const { print_dt, print_dn, company, price_list } = frm.doc;
     if (print_dt && print_dn) {
@@ -36,8 +53,15 @@ export const label_printer = {
           );
         });
         frm.refresh_field('items');
+        frm.save();
       }
     }
+  },
+  skip: function(frm) {
+    frm.save();
+  },
+  before_print: function(frm) {
+    console.log('prit');
   },
 };
 

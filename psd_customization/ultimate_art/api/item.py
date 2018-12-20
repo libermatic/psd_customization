@@ -52,6 +52,10 @@ def _get_price(item_code, price_list, template_item_code=None):
     return None
 
 
+def get_price(item_code, price_list):
+    return _get_price(item_code, price_list)
+
+
 def _make_price(price):
     if not price:
         return {}
