@@ -54,7 +54,7 @@ def create(subscription, trainer, from_date, to_date):
         'gym_trainer': trainer,
         'from_date': from_date,
         'to_date': to_date,
-    }).insert()
+    }).insert(ignore_permissions=True)
     return allocation
 
 
@@ -71,6 +71,7 @@ def update(name, key, value):
     allocation = frappe.get_doc('Trainer Allocation', name)
     field = _get_field(key)
     if field:
+        allocation.flags.ignore_permissions = True
         allocation.set(field, value)
         allocation.save()
     return allocation
@@ -78,4 +79,6 @@ def update(name, key, value):
 
 @frappe.whitelist()
 def remove(name):
-    return frappe.delete_doc('Trainer Allocation', name)
+    return frappe.delete_doc(
+        'Trainer Allocation', name, ignore_permissions=True
+    )
