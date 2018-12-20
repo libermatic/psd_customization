@@ -10713,7 +10713,7 @@ var psd = (function () {
   //
   //
   var script$5 = {
-    props: ['item_name', 'is_lifetime', 'from_date', 'to_date'],
+    props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date'],
     methods: {
       get_color: function get_color() {
         var is_lifetime = this.is_lifetime,
@@ -10739,6 +10739,9 @@ var psd = (function () {
       }
     },
     computed: {
+      docUrl: function docUrl() {
+        return "#Form/Gym Subscription/".concat(this.name);
+      },
       colorClass: function colorClass() {
         return "indicator ".concat(this.get_color());
       },
@@ -10770,17 +10773,17 @@ var psd = (function () {
               const __vue_script__$5 = script$5;
               
   /* template */
-  var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v("\n    "+_vm._s(_vm.item_name)+"\n    "),(_vm.is_lifetime)?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
+  var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v(" "),_c('a',{attrs:{"href":_vm.docUrl}},[_vm._v(_vm._s(_vm.item_name))]),_vm._v(" "),(_vm.is_lifetime)?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
   var __vue_staticRenderFns__$5 = [];
 
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-3623c10f_0", { source: "\n.psd-current-sub[data-v-3623c10f]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-3623c10f]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-3623c10f]:first-of-type{flex:auto\n}\n.badge[data-v-3623c10f]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-3623c10f]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-3623c10f]{background-color:#ffa00a\n}", map: undefined, media: undefined });
+      inject("data-v-15b64b0e_0", { source: "\n.psd-current-sub[data-v-15b64b0e]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-15b64b0e]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-15b64b0e]:first-of-type{flex:auto\n}\n.badge[data-v-15b64b0e]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-15b64b0e]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-15b64b0e]{background-color:#ffa00a\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$5 = "data-v-3623c10f";
+    const __vue_scope_id__$5 = "data-v-15b64b0e";
     /* module identifier */
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
@@ -12111,11 +12114,44 @@ var psd = (function () {
   // For license information, please see license.txt
   function add_buttons(frm) {
     frm.add_custom_button('Clear', function () {
-      ['company', 'price_list', 'print_dt', 'print_dn'].forEach(function (field) {
+      ['print_dt', 'print_dn', 'skip'].forEach(function (field) {
         return frm.set_value(field, null);
       });
       frm.clear_table('items');
       frm.refresh_field('items');
+    });
+    frm.add_custom_button('Set Missing', function () {
+      frm.save();
+    });
+    frm.add_custom_button('Print',
+    /*#__PURE__*/
+    _asyncToGenerator(
+    /*#__PURE__*/
+    regeneratorRuntime.mark(function _callee() {
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              _context.next = 2;
+              return frm.save();
+
+            case 2:
+              frm.print_doc();
+
+            case 3:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee, this);
+    }))).addClass('btn-primary');
+  }
+
+  function set_doc_query(frm) {
+    frm.set_query('print_dn', {
+      filters: {
+        company: frm.doc.company
+      }
     });
   }
 
@@ -12126,26 +12162,30 @@ var psd = (function () {
       });
     },
     refresh: function refresh(frm) {
+      frm.disable_save();
+      frm.toolbar.print_icon.hide();
       add_buttons(frm);
+      set_doc_query(frm);
     },
+    company: set_doc_query,
     print_dn: function () {
       var _print_dn = _asyncToGenerator(
       /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee(frm) {
-        var _frm$doc, print_dt, print_dn, company, price_list, _ref, items, _frm$get_field, grid;
+      regeneratorRuntime.mark(function _callee2(frm) {
+        var _frm$doc, print_dt, print_dn, company, price_list, _ref2, items, _frm$get_field, grid;
 
-        return regeneratorRuntime.wrap(function _callee$(_context) {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
-            switch (_context.prev = _context.next) {
+            switch (_context2.prev = _context2.next) {
               case 0:
                 _frm$doc = frm.doc, print_dt = _frm$doc.print_dt, print_dn = _frm$doc.print_dn, company = _frm$doc.company, price_list = _frm$doc.price_list;
 
                 if (!(print_dt && print_dn)) {
-                  _context.next = 7;
+                  _context2.next = 7;
                   break;
                 }
 
-                _context.next = 4;
+                _context2.next = 4;
                 return frappe.call({
                   method: 'psd_customization.ultimate_art.api.label_printer.get_items',
                   args: {
@@ -12157,8 +12197,8 @@ var psd = (function () {
                 });
 
               case 4:
-                _ref = _context.sent;
-                items = _ref.message;
+                _ref2 = _context2.sent;
+                items = _ref2.message;
 
                 if (items) {
                   _frm$get_field = frm.get_field('items'), grid = _frm$get_field.grid;
@@ -12166,20 +12206,27 @@ var psd = (function () {
                     var child_doc = Object.assign(frappe.model.add_child(frm.doc, 'Label Printer Item', 'items'), item);
                   });
                   frm.refresh_field('items');
+                  frm.save();
                 }
 
               case 7:
               case "end":
-                return _context.stop();
+                return _context2.stop();
             }
           }
-        }, _callee, this);
+        }, _callee2, this);
       }));
 
       return function print_dn(_x) {
         return _print_dn.apply(this, arguments);
       };
-    }()
+    }(),
+    skip: function skip(frm) {
+      frm.save();
+    },
+    before_print: function before_print(frm) {
+      console.log('prit');
+    }
   };
 
   var scripts = {
