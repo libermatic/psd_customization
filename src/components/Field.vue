@@ -31,6 +31,9 @@ export default {
     if (this.value) {
       field.set_value(this.value);
     }
+    this.$watch('value', function(value) {
+      field.set_value(value);
+    });
   },
 };
 </script>
