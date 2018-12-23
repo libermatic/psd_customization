@@ -85,8 +85,8 @@ function render_subscription_details(frm) {
 }
 
 function add_actions(frm) {
-  frm
-    .add_custom_button('Make Payment', function() {
+  frm.page
+    .add_menu_item('Make Payment', function() {
       frappe.model.open_mapped_doc({
         frm,
         method:
@@ -97,6 +97,18 @@ function add_actions(frm) {
       'btn-primary',
       frm.doc.__onload && !!frm.doc.__onload['unpaid_invoices']
     );
+  const trainable = (
+    (frm.doc.__onload && frm.doc.__onload.subscriptions) ||
+    []
+  ).find(({ is_training }) => is_training);
+  if (trainable) {
+    frm.page.add_menu_item('Training Schedule', function() {
+      frappe.set_route('training-schedule', {
+        member: frm.doc.name,
+        subscription: trainable.name,
+      });
+    });
+  }
 }
 
 export const gym_member = {

@@ -6,16 +6,25 @@
 import Field from './Field.vue';
 export default {
   components: { Field },
-  props: ['fieldname', 'value', 'label', 'options', 'get_query', 'onchange'],
+  props: [
+    'fieldname',
+    'value',
+    'label',
+    'options',
+    'read_only',
+    'get_query',
+    'onchange',
+  ],
   computed: {
     df: function() {
-      const { fieldname, label, options, get_query } = this;
+      const { fieldname, label, options, read_only, get_query } = this;
       const fieldtype = 'Link';
       return {
         fieldname,
         fieldtype,
         label,
         options,
+        read_only,
         get_query,
       };
     },
