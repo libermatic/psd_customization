@@ -6,6 +6,7 @@
         label="Member"
         options="Gym Member"
         :value="member"
+        :read_only="!!member"
         :onchange="handle_field"
       />
       <FieldLink
@@ -13,9 +14,13 @@
         label="Subscription"
         options="Gym Subscription"
         :value="subscription"
+        :read_only="!!subscription"
         :get_query="subscription_query"
         :onchange="handle_field"
       />
+      <div class="action">
+        <button type="button" name="button" class="btn" @click="clear">Clear</button>
+      </div>
     </div>
     <div v-if="item_name" class="section info-section">
       <div>
@@ -194,6 +199,15 @@ export default {
     },
   },
   methods: {
+    clear: function(e) {
+      this.member = null;
+      this.member_name = null;
+      this.subscription = null;
+      this.item_name = null;
+      this.start_date = null;
+      this.end_date = null;
+      this.schedules = [];
+    },
     handle_field: function({ fieldname, value }) {
       if (fieldname === 'member') {
         this.member = value;
@@ -304,6 +318,11 @@ export default {
   margin: 0 8px;
   box-sizing: border-box;
   min-width: 196px;
+}
+.action {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 10px;
 }
 .info-section > div {
   min-height: 48px;
