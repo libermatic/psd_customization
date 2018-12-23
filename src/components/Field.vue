@@ -10,10 +10,8 @@ export default {
     value: String,
   },
   mounted() {
-    const field = frappe.ui.form.make_control({
-      parent: this.$el,
-      df: this.df,
-    });
+    const { read_only, ...df } = this.df;
+    const field = frappe.ui.form.make_control({ parent: this.$el, df });
     field.refresh();
     Object.keys(this.events).forEach(evt => {
       field.$input.on(evt, this.events[evt]);
@@ -29,15 +27,23 @@ export default {
       field.set_custom_query({});
     });
     this.$watch('df.read_only', function(read_only) {
-      field.df.read_only = read_only;
-      field.refresh();
+      this.set_attrib(field, 'read_only', read_only);
+    });
+    this.$watch('value', function(value) {
+      field.set_value(value);
     });
     if (this.value) {
       field.set_value(this.value);
     }
-    this.$watch('value', function(value) {
-      field.set_value(value);
-    });
+    if (read_only) {
+      this.set_attrib(field, 'read_only', read_only);
+    }
+  },
+  methods: {
+    set_attrib: function(field, attrib, value) {
+      field.df[attrib] = value ? 1 : 0;
+      field.refresh();
+    },
   },
 };
 </script>
