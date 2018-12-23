@@ -182,6 +182,16 @@ export default {
         this.set_schedules();
       }
     },
+    member: async function(value, prev_value) {
+      if (value && value !== prev_value) {
+        const { message: subscription = {} } = await frappe.call({
+          method:
+            'psd_customization.fitness_world.api.gym_subscription.get_current_trainable',
+          args: { member: value },
+        });
+        this.subscription = subscription.name;
+      }
+    },
   },
   methods: {
     handle_field: function({ fieldname, value }) {

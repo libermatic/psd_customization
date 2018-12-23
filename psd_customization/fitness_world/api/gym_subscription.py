@@ -9,7 +9,7 @@ from frappe.utils \
 from erpnext.accounts.doctype.payment_entry.payment_entry \
     import get_payment_entry
 from functools import partial
-from toolz import compose, merge, concat, pluck
+from toolz import compose, merge, concat, pluck, first
 
 from psd_customization.utils.datetime \
     import merge_intervals, pretty_date, month_diff
@@ -323,6 +323,7 @@ def get_currents(member):
                 a.name,
                 a.subscription_item AS item,
                 a.subscription_name AS item_name,
+                a.is_training,
                 a.is_lifetime,
                 a.from_date,
                 a.to_date
@@ -342,6 +343,18 @@ def get_currents(member):
         values={'member': member},
         as_dict=1,
     )
+
+
+@frappe.whitelist()
+def get_current_trainable(member):
+    try:
+        return compose(
+            first,
+            partial(filter, lambda x: cint(x.is_training)),
+            get_currents,
+        )(member)
+    except StopIteration as e:
+        return None
 
 
 @frappe.whitelist()
