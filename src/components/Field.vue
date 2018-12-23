@@ -28,6 +28,10 @@ export default {
       field.get_query = query;
       field.set_custom_query({});
     });
+    this.$watch('df.read_only', function(read_only) {
+      field.df.read_only = read_only;
+      field.refresh();
+    });
     if (this.value) {
       field.set_value(this.value);
     }
