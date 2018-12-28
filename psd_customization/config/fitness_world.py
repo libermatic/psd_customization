@@ -79,6 +79,12 @@ def get_data():
                     "name": "Gym Subscription Status",
                     "label": "Subscription Status",
                 },
+                {
+                    "type": "report",
+                    "is_query_report": True,
+                    "name": "Gym Trainer Allotment",
+                    "label": "Trainer Allotment",
+                },
             ]
         },
     ]
