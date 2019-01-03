@@ -144,11 +144,19 @@ function make_dialog_field(what) {
   }
   if (what === 'trainer') {
     return [
-      Object.assign(field, {
+      {
+        fieldname: 'trainer',
         fieldtype: 'Link',
         label: 'Trainer',
         options: 'Gym Trainer',
-      }),
+        reqd: 1,
+      },
+      {
+        fieldname: 'slot',
+        fieldtype: 'Link',
+        label: 'Slot',
+        options: 'Training Slot',
+      },
     ];
   }
   return null;
@@ -255,21 +263,29 @@ export default {
       );
     },
     create: async function(from_date, to_date) {
-      const { value: trainer } = await frappeAsync.prompt(
-        make_dialog_field('trainer'),
-        'Select Trainer'
-      );
-      await frappe.call({
-        method: 'psd_customization.fitness_world.api.trainer_allocation.create',
-        args: {
-          subscription: this.subscription,
-          trainer,
-          from_date: frappe.datetime.user_to_str(from_date),
-          to_date: frappe.datetime.user_to_str(to_date),
-        },
-        freeze: true,
+      const dialog = new frappe.ui.Dialog({
+        title: 'Select Trainer',
+        fields: make_dialog_field('trainer'),
       });
-      this.set_schedules();
+      dialog.set_primary_action('OK', async () => {
+        const { trainer, slot } = dialog.get_values();
+        await frappe.call({
+          method:
+            'psd_customization.fitness_world.api.trainer_allocation.create',
+          args: {
+            subscription: this.subscription,
+            trainer,
+            slot,
+            from_date: frappe.datetime.user_to_str(from_date),
+            to_date: frappe.datetime.user_to_str(to_date),
+          },
+          freeze: true,
+        });
+        dialog.hide();
+        dialog.$wrapper.remove();
+        this.set_schedules();
+      });
+      dialog.show();
     },
     update: async function(name, key) {
       const field = make_dialog_field(key);
