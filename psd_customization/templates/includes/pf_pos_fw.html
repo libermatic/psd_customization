@@ -6,7 +6,7 @@
     }
   }
   .psd-pos {
-    font-family: mono;
+    font-family: monospace;
     font-size: 9pt;
     line-height: 1.5;
   }
@@ -136,7 +136,12 @@
     </div>
     {% for item in doc.items %}
     <div>
-      <div class="psd-pos-items-item_name">{{ item.item_name }}</div>
+      <div class="psd-pos-items-item_name">
+        {{ item.item_name }}
+        {% if item.gst_hsn_code %}
+        ({{ item.gst_hsn_code }})
+        {% endif %}
+      </div>
       <div>
         <div>
           {% if frappe.utils.cint(item.gym_is_lifetime) %}
@@ -144,7 +149,7 @@
           Starts {{ item.get_formatted('gym_from_date') }}
           {% else %}
           Starts {{ item.get_formatted('gym_from_date') }}<br />
-          Ends {{ item.get_formatted('gym_to_date') }}
+          Ends&nbsp;&nbsp; {{ item.get_formatted('gym_to_date') }}
           {% endif %}
         </div>
         <div>{{ item.get_formatted('amount') }}</div>
