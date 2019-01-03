@@ -28,6 +28,12 @@ export default class SubscriptionSelector {
           fieldtype: 'Link',
           options: 'Gym Trainer',
         },
+        {
+          label: 'Slot',
+          fieldname: 'slot',
+          fieldtype: 'Link',
+          options: 'Training Slot',
+        },
         { fieldtype: 'Column Break' },
         {
           label: 'From Date',
@@ -83,6 +89,7 @@ export default class SubscriptionSelector {
         from_date,
         to_date,
         trainer,
+        slot,
       } = this.dialog.get_values();
       frappe.model.set_value(
         cdt,
@@ -98,12 +105,15 @@ export default class SubscriptionSelector {
         frappe.model.set_value(cdt, cdn, 'gym_to_date', to_date);
       }
       frappe.model.set_value(cdt, cdn, 'gym_trainer', trainer);
+      frappe.model.set_value(cdt, cdn, 'gym_training_slot', slot);
       this.dialog.hide();
     });
     return true;
   }
   show({ show_trainer } = {}) {
-    this.dialog.fields_dict['trainer'].toggle(show_trainer);
+    ['trainer', 'slot'].forEach(field => {
+      this.dialog.fields_dict[field].toggle(show_trainer);
+    });
     this.dialog.show();
   }
 }

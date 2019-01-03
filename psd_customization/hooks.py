@@ -46,6 +46,7 @@ fixtures = [
             'Sales Invoice Item-gym_subscription',
             'Sales Invoice Item-gym_is_lifetime',
             'Sales Invoice Item-gym_trainer',
+            'Sales Invoice Item-gym_training_slot',
             'Sales Invoice Item-gym_col0',
             'Sales Invoice Item-gym_from_date',
             'Sales Invoice Item-gym_to_date',
