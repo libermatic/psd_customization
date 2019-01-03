@@ -13,6 +13,7 @@ _columns = [
     {'key': 'trainer', 'label': _('Trainer ID') + ':Link/Gym Trainer:120'},
     {'key': 'trainer_name', 'label': _('Trainer Name') + '::180'},
     {'key': 'slot', 'label': _('Slot') + ':Link/Training Slot:120'},
+    {'key': 'shift', 'label': _('Shift') + '::90'},
     {'key': 'member', 'label': _('Member ID') + ':Link/Gym Member:120'},
     {'key': 'member_name', 'label': _('Member Name') + '::180'},
     {'key': 'from_date', 'label': _('Training Start') + ':Date:90'},
@@ -101,12 +102,15 @@ def get_data(filters):
                 ta.gym_trainer_name AS trainer_name,
                 ta.from_date AS from_date,
                 ta.to_date AS to_date,
-                ta.training_slot AS slot
+                ta.training_slot AS slot,
+                ts.shift AS shift
             FROM `tabTrainer Allocation` AS ta
             LEFT JOIN `tabGym Member` AS m
                 ON ta.gym_member = m.name
             LEFT JOIN `tabGym Subscription` AS s
                 ON ta.gym_subscription = s.name
+            LEFT JOIN `tabTraining Slot` AS ts
+                ON ta.training_slot = ts.name
             WHERE {clauses}
             ORDER BY ta.from_date
         """.format(clauses=clauses),
