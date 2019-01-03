@@ -151,6 +151,8 @@ doc_events = {
     },
 }
 
+on_session_creation = 'psd_customization.doc_events.defaults.set_user_defaults'
+
 # Scheduled Tasks
 # ---------------
 
