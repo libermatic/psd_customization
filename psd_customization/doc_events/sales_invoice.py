@@ -13,7 +13,6 @@ from psd_customization.fitness_world.api.trainer_allocation \
     import create as create_schedule
 
 
-
 def validate(doc, method):
     filter_and_make_items = compose(
         partial(
@@ -103,6 +102,7 @@ def _make_trainer_alloc(item, sub):
         trainer=item.gym_trainer,
         from_date=item.gym_from_date,
         to_date=item.gym_to_date,
+        slot=item.gym_training_slot,
     )
 
 

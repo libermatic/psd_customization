@@ -10125,11 +10125,18 @@ var psd = (function () {
     }
 
     if (what === 'trainer') {
-      return [Object.assign(field, {
+      return [{
+        fieldname: 'trainer',
         fieldtype: 'Link',
         label: 'Trainer',
-        options: 'Gym Trainer'
-      })];
+        options: 'Gym Trainer',
+        reqd: 1
+      }, {
+        fieldname: 'slot',
+        fieldtype: 'Link',
+        label: 'Slot',
+        options: 'Training Slot'
+      }];
     }
 
     return null;
@@ -10333,40 +10340,64 @@ var psd = (function () {
       create: function () {
         var _create = _asyncToGenerator(
         /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee4(from_date, to_date) {
-          var _ref6, trainer;
+        regeneratorRuntime.mark(function _callee5(from_date, to_date) {
+          var _this = this;
 
-          return regeneratorRuntime.wrap(function _callee4$(_context4) {
+          var dialog;
+          return regeneratorRuntime.wrap(function _callee5$(_context5) {
             while (1) {
-              switch (_context4.prev = _context4.next) {
+              switch (_context5.prev = _context5.next) {
                 case 0:
-                  _context4.next = 2;
-                  return frappeAsync.prompt(make_dialog_field('trainer'), 'Select Trainer');
-
-                case 2:
-                  _ref6 = _context4.sent;
-                  trainer = _ref6.value;
-                  _context4.next = 6;
-                  return frappe.call({
-                    method: 'psd_customization.fitness_world.api.trainer_allocation.create',
-                    args: {
-                      subscription: this.subscription,
-                      trainer: trainer,
-                      from_date: frappe.datetime.user_to_str(from_date),
-                      to_date: frappe.datetime.user_to_str(to_date)
-                    },
-                    freeze: true
+                  dialog = new frappe.ui.Dialog({
+                    title: 'Select Trainer',
+                    fields: make_dialog_field('trainer')
                   });
+                  dialog.set_primary_action('OK',
+                  /*#__PURE__*/
+                  _asyncToGenerator(
+                  /*#__PURE__*/
+                  regeneratorRuntime.mark(function _callee4() {
+                    var _dialog$get_values, trainer, slot;
 
-                case 6:
-                  this.set_schedules();
+                    return regeneratorRuntime.wrap(function _callee4$(_context4) {
+                      while (1) {
+                        switch (_context4.prev = _context4.next) {
+                          case 0:
+                            _dialog$get_values = dialog.get_values(), trainer = _dialog$get_values.trainer, slot = _dialog$get_values.slot;
+                            _context4.next = 3;
+                            return frappe.call({
+                              method: 'psd_customization.fitness_world.api.trainer_allocation.create',
+                              args: {
+                                subscription: _this.subscription,
+                                trainer: trainer,
+                                slot: slot,
+                                from_date: frappe.datetime.user_to_str(from_date),
+                                to_date: frappe.datetime.user_to_str(to_date)
+                              },
+                              freeze: true
+                            });
 
-                case 7:
+                          case 3:
+                            dialog.hide();
+                            dialog.$wrapper.remove();
+
+                            _this.set_schedules();
+
+                          case 6:
+                          case "end":
+                            return _context4.stop();
+                        }
+                      }
+                    }, _callee4, this);
+                  })));
+                  dialog.show();
+
+                case 3:
                 case "end":
-                  return _context4.stop();
+                  return _context5.stop();
               }
             }
-          }, _callee4, this);
+          }, _callee5, this);
         }));
 
         return function create(_x3, _x4) {
@@ -10376,21 +10407,21 @@ var psd = (function () {
       update: function () {
         var _update = _asyncToGenerator(
         /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee5(name, key) {
+        regeneratorRuntime.mark(function _callee6(name, key) {
           var field, _ref7, value;
 
-          return regeneratorRuntime.wrap(function _callee5$(_context5) {
+          return regeneratorRuntime.wrap(function _callee6$(_context6) {
             while (1) {
-              switch (_context5.prev = _context5.next) {
+              switch (_context6.prev = _context6.next) {
                 case 0:
                   field = make_dialog_field(key);
-                  _context5.next = 3;
+                  _context6.next = 3;
                   return frappeAsync.prompt(field, field && field.fieldtype === 'Date' ? 'Enter Date' : 'Select Slot');
 
                 case 3:
-                  _ref7 = _context5.sent;
+                  _ref7 = _context6.sent;
                   value = _ref7.value;
-                  _context5.next = 7;
+                  _context6.next = 7;
                   return frappe.call({
                     method: 'psd_customization.fitness_world.api.trainer_allocation.update',
                     args: {
@@ -10406,10 +10437,10 @@ var psd = (function () {
 
                 case 8:
                 case "end":
-                  return _context5.stop();
+                  return _context6.stop();
               }
             }
-          }, _callee5, this);
+          }, _callee6, this);
         }));
 
         return function update(_x5, _x6) {
@@ -10419,24 +10450,24 @@ var psd = (function () {
       remove: function () {
         var _remove = _asyncToGenerator(
         /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee6(name) {
+        regeneratorRuntime.mark(function _callee7(name) {
           var will_remove;
-          return regeneratorRuntime.wrap(function _callee6$(_context6) {
+          return regeneratorRuntime.wrap(function _callee7$(_context7) {
             while (1) {
-              switch (_context6.prev = _context6.next) {
+              switch (_context7.prev = _context7.next) {
                 case 0:
-                  _context6.next = 2;
+                  _context7.next = 2;
                   return frappeAsync.confirm('Trainer for this period will be unassigned');
 
                 case 2:
-                  will_remove = _context6.sent;
+                  will_remove = _context7.sent;
 
                   if (!will_remove) {
-                    _context6.next = 6;
+                    _context7.next = 6;
                     break;
                   }
 
-                  _context6.next = 6;
+                  _context7.next = 6;
                   return frappe.call({
                     method: 'psd_customization.fitness_world.api.trainer_allocation.remove',
                     args: {
@@ -10450,10 +10481,10 @@ var psd = (function () {
 
                 case 7:
                 case "end":
-                  return _context6.stop();
+                  return _context7.stop();
               }
             }
-          }, _callee6, this);
+          }, _callee7, this);
         }));
 
         return function remove(_x7) {
@@ -10479,11 +10510,11 @@ var psd = (function () {
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-3537f444_0", { source: "\n.section[data-v-3537f444]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-3537f444]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.action[data-v-3537f444]{display:flex;align-items:flex-end;padding-bottom:10px\n}\n.info-section>div[data-v-3537f444]{min-height:48px\n}\n.info-section>div>span[data-v-3537f444]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-3537f444]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-3537f444]:last-of-type{font-weight:700\n}\n.list-section button[data-v-3537f444]{border:none;background-color:inherit;opacity:0\n}\n.list-section .chart[data-v-3537f444]{width:100%\n}\n.list-section tr:hover button[data-v-3537f444]{opacity:1\n}\n.list-section>table th[data-v-3537f444]{color:#8d99a6\n}\n.list-section>table button[data-v-3537f444]:hover{color:#8d99a6\n}\n.list-section .indicator>i[data-v-3537f444]{display:inline-block;height:8px;width:8px;border-radius:8px;margin:0 4px 0 0\n}\n.list-section .indicator[data-v-3537f444]::before{display:none\n}", map: undefined, media: undefined });
+      inject("data-v-45c887c4_0", { source: "\n.section[data-v-45c887c4]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-45c887c4]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.action[data-v-45c887c4]{display:flex;align-items:flex-end;padding-bottom:10px\n}\n.info-section>div[data-v-45c887c4]{min-height:48px\n}\n.info-section>div>span[data-v-45c887c4]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-45c887c4]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-45c887c4]:last-of-type{font-weight:700\n}\n.list-section button[data-v-45c887c4]{border:none;background-color:inherit;opacity:0\n}\n.list-section .chart[data-v-45c887c4]{width:100%\n}\n.list-section tr:hover button[data-v-45c887c4]{opacity:1\n}\n.list-section>table th[data-v-45c887c4]{color:#8d99a6\n}\n.list-section>table button[data-v-45c887c4]:hover{color:#8d99a6\n}\n.list-section .indicator>i[data-v-45c887c4]{display:inline-block;height:8px;width:8px;border-radius:8px;margin:0 4px 0 0\n}\n.list-section .indicator[data-v-45c887c4]::before{display:none\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-3537f444";
+    const __vue_scope_id__$3 = "data-v-45c887c4";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -11780,6 +11811,11 @@ var psd = (function () {
           fieldtype: 'Link',
           options: 'Gym Trainer'
         }, {
+          label: 'Slot',
+          fieldname: 'slot',
+          fieldtype: 'Link',
+          options: 'Training Slot'
+        }, {
           fieldtype: 'Column Break'
         }, {
           label: 'From Date',
@@ -11860,7 +11896,8 @@ var psd = (function () {
                         frequency = _this2$dialog$get_val.frequency,
                         from_date = _this2$dialog$get_val.from_date,
                         to_date = _this2$dialog$get_val.to_date,
-                        trainer = _this2$dialog$get_val.trainer;
+                        trainer = _this2$dialog$get_val.trainer,
+                        slot = _this2$dialog$get_val.slot;
 
                     frappe.model.set_value(cdt, cdn, 'qty', frequency === 'Lifetime' ? 60 : month_diff_dec(from_date, to_date));
 
@@ -11873,6 +11910,7 @@ var psd = (function () {
                     }
 
                     frappe.model.set_value(cdt, cdn, 'gym_trainer', trainer);
+                    frappe.model.set_value(cdt, cdn, 'gym_training_slot', slot);
 
                     _this2.dialog.hide();
                   });
@@ -11893,10 +11931,14 @@ var psd = (function () {
     }, {
       key: "show",
       value: function show() {
+        var _this3 = this;
+
         var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
             show_trainer = _ref.show_trainer;
 
-        this.dialog.fields_dict['trainer'].toggle(show_trainer);
+        ['trainer', 'slot'].forEach(function (field) {
+          _this3.dialog.fields_dict[field].toggle(show_trainer);
+        });
         this.dialog.show();
       }
     }]);

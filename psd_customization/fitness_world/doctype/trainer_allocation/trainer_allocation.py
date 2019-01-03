@@ -4,12 +4,26 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import flt, add_days, date_diff
+from frappe.utils import flt, add_days, date_diff, getdate
 from frappe.model.document import Document
 
 
 class TrainerAllocation(Document):
     def validate(self):
+        if getdate(self.to_date) < getdate(self.from_date):
+            frappe.throw(
+                'From Date cannot be after To Date.'
+            )
+        sub_from_date, sub_to_date = frappe.db.get_value(
+            'Gym Subscription',
+            self.gym_subscription,
+            ['from_date', 'to_date']
+        )
+        if getdate(self.from_date) < getdate(sub_from_date) \
+                or getdate(self.to_date) > getdate(sub_to_date):
+            frappe.throw(
+                'Date out of bounds of Subscription period.'
+            )
         existing = frappe.db.sql(
             """
                 SELECT 1 FROM `tabTrainer Allocation`

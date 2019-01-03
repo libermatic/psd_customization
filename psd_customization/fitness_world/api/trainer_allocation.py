@@ -47,13 +47,14 @@ def get_schedule(subscription, item=None):
 
 
 @frappe.whitelist()
-def create(subscription, trainer, from_date, to_date):
+def create(subscription, trainer, from_date, to_date, slot=None):
     allocation = frappe.get_doc({
         'doctype': 'Trainer Allocation',
         'gym_subscription': subscription,
         'gym_trainer': trainer,
         'from_date': from_date,
         'to_date': to_date,
+        'training_slot': slot,
     }).insert(ignore_permissions=True)
     return allocation
 

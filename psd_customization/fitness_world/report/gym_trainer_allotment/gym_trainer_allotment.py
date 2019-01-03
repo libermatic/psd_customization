@@ -4,28 +4,41 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from frappe.utils import getdate
 from functools import partial
-from toolz import compose, get, concatv, merge
+from toolz import compose, get, concatv, merge, pluck
+
+
+_columns = [
+    {'key': 'trainer', 'label': _('Trainer ID') + ':Link/Gym Trainer:120'},
+    {'key': 'trainer_name', 'label': _('Trainer Name') + '::180'},
+    {'key': 'slot', 'label': _('Slot') + ':Link/Training Slot:120'},
+    {'key': 'shift', 'label': _('Shift') + '::90'},
+    {'key': 'member', 'label': _('Member ID') + ':Link/Gym Member:120'},
+    {'key': 'member_name', 'label': _('Member Name') + '::180'},
+    {'key': 'from_date', 'label': _('Training Start') + ':Date:90'},
+    {'key': 'to_date', 'label': _('Training End') + ':Date:90'},
+    {
+        'key': 'subscription',
+        'label': _('Subscription') + ':Link/Gym Subscription:120'
+    },
+    {'key': 'subscription_status', 'label': _('Subscription Status') + '::90'},
+]
 
 
 def execute(filters=None):
-    columns = get_columns()
+    columns = get_columns(_columns)
     data = get_data(filters)
     return columns, data
 
 
-def get_columns():
-    columns = [
-        _('Trainer ID') + ':Link/Gym Trainer:120',
-        _('Trainer Name') + '::180',
-        _('Slot') + ':Link/Training Slot:120',
-        _('Member ID') + ':Link/Gym Member:120',
-        _('Member Name') + '::180',
-        _('Subscription') + ':Link/Gym Subscription:120',
-        _('From') + ':Date:90',
-        _('To') + ':Date:90',
-    ]
-    return columns
+get_columns = compose(
+    list, partial(pluck, 'label'),
+)
+
+get_keys = compose(
+    list, partial(pluck, 'key'),
+)
 
 
 def add_filter_clause(filters, field):
@@ -63,7 +76,7 @@ def make_filter_composer(filters, fields):
 
 
 def make_conditions(filters):
-    init_clauses, init_values = ['ta.gym_member = m.name'], {}
+    init_clauses, init_values = [], {}
     filter_composer = make_filter_composer(
         filters, ['gym_trainer', 'training_slot', 'from_date', 'to_date']
     )
@@ -81,26 +94,43 @@ def get_data(filters):
         """
             SELECT
                 ta.gym_subscription AS subscription,
+                s.status AS subscription_status,
+                s.to_date AS subscription_end,
                 m.name AS member,
                 m.member_name AS member_name,
                 ta.gym_trainer AS trainer,
                 ta.gym_trainer_name AS trainer_name,
                 ta.from_date AS from_date,
                 ta.to_date AS to_date,
-                ta.training_slot AS slot
-            FROM
-                `tabTrainer Allocation` AS ta, `tabGym Member` AS m
+                ta.training_slot AS slot,
+                ts.shift AS shift
+            FROM `tabTrainer Allocation` AS ta
+            LEFT JOIN `tabGym Member` AS m
+                ON ta.gym_member = m.name
+            LEFT JOIN `tabGym Subscription` AS s
+                ON ta.gym_subscription = s.name
+            LEFT JOIN `tabTraining Slot` AS ts
+                ON ta.training_slot = ts.name
             WHERE {clauses}
             ORDER BY ta.from_date
         """.format(clauses=clauses),
         values=values,
         as_dict=1,
+        debug=1
     )
     make_row = compose(
-        partial(get, [
-            'trainer', 'trainer_name', 'slot',
-            'member', 'member_name', 'subscription',
-            'from_date', 'to_date',
-        ])
+        partial(get, get_keys(_columns)),
+        _set_subscription_status(getdate()),
     )
     return map(make_row, allocations)
+
+
+def _set_subscription_status(today):
+    def fn(row):
+        subscription_end = row.get('subscription_end')
+        print(row)
+        subscription_status = 'Expired' \
+            if subscription_end and subscription_end < today \
+            else row.get('subscription_status')
+        return merge(row, {'subscription_status': subscription_status})
+    return fn
