@@ -52,11 +52,12 @@ fixtures = [
             'Sales Invoice Item-gym_to_date',
             'Purchase Receipt Item-parse_serial',
             'Purchase Invoice Item-parse_serial',
+            'Salary Structure-training_earning_detail',
+            'Salary Structure-salary_slip_based_on_training',
+            'Salary Structure-training_earning_detail_cb',
+            'Salary Structure-training_salary_component',
+            'Salary Structure-training_monthly_rate',
         ]]]
-    },
-    {
-        'doctype': 'Custom DocPerm',
-        'filters': [['role', 'in', ['Gym User', 'Gym Manager']]],
     },
 ]
 
@@ -86,6 +87,7 @@ doctype_js = {
     'Purchase Receipt': 'public/js/serial_reader.js',
     'Purchase Invoice': 'public/js/serial_reader.js',
     'Sales Invoice': 'public/js/cscripts/sales_invoice.js',
+    'Salary Structure': 'public/js/cscripts/salary_structure.js',
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
