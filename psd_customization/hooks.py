@@ -57,6 +57,12 @@ fixtures = [
             'Salary Structure-training_earning_detail_cb',
             'Salary Structure-training_salary_component',
             'Salary Structure-training_monthly_rate',
+            'Salary Slip-salary_slip_based_on_training',
+            'Salary Slip-training_section',
+            'Salary Slip-trainings',
+            'Salary Slip-training_cb',
+            'Salary Slip-total_training_months',
+            'Salary Slip-training_rate',
         ]]]
     },
 ]
