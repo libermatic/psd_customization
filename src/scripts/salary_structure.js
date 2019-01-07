@@ -16,3 +16,5 @@ export const salary_structure = {
     toggle_training_fields(frm);
   },
 };
+
+export default { salary_structure };

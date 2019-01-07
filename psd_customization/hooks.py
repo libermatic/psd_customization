@@ -94,6 +94,7 @@ doctype_js = {
     'Purchase Invoice': 'public/js/serial_reader.js',
     'Sales Invoice': 'public/js/cscripts/sales_invoice.js',
     'Salary Structure': 'public/js/cscripts/salary_structure.js',
+    'Salary Slip': 'public/js/cscripts/salary_slip.js',
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
