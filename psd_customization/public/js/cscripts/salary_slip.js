@@ -2,6 +2,16 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Salary Slip', {
+  setup: function(frm) {
+    frm.fields_dict['trainings'].grid.get_field(
+      'training'
+    ).get_query = function() {
+      return {
+        query: 'psd_customization.fitness_world.api.salary_slip.training_query',
+        filters: { employee: frm.doc.employee },
+      };
+    };
+  },
   total_training_months: async function(frm) {
     await psd.scripts.salary_slip.calculate_training_earnings(frm);
     calculate_all(frm.doc, frm.doc.doctype, frm.doc.name);

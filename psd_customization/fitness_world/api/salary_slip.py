@@ -124,3 +124,27 @@ def get_training_data(training, start_date, end_date):
         return {
             'months': ta.months, 'gym_subscription': ta.gym_subscription,
         }
+
+
+def training_query(doctype, txt, searchfield, start, page_len, filters):
+    trainer = frappe.db.exists('Gym Trainer', {
+        'employee': filters.get('employee'),
+    })
+    if not trainer:
+        return []
+    return frappe.db.sql(
+        """
+            SELECT name, gym_member_name
+            FROM `tabTrainer Allocation`
+            WHERE
+                gym_trainer = %(trainer)s AND
+                (salary_till IS NULL OR salary_till < to_date)
+            ORDER BY to_date
+            LIMIT %(start)s, %(page_len)s
+        """,
+        values={
+            'trainer': trainer,
+            'start': start,
+            'page_len': page_len,
+        }
+    )
