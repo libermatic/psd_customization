@@ -159,6 +159,10 @@ doc_events = {
         'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
         'on_cancel': 'psd_customization.doc_events.sales_invoice.on_cancel',
     },
+    'Salary Slip': {
+        'before_insert':
+            'psd_customization.doc_events.salary_slip.before_insert',
+    },
 }
 
 on_session_creation = 'psd_customization.doc_events.defaults.set_user_defaults'
