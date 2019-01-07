@@ -876,7 +876,7 @@
  {
   "allow_on_submit": 0, 
   "bold": 0, 
-  "collapsible": 1, 
+  "collapsible": 0, 
   "collapsible_depends_on": null, 
   "columns": 0, 
   "default": null, 
@@ -894,7 +894,7 @@
   "in_list_view": 0, 
   "in_standard_filter": 0, 
   "insert_after": "hour_rate", 
-  "label": "Training Section", 
+  "label": "", 
   "modified": "2019-01-05 23:53:17.504477", 
   "name": "Salary Slip-training_section", 
   "no_copy": 0, 

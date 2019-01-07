@@ -12,6 +12,12 @@ frappe.ui.form.on('Salary Slip', {
       };
     };
   },
+  refresh: function(frm) {
+    psd.scripts.salary_slip.toggle_training_section(frm);
+  },
+  salary_slip_based_on_training: function(frm) {
+    psd.scripts.salary_slip.toggle_training_section(frm);
+  },
   total_training_months: async function(frm) {
     await psd.scripts.salary_slip.calculate_training_earnings(frm);
     calculate_all(frm.doc, frm.doc.doctype, frm.doc.name);

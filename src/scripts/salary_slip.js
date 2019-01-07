@@ -30,6 +30,12 @@ export const salary_slip = {
       frm.refresh_field('earnings');
     }
   },
+  toggle_training_section: function(frm) {
+    frm.toggle_display(
+      ['training_section', 'trainings'],
+      cint(frm.doc.salary_slip_based_on_training) === 1
+    );
+  },
 };
 
 function calculate_training_months(frm) {
