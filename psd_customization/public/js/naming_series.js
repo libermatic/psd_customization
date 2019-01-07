@@ -16,6 +16,7 @@ async function set_naming_series(frm, dt) {
   const renaming_doctypes = {
     'Sales Invoice': `SI-${company['abbr']}/.YY.-`,
     'Payment Entry': `PE-${company['abbr']}/.YY.-`,
+    'Journal Entry': `JV-${company['abbr']}/.YY.-`,
   };
   const naming_series = frm.get_docfield('naming_series').options;
   if (naming_series.indexOf(renaming_doctypes[dt]) > -1) {
@@ -27,3 +28,4 @@ async function set_naming_series(frm, dt) {
 
 frappe.ui.form.on('Sales Invoice', { company: set_naming_series });
 frappe.ui.form.on('Payment Entry', { company: set_naming_series });
+frappe.ui.form.on('Journal Entry', { company: set_naming_series });

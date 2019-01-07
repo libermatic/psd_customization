@@ -30,6 +30,7 @@ fixtures = [
             'Sales Invoice Item-warehouse-in_list_view',
             'Purchase Invoice-is_paid-default',
             'Purchase Invoice-update_stock-default',
+            'Salary Slip-end_date-read_only',
         ]]],
     },
     {
@@ -52,11 +53,18 @@ fixtures = [
             'Sales Invoice Item-gym_to_date',
             'Purchase Receipt Item-parse_serial',
             'Purchase Invoice Item-parse_serial',
+            'Salary Structure-training_earning_detail',
+            'Salary Structure-salary_slip_based_on_training',
+            'Salary Structure-training_earning_detail_cb',
+            'Salary Structure-training_salary_component',
+            'Salary Structure-training_monthly_rate',
+            'Salary Slip-salary_slip_based_on_training',
+            'Salary Slip-training_section',
+            'Salary Slip-trainings',
+            'Salary Slip-training_cb',
+            'Salary Slip-total_training_months',
+            'Salary Slip-training_rate',
         ]]]
-    },
-    {
-        'doctype': 'Custom DocPerm',
-        'filters': [['role', 'in', ['Gym User', 'Gym Manager']]],
     },
 ]
 
@@ -86,6 +94,8 @@ doctype_js = {
     'Purchase Receipt': 'public/js/serial_reader.js',
     'Purchase Invoice': 'public/js/serial_reader.js',
     'Sales Invoice': 'public/js/cscripts/sales_invoice.js',
+    'Salary Structure': 'public/js/cscripts/salary_structure.js',
+    'Salary Slip': 'public/js/cscripts/salary_slip.js',
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -149,6 +159,12 @@ doc_events = {
         'validate': 'psd_customization.doc_events.sales_invoice.validate',
         'on_submit': 'psd_customization.doc_events.sales_invoice.on_submit',
         'on_cancel': 'psd_customization.doc_events.sales_invoice.on_cancel',
+    },
+    'Salary Slip': {
+        'before_insert':
+            'psd_customization.doc_events.salary_slip.before_insert',
+        'on_submit': 'psd_customization.doc_events.salary_slip.on_submit',
+        'on_cancel': 'psd_customization.doc_events.salary_slip.on_cancel',
     },
 }
 

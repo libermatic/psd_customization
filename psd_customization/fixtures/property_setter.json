@@ -202,5 +202,22 @@
   "property": "in_list_view", 
   "property_type": "Check", 
   "value": "0"
+ }, 
+ {
+  "_assign": null, 
+  "_comments": null, 
+  "_liked_by": null, 
+  "_user_tags": null, 
+  "default_value": null, 
+  "doc_type": "Salary Slip", 
+  "docstatus": 0, 
+  "doctype": "Property Setter", 
+  "doctype_or_field": "DocField", 
+  "field_name": "end_date", 
+  "modified": "2019-01-08 00:15:55.537666", 
+  "name": "Salary Slip-end_date-read_only", 
+  "property": "read_only", 
+  "property_type": "Check", 
+  "value": "1"
  }
 ]
