@@ -12273,6 +12273,200 @@ var psd = (function () {
     }()
   };
 
+  // Copyright (c) 2019, Libermatic and contributors
+  // For license information, please see license.txt
+  function toggle_training_fields(frm) {
+    frm.toggle_display(['training_salary_component', 'training_monthly_rate'], frm.doc.salary_slip_based_on_training);
+  }
+
+  var salary_structure = {
+    refresh: function refresh(frm) {
+      toggle_training_fields(frm);
+    },
+    salary_slip_based_on_training: function salary_slip_based_on_training(frm) {
+      toggle_training_fields(frm);
+    }
+  };
+
+  var $filter = _arrayMethods(2);
+  _export(_export.P + _export.F * !_strictMethod([].filter, true), 'Array', {
+    // 22.1.3.7 / 15.4.4.20 Array.prototype.filter(callbackfn [, thisArg])
+    filter: function filter(callbackfn
+    /* , thisArg */
+    ) {
+      return $filter(this, callbackfn, arguments[1]);
+    }
+  });
+
+  // Copyright (c) 2019, Libermatic and contributors
+  // For license information, please see license.txt
+  var salary_slip = {
+    set_training_data: function () {
+      var _set_training_data = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee(frm) {
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return frappe.call({
+                  method: 'psd_customization.fitness_world.api.salary_slip.set_trainings_in_salary_slip',
+                  args: {
+                    doc_json: frm.doc,
+                    set_in_response: 1
+                  }
+                });
+
+              case 2:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      return function set_training_data(_x) {
+        return _set_training_data.apply(this, arguments);
+      };
+    }(),
+    calculate_training_earnings: function () {
+      var _calculate_training_earnings = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee2(frm) {
+        var _frm$doc, salary_structure, _frm$doc$total_traini, total_training_months, _frm$doc$training_rat, training_rate, _ref, _ref$message, training_salary_component, earning;
+
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _frm$doc = frm.doc, salary_structure = _frm$doc.salary_structure, _frm$doc$total_traini = _frm$doc.total_training_months, total_training_months = _frm$doc$total_traini === void 0 ? 0 : _frm$doc$total_traini, _frm$doc$training_rat = _frm$doc.training_rate, training_rate = _frm$doc$training_rat === void 0 ? 0 : _frm$doc$training_rat;
+                _context2.next = 3;
+                return frappe.db.get_value('Salary Structure', salary_structure, 'training_salary_component');
+
+              case 3:
+                _ref = _context2.sent;
+                _ref$message = _ref.message;
+                _ref$message = _ref$message === void 0 ? {} : _ref$message;
+                training_salary_component = _ref$message.training_salary_component;
+                earning = frm.doc.earnings.find(function (_ref2) {
+                  var salary_component = _ref2.salary_component;
+                  return salary_component === training_salary_component;
+                });
+
+                if (earning) {
+                  earning.amount = total_training_months * training_rate;
+                  frm.refresh_field('earnings');
+                }
+
+              case 9:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      return function calculate_training_earnings(_x2) {
+        return _calculate_training_earnings.apply(this, arguments);
+      };
+    }(),
+    toggle_training_section: function toggle_training_section(frm) {
+      frm.toggle_display(['training_section', 'trainings'], cint(frm.doc.salary_slip_based_on_training) === 1);
+    }
+  };
+
+  function calculate_training_months(frm) {
+    frm.set_value('total_training_months', frm.doc.trainings.map(function (_ref3) {
+      var months = _ref3.months;
+      return months;
+    }).reduce(function (a) {
+      var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      return a + x;
+    }, 0));
+  }
+
+  var salary_slip_training = {
+    training: function () {
+      var _training = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee3(frm, cdt, cdn) {
+        var _frappe$get_doc, training, no_of_occurences, _frm$doc2, start_date, end_date, _ref5, _ref5$message, months, gym_subscription;
+
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _frappe$get_doc = frappe.get_doc(cdt, cdn), training = _frappe$get_doc.training;
+
+                if (!training) {
+                  _context3.next = 18;
+                  break;
+                }
+
+                no_of_occurences = frm.doc.trainings.filter(function (_ref4) {
+                  var t = _ref4.training;
+                  return t === training;
+                }).length;
+
+                if (!(no_of_occurences > 1)) {
+                  _context3.next = 7;
+                  break;
+                }
+
+                frm.get_field('trainings').grid.grid_rows_by_docname[cdn].remove();
+                _context3.next = 16;
+                break;
+
+              case 7:
+                _frm$doc2 = frm.doc, start_date = _frm$doc2.start_date, end_date = _frm$doc2.end_date;
+                _context3.next = 10;
+                return frappe.call({
+                  method: 'psd_customization.fitness_world.api.salary_slip.get_training_data',
+                  args: {
+                    training: training,
+                    start_date: start_date,
+                    end_date: end_date
+                  }
+                });
+
+              case 10:
+                _ref5 = _context3.sent;
+                _ref5$message = _ref5.message;
+                _ref5$message = _ref5$message === void 0 ? {} : _ref5$message;
+                months = _ref5$message.months, gym_subscription = _ref5$message.gym_subscription;
+                frappe.model.set_value(cdt, cdn, 'months', months);
+                frappe.model.set_value(cdt, cdn, 'subscription', gym_subscription);
+
+              case 16:
+                _context3.next = 19;
+                break;
+
+              case 18:
+                ['months', 'subscription'].forEach(function (field) {
+                  frappe.model.set_value(cdt, cdn, field, null);
+                });
+
+              case 19:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      return function training(_x3, _x4, _x5) {
+        return _training.apply(this, arguments);
+      };
+    }(),
+    months: function months(frm, cdt, cdn) {
+      calculate_training_months(frm);
+    },
+    trainings_remove: function trainings_remove(frm, cdt, cdn) {
+      calculate_training_months(frm);
+    }
+  };
+
   // Copyright (c) 2018, Libermatic and contributors
   // For license information, please see license.txt
   function add_buttons(frm) {
@@ -12395,6 +12589,9 @@ var psd = (function () {
   var scripts = {
     sales_invoice: sales_invoice,
     sales_invoice_item: sales_invoice_item,
+    salary_slip: salary_slip,
+    salary_slip_training: salary_slip_training,
+    salary_structure: salary_structure,
     gym_member: gym_member,
     gym_subscription: gym_subscription,
     gym_subscription_list: gym_subscription_list,
