@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import getdate, cint
+from frappe.utils import getdate, cint, add_days
 from builtins import str
 import json
 from toolz import merge, pluck
@@ -71,7 +71,14 @@ def get_trainings_for_salary_slip(employee, end_date):
                 IFNULL(
                     ta.salary_till,
                     DATE_SUB(ta.from_date, INTERVAL 1 DAY)
-                ) < %(end_date)s
+                ) < %(end_date)s AND
+                DATEDIFF(
+                    ta.to_date,
+                    IFNULL(
+                        ta.salary_till,
+                        DATE_SUB(ta.from_date, INTERVAL 1 DAY)
+                    )
+                ) > 0
         """,
         values={
             'trainer': trainer,
@@ -98,7 +105,8 @@ def add_earning_for_training(doc, salary_component, amount):
 
 def _set_days(end_date):
     def fn(row):
-        from_date = row.salary_till + 1 if row.salary_till else row.from_date
+        from_date = add_days(row.salary_till, 1) if row.salary_till \
+            else row.from_date
         to_date = min(getdate(end_date), row.to_date)
         days = (to_date - from_date).days + 1
         return frappe._dict(
