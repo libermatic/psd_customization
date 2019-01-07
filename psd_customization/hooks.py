@@ -30,6 +30,7 @@ fixtures = [
             'Sales Invoice Item-warehouse-in_list_view',
             'Purchase Invoice-is_paid-default',
             'Purchase Invoice-update_stock-default',
+            'Salary Slip-end_date-read_only',
         ]]],
     },
     {
@@ -162,6 +163,8 @@ doc_events = {
     'Salary Slip': {
         'before_insert':
             'psd_customization.doc_events.salary_slip.before_insert',
+        'on_submit': 'psd_customization.doc_events.salary_slip.on_submit',
+        'on_cancel': 'psd_customization.doc_events.salary_slip.on_cancel',
     },
 }
 
