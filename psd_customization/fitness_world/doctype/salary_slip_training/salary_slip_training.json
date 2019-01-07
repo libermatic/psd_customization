@@ -9,7 +9,7 @@
  "docstatus": 0, 
  "doctype": "DocType", 
  "document_type": "", 
- "editable_grid": 1, 
+ "editable_grid": 0, 
  "engine": "InnoDB", 
  "fields": [
   {
@@ -146,7 +146,7 @@
  "issingle": 0, 
  "istable": 1, 
  "max_attachments": 0, 
- "modified": "2019-01-07 00:53:09.998207", 
+ "modified": "2019-01-07 19:43:21.948523", 
  "modified_by": "Administrator", 
  "module": "Fitness World", 
  "name": "Salary Slip Training", 

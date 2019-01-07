@@ -107,3 +107,20 @@ def _set_days(end_date):
             })
         )
     return fn
+
+
+@frappe.whitelist()
+def get_training_data(training, start_date, end_date):
+    trainer_alloc = frappe.get_doc('Trainer Allocation', training)
+    if trainer_alloc:
+        day_fraction = frappe.db.get_value(
+            'Gym Subscription', trainer_alloc.gym_subscription, 'day_fraction',
+        )
+        ta = _set_days(end_date)(
+            frappe._dict(
+                merge(trainer_alloc.as_dict(), {'day_fraction': day_fraction})
+            )
+        )
+        return {
+            'months': ta.months, 'gym_subscription': ta.gym_subscription,
+        }
