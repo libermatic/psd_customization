@@ -10,6 +10,10 @@ from frappe.model.document import Document
 
 class TrainerAllocation(Document):
     def validate(self):
+        self.validate_dates()
+        self.validate_existing()
+
+    def validate_dates(self):
         if getdate(self.to_date) < getdate(self.from_date):
             frappe.throw(
                 'From Date cannot be after To Date.'
@@ -24,6 +28,16 @@ class TrainerAllocation(Document):
             frappe.throw(
                 'Date out of bounds of Subscription period.'
             )
+        if self.salary_till and not (
+            getdate(self.from_date)
+            <= getdate(self.salary_till)
+            <= getdate(self.to_date)
+        ):
+            frappe.throw(
+                'Payroll Date out of bounds of Trainer Allocation period.'
+            )
+
+    def validate_existing(self):
         existing = frappe.db.sql(
             """
                 SELECT 1 FROM `tabTrainer Allocation`

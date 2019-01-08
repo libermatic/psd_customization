@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import getdate, add_days
+from frappe.utils import getdate, add_days, formatdate
 
 
 def _generate_intervals(start_date, end_date, allocations):
@@ -71,6 +71,13 @@ def _get_field(key):
 def update(name, key, value):
     allocation = frappe.get_doc('Trainer Allocation', name)
     field = _get_field(key)
+    if field in ['from_date', 'to_date']:
+        if allocation.salary_till and getdate(value) < allocation.salary_till:
+            return frappe.throw(
+                'Cannot update for period before Payroll Date {}'.format(
+                    formatdate(allocation.salary_till)
+                )
+            )
     if field:
         allocation.flags.ignore_permissions = True
         allocation.set(field, value)

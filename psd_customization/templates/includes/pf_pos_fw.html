@@ -61,7 +61,6 @@
   .psd-pos-items > div > div {
     display: flex;
     flex-flow: row nowrap;
-    align-items: flex-end;
   }
   .psd-pos-items > div > div > div:first-of-type {
     flex: 1 1 auto;
@@ -136,23 +135,22 @@
     </div>
     {% for item in doc.items %}
     <div>
-      <div class="psd-pos-items-item_name">
-        {{ item.item_name }}
-        {% if item.gst_hsn_code %}
-        ({{ item.gst_hsn_code }})
-        {% endif %}
-      </div>
       <div>
-        <div>
-          {% if frappe.utils.cint(item.gym_is_lifetime) %}
-          Lifetime.<br />
-          Starts {{ item.get_formatted('gym_from_date') }}
-          {% else %}
-          Starts {{ item.get_formatted('gym_from_date') }}<br />
-          Ends&nbsp;&nbsp; {{ item.get_formatted('gym_to_date') }}
-          {% endif %}
+        <div class="psd-pos-items-item_name">
+          {{ item.item_name }}
         </div>
         <div>{{ item.get_formatted('amount') }}</div>
+      </div>
+      {% if item.gst_hsn_code %}
+      <div>HSN/SAC: {{ item.gst_hsn_code }}</div>
+      {% endif %}
+      <div>
+        {% if frappe.utils.cint(item.gym_is_lifetime) %}
+        Lifetime. Starts {{ item.get_formatted('gym_from_date') }}.
+        {% else %}
+        From {{ item.get_formatted('gym_from_date') }}
+        to {{ item.get_formatted('gym_to_date') }}
+        {% endif %}
       </div>
     </div>
     {% endfor %}
