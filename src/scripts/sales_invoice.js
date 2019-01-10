@@ -128,14 +128,26 @@ export const sales_invoice_item = {
           frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1)
         ),
       ]);
-      const { message: subscription_item } = await frappe.call({
-        method:
-          'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
-        args: { item_code },
-      });
+      const [
+        { message: subscription_item },
+        { message: training = {} },
+      ] = await Promise.all([
+        frappe.call({
+          method:
+            'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
+          args: { item_code },
+        }),
+        frappe.call({
+          method:
+            'psd_customization.fitness_world.api.trainer_allocation.get_last',
+          args: { item_code, member: frm.doc.gym_member },
+        }),
+      ]);
       if (subscription_item) {
         frm.subscription_selector.show({
           show_trainer: cint(subscription_item.requires_trainer),
+          trainer: training.gym_trainer,
+          slot: training.training_slot,
         });
       }
     } else {
