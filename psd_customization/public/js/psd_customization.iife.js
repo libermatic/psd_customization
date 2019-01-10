@@ -8410,6 +8410,44 @@ var psd = (function () {
     return _assertThisInitialized(self);
   }
 
+  function _slicedToArray(arr, i) {
+    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
+  }
+
+  function _arrayWithHoles(arr) {
+    if (Array.isArray(arr)) return arr;
+  }
+
+  function _iterableToArrayLimit(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"] != null) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  function _nonIterableRest() {
+    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  }
+
   var _toIobject = function (it) {
     return _iobject(_defined(it));
   };
@@ -11934,11 +11972,15 @@ var psd = (function () {
         var _this3 = this;
 
         var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            trainer = _ref.trainer,
+            slot = _ref.slot,
             show_trainer = _ref.show_trainer;
 
         ['trainer', 'slot'].forEach(function (field) {
           _this3.dialog.fields_dict[field].toggle(show_trainer);
         });
+        this.dialog.set_value('trainer', trainer);
+        this.dialog.set_value('slot', slot);
         this.dialog.show();
       }
     }]);
@@ -11958,7 +12000,7 @@ var psd = (function () {
     _render_subscription_details = _asyncToGenerator(
     /*#__PURE__*/
     regeneratorRuntime.mark(function _callee5(frm) {
-      var _ref3, _ref3$message, subscriptions, node;
+      var _ref4, _ref4$message, subscriptions, node;
 
       return regeneratorRuntime.wrap(function _callee5$(_context5) {
         while (1) {
@@ -11984,9 +12026,9 @@ var psd = (function () {
               });
 
             case 5:
-              _ref3 = _context5.sent;
-              _ref3$message = _ref3.message;
-              subscriptions = _ref3$message === void 0 ? [] : _ref3$message;
+              _ref4 = _context5.sent;
+              _ref4$message = _ref4.message;
+              subscriptions = _ref4$message === void 0 ? [] : _ref4$message;
               node = frm.fields_dict['gym_subscription_details_html'].$wrapper.append('<div />').children()[0];
               frm.subscription_details = new Vue({
                 el: node,
@@ -12087,7 +12129,7 @@ var psd = (function () {
     _set_qty = _asyncToGenerator(
     /*#__PURE__*/
     regeneratorRuntime.mark(function _callee6(frm, cdt, cdn) {
-      var _frappe$get_doc4, item_code, gym_from_date, gym_to_date, gym_is_lifetime, _ref4, _ref4$message, sub_item;
+      var _frappe$get_doc4, item_code, gym_from_date, gym_to_date, gym_is_lifetime, _ref5, _ref5$message, sub_item;
 
       return regeneratorRuntime.wrap(function _callee6$(_context6) {
         while (1) {
@@ -12104,9 +12146,9 @@ var psd = (function () {
               return frappe.db.get_value('Gym Subscription Item', item_code, 'quantity_for_lifetime');
 
             case 4:
-              _ref4 = _context6.sent;
-              _ref4$message = _ref4.message;
-              sub_item = _ref4$message === void 0 ? {} : _ref4$message;
+              _ref5 = _context6.sent;
+              _ref5$message = _ref5.message;
+              sub_item = _ref5$message === void 0 ? {} : _ref5$message;
               frappe.model.set_value(cdt, cdn, 'qty', sub_item.quantity_for_lifetime || 1);
               _context6.next = 11;
               break;
@@ -12178,7 +12220,7 @@ var psd = (function () {
       var _is_gym_subscription = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee3(frm, cdt, cdn) {
-        var _frappe$get_doc2, item_code, is_gym_subscription, today, _ref2, subscription_item;
+        var _frappe$get_doc2, item_code, is_gym_subscription, today, _ref2, _ref3, subscription_item, _ref3$1$message, training;
 
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
@@ -12187,7 +12229,7 @@ var psd = (function () {
                 _frappe$get_doc2 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc2.item_code, is_gym_subscription = _frappe$get_doc2.is_gym_subscription;
 
                 if (!is_gym_subscription) {
-                  _context3.next = 12;
+                  _context3.next = 15;
                   break;
                 }
 
@@ -12197,32 +12239,43 @@ var psd = (function () {
 
               case 5:
                 _context3.next = 7;
-                return frappe.call({
+                return Promise.all([frappe.call({
                   method: 'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
                   args: {
                     item_code: item_code
                   }
-                });
+                }), frappe.call({
+                  method: 'psd_customization.fitness_world.api.trainer_allocation.get_last',
+                  args: {
+                    item_code: item_code,
+                    member: frm.doc.gym_member
+                  }
+                })]);
 
               case 7:
                 _ref2 = _context3.sent;
-                subscription_item = _ref2.message;
+                _ref3 = _slicedToArray(_ref2, 2);
+                subscription_item = _ref3[0].message;
+                _ref3$1$message = _ref3[1].message;
+                training = _ref3$1$message === void 0 ? {} : _ref3$1$message;
 
                 if (subscription_item) {
                   frm.subscription_selector.show({
-                    show_trainer: cint(subscription_item.requires_trainer)
+                    show_trainer: cint(subscription_item.requires_trainer),
+                    trainer: training.gym_trainer,
+                    slot: training.training_slot
                   });
                 }
 
-                _context3.next = 13;
+                _context3.next = 16;
                 break;
 
-              case 12:
+              case 15:
                 ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach(function (field) {
                   return frappe.model.set_value(cdt, cdn, field, null);
                 });
 
-              case 13:
+              case 16:
               case "end":
                 return _context3.stop();
             }
