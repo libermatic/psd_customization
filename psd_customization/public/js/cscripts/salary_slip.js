@@ -22,7 +22,7 @@ frappe.ui.form.on('Salary Slip', {
     await psd.scripts.salary_slip.calculate_training_earnings(frm);
     calculate_all(frm.doc, frm.doc.doctype, frm.doc.name);
   },
-  training_monthly_rate: async function(frm) {
+  training_rate: async function(frm) {
     await psd.scripts.salary_slip.calculate_training_earnings(frm);
     calculate_all(frm.doc, frm.doc.doctype, frm.doc.name);
   },
