@@ -10,32 +10,33 @@ from frappe.model.document import Document
 
 class TrainerAllocation(Document):
     def validate(self):
+        self.validate_subscription()
         self.validate_dates()
         self.validate_existing()
 
+    def validate_subscription(self):
+        subscription = frappe.get_doc("Gym Subscription", self.gym_subscription)
+        if not subscription:
+            frappe.throw("Invalid Subscription: {}".format(self.gym_subscription))
+        if subscription.docstatus != 1 or subscription.status != "Active":
+            frappe.throw("Trainer can only be allocated for active Subscriptions")
+
     def validate_dates(self):
         if getdate(self.to_date) < getdate(self.from_date):
-            frappe.throw(
-                'From Date cannot be after To Date.'
-            )
+            frappe.throw("From Date cannot be after To Date.")
         sub_from_date, sub_to_date = frappe.db.get_value(
-            'Gym Subscription',
-            self.gym_subscription,
-            ['from_date', 'to_date']
+            "Gym Subscription", self.gym_subscription, ["from_date", "to_date"]
         )
-        if getdate(self.from_date) < getdate(sub_from_date) \
-                or getdate(self.to_date) > getdate(sub_to_date):
-            frappe.throw(
-                'Date out of bounds of Subscription period.'
-            )
+        if getdate(self.from_date) < getdate(sub_from_date) or getdate(
+            self.to_date
+        ) > getdate(sub_to_date):
+            frappe.throw("Date out of bounds of Subscription period.")
         if self.salary_till and not (
             getdate(self.from_date)
             <= getdate(self.salary_till)
             <= getdate(self.to_date)
         ):
-            frappe.throw(
-                'Payroll Date out of bounds of Trainer Allocation period.'
-            )
+            frappe.throw("Payroll Date out of bounds of Trainer Allocation period.")
 
     def validate_existing(self):
         existing = frappe.db.sql(
@@ -48,31 +49,26 @@ class TrainerAllocation(Document):
                     to_date>=%(from_date)s
             """,
             values={
-                'name': self.name,
-                'gym_subscription': self.gym_subscription,
-                'from_date': self.from_date,
-                'to_date': self.to_date,
+                "name": self.name,
+                "gym_subscription": self.gym_subscription,
+                "from_date": self.from_date,
+                "to_date": self.to_date,
             },
         )
         if existing:
-            frappe.throw(
-                'Another allocation already exists during this time frame.'
-            )
+            frappe.throw("Another allocation already exists during this time frame.")
 
     def before_save(self):
         self.gym_member, sub_item, day_fraction = frappe.db.get_value(
-            'Gym Subscription',
+            "Gym Subscription",
             self.gym_subscription,
-            ['member', 'subscription_item', 'day_fraction'],
+            ["member", "subscription_item", "day_fraction"],
         )
         trainer_cost = frappe.db.get_value(
-            'Gym Subscription Item', sub_item, 'base_trainer_cost',
+            "Gym Subscription Item", sub_item, "base_trainer_cost"
         )
-        days = date_diff(
-            add_days(self.to_date, 1),
-            self.from_date
-        )
+        days = date_diff(add_days(self.to_date, 1), self.from_date)
         self.cost = trainer_cost * day_fraction * flt(days)
         self.gym_trainer_name = frappe.db.get_value(
-            'Gym Trainer', self.gym_trainer, 'trainer_name',
+            "Gym Trainer", self.gym_trainer, "trainer_name"
         )
