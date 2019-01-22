@@ -72,6 +72,7 @@ fixtures = [
                     "Salary Slip-training_section",
                     "Salary Slip-trainings",
                     "Salary Slip-training_cb",
+                    "Salary Slip-actual_training_months",
                     "Salary Slip-total_training_months",
                     "Salary Slip-training_rate",
                 ],

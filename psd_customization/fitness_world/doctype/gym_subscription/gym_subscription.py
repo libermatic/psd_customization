@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import cint, getdate, date_diff, add_days, flt
+from frappe.utils import cint, getdate
 from frappe.model.document import Document
 
 from psd_customization.fitness_world.api.gym_subscription import validate_dependencies
@@ -81,9 +81,7 @@ class GymSubscription(Document):
         )
         self.status = "Active"
         if cint(needs_trainer):
-            days = date_diff(add_days(self.to_date, 1), self.from_date)
             self.is_training = 1
-            self.day_fraction = 1.0 / flt(days, 5)
 
     def before_update_after_submit(self):
         self.validate_opening()

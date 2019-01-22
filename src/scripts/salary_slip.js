@@ -40,8 +40,18 @@ export const salary_slip = {
 
 function calculate_training_months(frm) {
   frm.set_value(
+    'actual_training_months',
+    frm.doc.trainings
+      .map(({ months = 0.0 }) => months)
+      .reduce((a, x = 0) => a + x, 0)
+  );
+  frm.set_value(
     'total_training_months',
-    frm.doc.trainings.map(({ months }) => months).reduce((a, x = 0) => a + x, 0)
+    frm.doc.trainings
+      .map(
+        ({ months = 0.0, cost_multiplier = 1.0 }) => months * cost_multiplier
+      )
+      .reduce((a, x = 0) => a + x, 0)
   );
 }
 
@@ -57,7 +67,7 @@ export const salary_slip_training = {
       } else {
         const { start_date, end_date } = frm.doc;
         const {
-          message: { months, gym_subscription } = {},
+          message: { months, gym_subscription, cost_multiplier } = {},
         } = await frappe.call({
           method:
             'psd_customization.fitness_world.api.salary_slip.get_training_data',
@@ -65,6 +75,7 @@ export const salary_slip_training = {
         });
         frappe.model.set_value(cdt, cdn, 'months', months);
         frappe.model.set_value(cdt, cdn, 'subscription', gym_subscription);
+        frappe.model.set_value(cdt, cdn, 'cost_multiplier', cost_multiplier);
       }
     } else {
       ['months', 'subscription'].forEach(field => {
