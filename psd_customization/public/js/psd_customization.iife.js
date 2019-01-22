@@ -12430,9 +12430,20 @@ var psd = (function () {
   };
 
   function calculate_training_months(frm) {
-    frm.set_value('total_training_months', frm.doc.trainings.map(function (_ref3) {
-      var months = _ref3.months;
+    frm.set_value('actual_training_months', frm.doc.trainings.map(function (_ref3) {
+      var _ref3$months = _ref3.months,
+          months = _ref3$months === void 0 ? 0.0 : _ref3$months;
       return months;
+    }).reduce(function (a) {
+      var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      return a + x;
+    }, 0));
+    frm.set_value('total_training_months', frm.doc.trainings.map(function (_ref4) {
+      var _ref4$months = _ref4.months,
+          months = _ref4$months === void 0 ? 0.0 : _ref4$months,
+          _ref4$cost_multiplier = _ref4.cost_multiplier,
+          cost_multiplier = _ref4$cost_multiplier === void 0 ? 1.0 : _ref4$cost_multiplier;
+      return months * cost_multiplier;
     }).reduce(function (a) {
       var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       return a + x;
@@ -12444,7 +12455,7 @@ var psd = (function () {
       var _training = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee3(frm, cdt, cdn) {
-        var _frappe$get_doc, training, no_of_occurences, _frm$doc2, start_date, end_date, _ref5, _ref5$message, months, gym_subscription;
+        var _frappe$get_doc, training, no_of_occurences, _frm$doc2, start_date, end_date, _ref6, _ref6$message, months, gym_subscription, cost_multiplier;
 
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
@@ -12453,12 +12464,12 @@ var psd = (function () {
                 _frappe$get_doc = frappe.get_doc(cdt, cdn), training = _frappe$get_doc.training;
 
                 if (!training) {
-                  _context3.next = 18;
+                  _context3.next = 19;
                   break;
                 }
 
-                no_of_occurences = frm.doc.trainings.filter(function (_ref4) {
-                  var t = _ref4.training;
+                no_of_occurences = frm.doc.trainings.filter(function (_ref5) {
+                  var t = _ref5.training;
                   return t === training;
                 }).length;
 
@@ -12468,7 +12479,7 @@ var psd = (function () {
                 }
 
                 frm.get_field('trainings').grid.grid_rows_by_docname[cdn].remove();
-                _context3.next = 16;
+                _context3.next = 17;
                 break;
 
               case 7:
@@ -12484,23 +12495,24 @@ var psd = (function () {
                 });
 
               case 10:
-                _ref5 = _context3.sent;
-                _ref5$message = _ref5.message;
-                _ref5$message = _ref5$message === void 0 ? {} : _ref5$message;
-                months = _ref5$message.months, gym_subscription = _ref5$message.gym_subscription;
+                _ref6 = _context3.sent;
+                _ref6$message = _ref6.message;
+                _ref6$message = _ref6$message === void 0 ? {} : _ref6$message;
+                months = _ref6$message.months, gym_subscription = _ref6$message.gym_subscription, cost_multiplier = _ref6$message.cost_multiplier;
                 frappe.model.set_value(cdt, cdn, 'months', months);
                 frappe.model.set_value(cdt, cdn, 'subscription', gym_subscription);
+                frappe.model.set_value(cdt, cdn, 'cost_multiplier', cost_multiplier);
 
-              case 16:
-                _context3.next = 19;
+              case 17:
+                _context3.next = 20;
                 break;
 
-              case 18:
+              case 19:
                 ['months', 'subscription'].forEach(function (field) {
                   frappe.model.set_value(cdt, cdn, field, null);
                 });
 
-              case 19:
+              case 20:
               case "end":
                 return _context3.stop();
             }
