@@ -4,10 +4,11 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import getdate, cint, add_days
+from frappe.utils import getdate, add_days, cint, flt
 from builtins import str
 import json
-from toolz import merge, pluck
+from functools import partial
+from toolz import merge, pluck, compose
 
 from psd_customization.utils.datetime import month_diff
 
@@ -35,9 +36,14 @@ def set_trainings_in_salary_slip(doc_json, set_in_response=0):
                     "member_name": row.gym_member_name,
                     "months": row.months,
                     "subscription": row.gym_subscription,
+                    "cost_multiplier": row.cost_multiplier or 1.0,
                 },
             )
-        doc.total_training_months = sum(pluck("months", trainings))
+        doc.actual_training_months = compose(sum, partial(pluck, "months"))(trainings)
+        doc.total_training_months = compose(
+            sum,
+            partial(map, lambda t: flt(t.months or 0) * flt(t.cost_multiplier or 1)),
+        )(trainings)
         doc.training_rate = structure.training_monthly_rate
         add_earning_for_training(
             doc,
@@ -60,7 +66,8 @@ def get_trainings_for_salary_slip(employee, end_date):
                 s.name AS gym_subscription,
                 ta.salary_till AS salary_till,
                 ta.from_date AS from_date,
-                ta.to_date AS to_date
+                ta.to_date AS to_date,
+                s.cost_multiplier AS cost_multiplier
             FROM `tabTrainer Allocation` AS ta
             LEFT JOIN `tabGym Subscription` AS s
                 ON s.name = ta.gym_subscription
@@ -117,7 +124,14 @@ def get_training_data(training, start_date, end_date):
     trainer_alloc = frappe.get_doc("Trainer Allocation", training)
     if trainer_alloc:
         ta = _set_days(end_date)(frappe._dict(trainer_alloc.as_dict()))
-        return {"months": ta.months, "gym_subscription": ta.gym_subscription}
+        cost_multiplier = frappe.db.get_value(
+            "Gym Subscription", ta.gym_subscription, "cost_multiplier"
+        )
+        return {
+            "months": ta.months,
+            "gym_subscription": ta.gym_subscription,
+            "cost_multiplier": cost_multiplier or 1.0,
+        }
 
 
 def training_query(doctype, txt, searchfield, start, page_len, filters):
