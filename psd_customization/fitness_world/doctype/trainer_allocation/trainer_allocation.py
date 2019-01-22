@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import flt, add_days, date_diff, getdate
+from frappe.utils import getdate
 from frappe.model.document import Document
 
 
@@ -59,16 +59,9 @@ class TrainerAllocation(Document):
             frappe.throw("Another allocation already exists during this time frame.")
 
     def before_save(self):
-        self.gym_member, sub_item, day_fraction = frappe.db.get_value(
-            "Gym Subscription",
-            self.gym_subscription,
-            ["member", "subscription_item", "day_fraction"],
+        self.gym_member = frappe.db.get_value(
+            "Gym Subscription", self.gym_subscription, "member"
         )
-        trainer_cost = frappe.db.get_value(
-            "Gym Subscription Item", sub_item, "base_trainer_cost"
-        )
-        days = date_diff(add_days(self.to_date, 1), self.from_date)
-        self.cost = trainer_cost * day_fraction * flt(days)
         self.gym_trainer_name = frappe.db.get_value(
             "Gym Trainer", self.gym_trainer, "trainer_name"
         )
