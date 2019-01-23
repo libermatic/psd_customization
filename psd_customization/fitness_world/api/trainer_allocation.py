@@ -95,21 +95,35 @@ def remove(name):
 
 
 @frappe.whitelist()
-def get_last(item_code, member):
+def get_last(member, item_code=None, subscription_item=None):
+    subquery = (
+        """
+        (
+            SELECT name FROM `tabGym Subscription Item`
+            WHERE item = %(item_code)s AND requires_trainer = 1
+        )
+        """
+        if item_code
+        else "%(subscription_item)s"
+    )
     allocations = frappe.db.sql(
         """
-            SELECT gym_trainer, training_slot FROM `tabTrainer Allocation`
+            SELECT gym_trainer, gym_trainer_name, training_slot
+            FROM `tabTrainer Allocation`
             WHERE gym_subscription = (
                 SELECT name FROM `tabGym Subscription`
-                WHERE subscription_item = (
-                    SELECT name FROM `tabGym Subscription Item`
-                    WHERE item = %(item_code)s AND requires_trainer = 1
-                ) AND member = %(member)s
+                WHERE subscription_item = {} AND member = %(member)s
                 ORDER BY from_date DESC LIMIT 1
             )
             ORDER BY to_date DESC LIMIT 1
-        """,
-        values={"item_code": item_code, "member": member},
+        """.format(
+            subquery
+        ),
+        values={
+            "item_code": item_code,
+            "member": member,
+            "subscription_item": subscription_item,
+        },
         as_dict=1,
     )
     try:
