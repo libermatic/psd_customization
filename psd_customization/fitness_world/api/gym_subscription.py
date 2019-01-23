@@ -353,7 +353,7 @@ def get_current_trainable(member):
         return compose(
             first, partial(filter, lambda x: cint(x.is_training)), get_currents
         )(member)
-    except StopIteration as e:
+    except StopIteration:
         return None
 
 

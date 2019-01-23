@@ -65,7 +65,7 @@ function render_address_and_contact(frm) {
 
 function render_subscription_details(frm) {
   if (frm.doc.__onload) {
-    const { subscriptions } = frm.doc.__onload;
+    const { subscriptions, last_trainer } = frm.doc.__onload;
     const { total_invoices, unpaid_invoices, outstanding } =
       frm.doc.__onload['subscription_details'] || {};
     const node = frm.dashboard.add_section('<div />').children()[0];
@@ -78,6 +78,7 @@ function render_subscription_details(frm) {
             unpaid_invoices,
             outstanding,
             subscriptions,
+            last_trainer,
           },
         }),
     });

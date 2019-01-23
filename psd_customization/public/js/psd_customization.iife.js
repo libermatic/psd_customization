@@ -11254,7 +11254,7 @@ var psd = (function () {
 
   //
   var script$7 = {
-    props: ['outstanding', 'total_invoices', 'unpaid_invoices', 'subscriptions'],
+    props: ['outstanding', 'total_invoices', 'unpaid_invoices', 'subscriptions', 'last_trainer'],
     components: {
       DashboardItem: DashboardItem,
       CurrentSubscriptions: CurrentSubscriptions
@@ -11273,6 +11273,13 @@ var psd = (function () {
           content: "".concat(this.unpaid_invoices || '-', " / ").concat(this.total_invoices || '-'),
           color: this.unpaid_invoices ? 'orange' : 'green'
         };
+      },
+      trainer: function trainer() {
+        return {
+          label: 'Last Trainer',
+          content: this.last_trainer ? this.last_trainer.gym_trainer_name : '-',
+          color: this.last_trainer ? 'lightblue' : 'darkgrey'
+        };
       }
     }
   };
@@ -11281,7 +11288,7 @@ var psd = (function () {
               const __vue_script__$7 = script$7;
               
   /* template */
-  var __vue_render__$7 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.outstanding_cpt,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoices,false))],1),_vm._v(" "),_c('current-subscriptions',{attrs:{"subscriptions":_vm.subscriptions}})],1)};
+  var __vue_render__$7 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.outstanding_cpt,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoices,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.trainer,false))],1),_vm._v(" "),_c('current-subscriptions',{attrs:{"subscriptions":_vm.subscriptions}})],1)};
   var __vue_staticRenderFns__$7 = [];
 
     /* style */
@@ -11408,7 +11415,9 @@ var psd = (function () {
 
   function render_subscription_details(frm) {
     if (frm.doc.__onload) {
-      var subscriptions = frm.doc.__onload.subscriptions;
+      var _frm$doc$__onload = frm.doc.__onload,
+          subscriptions = _frm$doc$__onload.subscriptions,
+          last_trainer = _frm$doc$__onload.last_trainer;
 
       var _ref = frm.doc.__onload['subscription_details'] || {},
           total_invoices = _ref.total_invoices,
@@ -11424,7 +11433,8 @@ var psd = (function () {
               total_invoices: total_invoices,
               unpaid_invoices: unpaid_invoices,
               outstanding: outstanding,
-              subscriptions: subscriptions
+              subscriptions: subscriptions,
+              last_trainer: last_trainer
             }
           });
         }
