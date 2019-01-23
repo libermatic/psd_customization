@@ -12,10 +12,21 @@ from frappe.contacts.address_and_contact import (
 )
 import operator
 from functools import reduce, partial
-from toolz import count, pluck, compose
+from toolz import count, pluck, compose, first, excepts
 
 from psd_customization.utils.fp import pick
 from psd_customization.fitness_world.api.gym_subscription import get_currents
+from psd_customization.fitness_world.api.trainer_allocation import get_last
+
+
+def _get_trainer(member, subscriptions):
+    training_sub = compose(
+        excepts(StopIteration, first, lambda __: None),
+        partial(filter, lambda x: x.get("is_training") == 1),
+    )(subscriptions)
+    if not training_sub:
+        return None
+    return get_last(member, subscription_item=training_sub.get("item"))
 
 
 class GymMember(Document):
@@ -119,6 +130,7 @@ class GymMember(Document):
         )
         subscriptions = get_currents(self.name)
         self.set_onload("subscriptions", subscriptions)
+        self.set_onload("last_trainer", _get_trainer(self.name, subscriptions))
 
     def fetch_and_link_doc(self, doctype, fetch_fn):
         docname = fetch_fn("Customer", self.customer)
