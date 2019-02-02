@@ -65,7 +65,7 @@ def get_trainings_for_salary_slip(employee, end_date):
                 ta.salary_till AS salary_till,
                 ta.from_date AS from_date,
                 ta.to_date AS to_date,
-                ta.day_fraction AS day_fraction,
+                s.day_fraction AS day_fraction,
                 s.cost_multiplier AS cost_multiplier
             FROM `tabTrainer Allocation` AS ta
             LEFT JOIN `tabGym Subscription` AS s
