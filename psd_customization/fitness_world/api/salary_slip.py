@@ -10,8 +10,6 @@ import json
 from functools import partial
 from toolz import merge, pluck, compose
 
-from psd_customization.utils.datetime import month_diff
-
 
 @frappe.whitelist()
 def set_trainings_in_salary_slip(doc_json, set_in_response=0):
@@ -67,6 +65,7 @@ def get_trainings_for_salary_slip(employee, end_date):
                 ta.salary_till AS salary_till,
                 ta.from_date AS from_date,
                 ta.to_date AS to_date,
+                ta.day_fraction AS day_fraction,
                 s.cost_multiplier AS cost_multiplier
             FROM `tabTrainer Allocation` AS ta
             LEFT JOIN `tabGym Subscription` AS s
@@ -112,9 +111,8 @@ def _set_days(end_date):
     def fn(row):
         from_date = add_days(row.salary_till, 1) if row.salary_till else row.from_date
         to_date = min(getdate(end_date), row.to_date)
-        return frappe._dict(
-            merge(row, {"months": month_diff(from_date, to_date, as_dec=1)})
-        )
+        days = (to_date - from_date).days + 1
+        return frappe._dict(merge(row, {"months": days * row.day_fraction}))
 
     return fn
 
