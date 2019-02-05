@@ -377,6 +377,7 @@ def set_expired_susbcriptions(posting_date):
     subscriptions = frappe.get_all(
         "Gym Subscription",
         filters=[
+            ["docstatus", "=", 1],
             ["status", "!=", "Expired"],
             ["is_lifetime", "=", 0],
             ["to_date", "<", posting_date],
