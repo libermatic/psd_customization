@@ -117,7 +117,8 @@ export const sales_invoice_item = {
   },
   is_gym_subscription: async function(frm, cdt, cdn) {
     const { item_code, is_gym_subscription } = frappe.get_doc(cdt, cdn);
-    if (is_gym_subscription) {
+    const { member } = frm.doc;
+    if (is_gym_subscription && member) {
       const today = frappe.datetime.nowdate();
       await Promise.all([
         frappe.model.set_value(cdt, cdn, 'gym_from_date', today),
@@ -140,7 +141,7 @@ export const sales_invoice_item = {
         frappe.call({
           method:
             'psd_customization.fitness_world.api.trainer_allocation.get_last',
-          args: { item_code, member: frm.doc.gym_member },
+          args: { item_code, member },
         }),
       ]);
       if (subscription_item) {

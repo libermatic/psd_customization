@@ -12230,25 +12230,26 @@ var psd = (function () {
       var _is_gym_subscription = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee3(frm, cdt, cdn) {
-        var _frappe$get_doc2, item_code, is_gym_subscription, today, _ref2, _ref3, subscription_item, _ref3$1$message, training;
+        var _frappe$get_doc2, item_code, is_gym_subscription, member, today, _ref2, _ref3, subscription_item, _ref3$1$message, training;
 
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
               case 0:
                 _frappe$get_doc2 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc2.item_code, is_gym_subscription = _frappe$get_doc2.is_gym_subscription;
+                member = frm.doc.member;
 
-                if (!is_gym_subscription) {
-                  _context3.next = 15;
+                if (!(is_gym_subscription && member)) {
+                  _context3.next = 16;
                   break;
                 }
 
                 today = frappe.datetime.nowdate();
-                _context3.next = 5;
+                _context3.next = 6;
                 return Promise.all([frappe.model.set_value(cdt, cdn, 'gym_from_date', today), frappe.model.set_value(cdt, cdn, 'gym_to_date', frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1))]);
 
-              case 5:
-                _context3.next = 7;
+              case 6:
+                _context3.next = 8;
                 return Promise.all([frappe.call({
                   method: 'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
                   args: {
@@ -12258,11 +12259,11 @@ var psd = (function () {
                   method: 'psd_customization.fitness_world.api.trainer_allocation.get_last',
                   args: {
                     item_code: item_code,
-                    member: frm.doc.gym_member
+                    member: member
                   }
                 })]);
 
-              case 7:
+              case 8:
                 _ref2 = _context3.sent;
                 _ref3 = _slicedToArray(_ref2, 2);
                 subscription_item = _ref3[0].message;
@@ -12277,15 +12278,15 @@ var psd = (function () {
                   });
                 }
 
-                _context3.next = 16;
+                _context3.next = 17;
                 break;
 
-              case 15:
+              case 16:
                 ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach(function (field) {
                   return frappe.model.set_value(cdt, cdn, field, null);
                 });
 
-              case 16:
+              case 17:
               case "end":
                 return _context3.stop();
             }
