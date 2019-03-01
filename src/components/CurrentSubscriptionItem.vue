@@ -3,7 +3,7 @@
     <div class="psd-current-sub-description">
       <span :class="colorClass" />
       <a :href="docUrl">{{ item_name }}</a>
-      <span v-if="is_lifetime" class="badge psd-badge-info">
+      <span v-if="is_lifetime && status === 'Active'" class="badge psd-badge-info">
         Lifetime
       </span>
     </div>
@@ -21,7 +21,10 @@ export default {
   props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date'],
   methods: {
     get_color() {
-      const { is_lifetime, to_date } = this;
+      const { is_lifetime, to_date, status } = this;
+      if (status !== 'Active') {
+        return 'red';
+      }
       if (is_lifetime) {
         return 'green';
       }

@@ -34,7 +34,6 @@ fixtures = [
                     "Sales Invoice Item-warehouse-in_list_view",
                     "Purchase Invoice-is_paid-default",
                     "Purchase Invoice-update_stock-default",
-                    "Salary Slip-end_date-read_only",
                 ],
             ]
         ],

@@ -10894,7 +10894,12 @@ var psd = (function () {
     methods: {
       get_color: function get_color() {
         var is_lifetime = this.is_lifetime,
-            to_date = this.to_date;
+            to_date = this.to_date,
+            status = this.status;
+
+        if (status !== 'Active') {
+          return 'red';
+        }
 
         if (is_lifetime) {
           return 'green';
@@ -10950,17 +10955,17 @@ var psd = (function () {
               const __vue_script__$5 = script$5;
               
   /* template */
-  var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v(" "),_c('a',{attrs:{"href":_vm.docUrl}},[_vm._v(_vm._s(_vm.item_name))]),_vm._v(" "),(_vm.is_lifetime)?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
+  var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v(" "),_c('a',{attrs:{"href":_vm.docUrl}},[_vm._v(_vm._s(_vm.item_name))]),_vm._v(" "),(_vm.is_lifetime && _vm.status === 'Active')?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
   var __vue_staticRenderFns__$5 = [];
 
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-15b64b0e_0", { source: "\n.psd-current-sub[data-v-15b64b0e]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-15b64b0e]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-15b64b0e]:first-of-type{flex:auto\n}\n.badge[data-v-15b64b0e]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-15b64b0e]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-15b64b0e]{background-color:#ffa00a\n}", map: undefined, media: undefined });
+      inject("data-v-01473f17_0", { source: "\n.psd-current-sub[data-v-01473f17]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-01473f17]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-01473f17]:first-of-type{flex:auto\n}\n.badge[data-v-01473f17]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-01473f17]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-01473f17]{background-color:#ffa00a\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$5 = "data-v-15b64b0e";
+    const __vue_scope_id__$5 = "data-v-01473f17";
     /* module identifier */
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
@@ -12237,7 +12242,7 @@ var psd = (function () {
             switch (_context3.prev = _context3.next) {
               case 0:
                 _frappe$get_doc2 = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc2.item_code, is_gym_subscription = _frappe$get_doc2.is_gym_subscription;
-                member = frm.doc.member;
+                member = frm.doc.gym_member;
 
                 if (!(is_gym_subscription && member)) {
                   _context3.next = 16;

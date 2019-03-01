@@ -208,6 +208,7 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
             WHERE
                 member = '{member}' AND
                 subscription_item = '{item}' AND
+                status = 'Active' AND
                 docstatus = 1 AND
                 {filters}
             ORDER BY from_date
@@ -323,6 +324,7 @@ def get_currents(member):
         """
             SELECT
                 a.name,
+                a.status,
                 a.subscription_item AS item,
                 a.subscription_name AS item_name,
                 a.is_training,
