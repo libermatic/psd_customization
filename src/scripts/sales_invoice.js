@@ -117,7 +117,7 @@ export const sales_invoice_item = {
   },
   is_gym_subscription: async function(frm, cdt, cdn) {
     const { item_code, is_gym_subscription } = frappe.get_doc(cdt, cdn);
-    const { member } = frm.doc;
+    const { gym_member: member } = frm.doc;
     if (is_gym_subscription && member) {
       const today = frappe.datetime.nowdate();
       await Promise.all([
