@@ -324,6 +324,7 @@ def get_currents(member):
         """
             SELECT
                 a.name,
+                a.status,
                 a.subscription_item AS item,
                 a.subscription_name AS item_name,
                 a.is_training,
