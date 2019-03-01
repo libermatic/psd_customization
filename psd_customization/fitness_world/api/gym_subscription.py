@@ -208,6 +208,7 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
             WHERE
                 member = '{member}' AND
                 subscription_item = '{item}' AND
+                status = 'Active' AND
                 docstatus = 1 AND
                 {filters}
             ORDER BY from_date
