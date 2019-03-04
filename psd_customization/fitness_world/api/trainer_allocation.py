@@ -78,7 +78,7 @@ def update(name, key, value):
     if field in ["from_date", "to_date"]:
         if allocation.salary_till and getdate(value) < allocation.salary_till:
             return frappe.throw(
-                "Cannot update for period before Payroll Date {}".format(
+                "Cannot update. Freezed till {}".format(
                     formatdate(allocation.salary_till)
                 )
             )

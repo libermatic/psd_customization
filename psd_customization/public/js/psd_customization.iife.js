@@ -8778,7 +8778,7 @@ var psd = (function () {
         // Set @@toStringTag to native iterators
         _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
 
-        if (typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
+        if (!_library && typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
       }
     } // fix Array#{values, @@iterator}.name in V8 / FF
 
@@ -8792,7 +8792,7 @@ var psd = (function () {
     } // Define iterator
 
 
-    if (BUGGY || VALUES_BUG || !proto[ITERATOR]) {
+    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
       _hide(proto, ITERATOR, $default);
     } // Plug for library
 

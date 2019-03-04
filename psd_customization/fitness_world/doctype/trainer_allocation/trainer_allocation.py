@@ -16,10 +16,8 @@ class TrainerAllocation(Document):
 
     def validate_subscription(self):
         subscription = frappe.get_doc("Gym Subscription", self.gym_subscription)
-        if not subscription:
+        if not subscription or subscription.docstatus != 1:
             frappe.throw("Invalid Subscription: {}".format(self.gym_subscription))
-        if subscription.docstatus != 1 or subscription.status != "Active":
-            frappe.throw("Trainer can only be allocated for active Subscriptions")
 
     def validate_dates(self):
         if getdate(self.to_date) < getdate(self.from_date):
