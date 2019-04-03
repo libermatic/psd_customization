@@ -8778,7 +8778,7 @@ var psd = (function () {
         // Set @@toStringTag to native iterators
         _setToStringTag(IteratorPrototype, TAG, true); // fix for some old engines
 
-        if (!_library && typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
+        if (typeof IteratorPrototype[ITERATOR] != 'function') _hide(IteratorPrototype, ITERATOR, returnThis);
       }
     } // fix Array#{values, @@iterator}.name in V8 / FF
 
@@ -8792,7 +8792,7 @@ var psd = (function () {
     } // Define iterator
 
 
-    if ((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
+    if (BUGGY || VALUES_BUG || !proto[ITERATOR]) {
       _hide(proto, ITERATOR, $default);
     } // Plug for library
 
@@ -10890,7 +10890,7 @@ var psd = (function () {
   //
   //
   var script$5 = {
-    props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date'],
+    props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date', 'status'],
     methods: {
       get_color: function get_color() {
         var is_lifetime = this.is_lifetime,
@@ -10961,11 +10961,11 @@ var psd = (function () {
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-01473f17_0", { source: "\n.psd-current-sub[data-v-01473f17]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-01473f17]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-01473f17]:first-of-type{flex:auto\n}\n.badge[data-v-01473f17]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-01473f17]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-01473f17]{background-color:#ffa00a\n}", map: undefined, media: undefined });
+      inject("data-v-3bcf558e_0", { source: "\n.psd-current-sub[data-v-3bcf558e]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-3bcf558e]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-3bcf558e]:first-of-type{flex:auto\n}\n.badge[data-v-3bcf558e]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-3bcf558e]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-3bcf558e]{background-color:#ffa00a\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$5 = "data-v-01473f17";
+    const __vue_scope_id__$5 = "data-v-3bcf558e";
     /* module identifier */
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
