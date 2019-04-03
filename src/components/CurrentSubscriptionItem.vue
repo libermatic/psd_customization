@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date'],
+  props: ['name', 'item_name', 'is_lifetime', 'from_date', 'to_date', 'status'],
   methods: {
     get_color() {
       const { is_lifetime, to_date, status } = this;
