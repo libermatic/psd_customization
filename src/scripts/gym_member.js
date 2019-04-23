@@ -117,7 +117,6 @@ export const gym_member = {
     set_queries(frm);
   },
   refresh: function(frm) {
-    frm.toggle_display('member_id', frm.doc.__islocal);
     frm.toggle_enable('enrollment_date', frm.doc.__islocal);
     if (frm.doc.__islocal) {
       frm.set_value('enrollment_date', frappe.datetime.get_today());
