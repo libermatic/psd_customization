@@ -62,6 +62,7 @@ fixtures = [
                     "Sales Invoice Item-gym_from_date",
                     "Sales Invoice Item-gym_to_date",
                     "Purchase Receipt Item-parse_serial",
+                    "Purchase Invoice Item-barcode",
                     "Purchase Invoice Item-parse_serial",
                     "Salary Structure-training_earning_detail",
                     "Salary Structure-salary_slip_based_on_training",
