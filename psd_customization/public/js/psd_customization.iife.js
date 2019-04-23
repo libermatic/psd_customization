@@ -11474,7 +11474,6 @@ var psd = (function () {
       set_queries(frm);
     },
     refresh: function refresh(frm) {
-      frm.toggle_display('member_id', frm.doc.__islocal);
       frm.toggle_enable('enrollment_date', frm.doc.__islocal);
 
       if (frm.doc.__islocal) {
@@ -12342,6 +12341,13 @@ var psd = (function () {
     }()
   };
 
+  var purchase_invoice = {
+    barcode: function barcode(frm, cdt, cdn) {
+      var transaction_controller = new erpnext.TransactionController();
+      transaction_controller.barcode(frm, cdt, cdn);
+    }
+  };
+
   // Copyright (c) 2019, Libermatic and contributors
   // For license information, please see license.txt
   function toggle_training_fields(frm) {
@@ -12668,6 +12674,7 @@ var psd = (function () {
   };
 
   var scripts = {
+    purchase_invoice: purchase_invoice,
     sales_invoice: sales_invoice,
     sales_invoice_item: sales_invoice_item,
     salary_slip: salary_slip,
