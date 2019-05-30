@@ -119,8 +119,7 @@ def on_cancel(doc, method):
             if item.is_gym_subscription and item.gym_subscription:
                 sub = frappe.get_doc("Gym Subscription", item.gym_subscription)
                 if sub and sub.docstatus == 1:
-                    sub.reference_invoice = None
-                    sub.save(ignore_permissions=True)
+                    sub.cancel()
                     subs.append(item.gym_subscription)
                 frappe.db.set_value(
                     "Sales Invoice Item", item.name, "gym_subscription", None

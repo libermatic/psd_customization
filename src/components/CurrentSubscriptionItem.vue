@@ -31,14 +31,15 @@ export default {
       if (!to_date) {
         return 'darkgrey';
       }
+      const day_after = moment(to_date).add(1, 'd');
       if (
         moment()
           .add(7, 'days')
-          .isBefore(to_date)
+          .isBefore(day_after)
       ) {
         return 'green';
       }
-      if (moment().isSameOrBefore(to_date)) {
+      if (moment().isSameOrBefore(day_after)) {
         return 'orange';
       }
       return 'red';
@@ -65,9 +66,10 @@ export default {
       if (is_lifetime && !to_date) {
         return null;
       }
-      return `${moment().isAfter(to_date) ? 'Expired' : 'Expires'} ${moment(
-        to_date
-      ).fromNow()}`;
+      const day_after = moment(to_date).add(1, 'd');
+      return `${
+        moment().isAfter(day_after) ? 'Expired' : 'Expires'
+      } ${day_after.fromNow()}`;
     },
   },
 };

@@ -137,6 +137,7 @@ export const gym_member = {
       !frm.doc.__islocal
     );
     frm.toggle_enable('customer', frm.doc.__islocal);
+    frm.toggle_display('member_id', frm.doc.__islocal);
     if (!frm.doc.__islocal) {
       render_address_and_contact(frm);
       render_subscription_details(frm);
