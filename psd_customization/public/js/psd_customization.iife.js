@@ -10909,11 +10909,13 @@ var psd = (function () {
           return 'darkgrey';
         }
 
-        if (moment().add(7, 'days').isBefore(to_date)) {
+        var day_after = moment(to_date).add(1, 'd');
+
+        if (moment().add(7, 'days').isBefore(day_after)) {
           return 'green';
         }
 
-        if (moment().isSameOrBefore(to_date)) {
+        if (moment().isSameOrBefore(day_after)) {
           return 'orange';
         }
 
@@ -10946,7 +10948,8 @@ var psd = (function () {
           return null;
         }
 
-        return "".concat(moment().isAfter(to_date) ? 'Expired' : 'Expires', " ").concat(moment(to_date).fromNow());
+        var day_after = moment(to_date).add(1, 'd');
+        return "".concat(moment().isAfter(day_after) ? 'Expired' : 'Expires', " ").concat(day_after.fromNow());
       }
     }
   };
@@ -10961,11 +10964,11 @@ var psd = (function () {
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-3bcf558e_0", { source: "\n.psd-current-sub[data-v-3bcf558e]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-3bcf558e]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-3bcf558e]:first-of-type{flex:auto\n}\n.badge[data-v-3bcf558e]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-3bcf558e]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-3bcf558e]{background-color:#ffa00a\n}", map: undefined, media: undefined });
+      inject("data-v-0d8e2928_0", { source: "\n.psd-current-sub[data-v-0d8e2928]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-0d8e2928]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-0d8e2928]:first-of-type{flex:auto\n}\n.badge[data-v-0d8e2928]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-0d8e2928]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-0d8e2928]{background-color:#ffa00a\n}", map: undefined, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$5 = "data-v-3bcf558e";
+    const __vue_scope_id__$5 = "data-v-0d8e2928";
     /* module identifier */
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
@@ -11487,6 +11490,7 @@ var psd = (function () {
       };
       frm.toggle_display(['contact_section', 'address_html', 'contact_html', 'notification_contact', 'emergency_contact'], !frm.doc.__islocal);
       frm.toggle_enable('customer', frm.doc.__islocal);
+      frm.toggle_display('member_id', frm.doc.__islocal);
 
       if (!frm.doc.__islocal) {
         render_address_and_contact(frm);
