@@ -46,10 +46,7 @@ def merge_intervals(intervals):
     if not reduced[0].get("from_date") or not reduced[0].get("to_date"):
         raise KeyError()
     for interval in intervals[1:]:
-        from_date, to_date = (
-            getdate(interval["from_date"]),
-            getdate(interval["to_date"]),
-        )
+        from_date, to_date = interval["from_date"], interval["to_date"]
         if add_days(reduced[-1]["to_date"], 1) == from_date:
             reduced[-1]["to_date"] = to_date
         else:

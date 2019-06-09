@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, getdate
 from functools import partial
 from toolz import compose
 
@@ -22,8 +22,8 @@ def validate(doc, method):
                 {
                     "item_code": x.item_code,
                     "item_name": x.item_name,
-                    "from_date": x.gym_from_date,
-                    "to_date": x.gym_to_date,
+                    "from_date": getdate(x.gym_from_date),
+                    "to_date": getdate(x.gym_to_date),
                     "is_lifetime": x.gym_is_lifetime,
                 }
             ),
