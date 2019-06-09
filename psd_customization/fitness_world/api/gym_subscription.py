@@ -193,7 +193,7 @@ def _existing_subscription_by_item(
     )
 
 
-def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
+def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0, status=[]):
     filters = ["(to_date >= '{}' OR is_lifetime = 1)".format(from_date)]
     if not lifetime and to_date:
         filters.append("from_date <= '{}'".format(to_date))
@@ -208,7 +208,7 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
             WHERE
                 member = '{member}' AND
                 subscription_item = '{item}' AND
-                status = 'Active' AND
+                status IN %(status)s AND
                 docstatus = 1 AND
                 {filters}
             ORDER BY from_date
@@ -219,6 +219,7 @@ def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0):
             filters=" AND ".join(filters),
             limit="LIMIT 1" if limit else "",
         ),
+        values={"status": status or ["Active"]},
         as_dict=1,
     )
 
@@ -238,7 +239,14 @@ def _has_valid_requirements(
     subscriptions = list(
         concat(
             [
-                _get_subscriptions(member, item_code, from_date, to_date, lifetime),
+                _get_subscriptions(
+                    member,
+                    item_code,
+                    from_date,
+                    to_date,
+                    lifetime,
+                    status=["Active", "Expired"],
+                ),
                 current or [],
             ]
         )
