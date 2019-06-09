@@ -338,7 +338,7 @@
   "report_hide": 0, 
   "reqd": 0, 
   "search_index": 0, 
-  "unique": 0, 
+  "unique": 1, 
   "width": null
  }, 
  {

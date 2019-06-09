@@ -5,9 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import (
-    date_diff, flt, getdate, cint, add_months, add_days, datetime
-)
+from frappe.utils import date_diff, flt, getdate, cint, add_months, add_days, datetime
 from functools import partial
 from toolz import compose
 
@@ -15,17 +13,14 @@ from toolz import compose
 def _get_next_start(d):
     x = 1
     while True:
-        yield add_months(d,  months=x), x
+        yield add_months(d, months=x), x
         x += 1
 
 
 def _get_next_end(d):
     x = 1
     while True:
-        yield compose(
-            partial(add_days, days=-1),
-            partial(add_months, months=x),
-        )(d), x
+        yield compose(partial(add_days, days=-1), partial(add_months, months=x))(d), x
         x += 1
 
 
@@ -48,12 +43,15 @@ def month_diff(d1, d2, as_dec=0):
 
 def merge_intervals(intervals):
     reduced = [intervals[0]]
-    if not reduced[0].get('from_date') or not reduced[0].get('to_date'):
+    if not reduced[0].get("from_date") or not reduced[0].get("to_date"):
         raise KeyError()
     for interval in intervals[1:]:
-        from_date, to_date = interval['from_date'], interval['to_date']
-        if add_days(reduced[-1]['to_date'], 1) == from_date:
-            reduced[-1]['to_date'] = to_date
+        from_date, to_date = (
+            getdate(interval["from_date"]),
+            getdate(interval["to_date"]),
+        )
+        if add_days(reduced[-1]["to_date"], 1) == from_date:
+            reduced[-1]["to_date"] = to_date
         else:
             reduced.append(interval)
 
@@ -68,19 +66,19 @@ def pretty_date(iso_datetime, ref_date=None):
     if days < 0:
         return frappe.utils.pretty_date(iso_datetime)
     if days < 1:
-        return _('today')
+        return _("today")
     if days == 1:
-        return _('tomorrow')
+        return _("tomorrow")
     if days < 7:
-        return _('in {} days'.format(cint(days)))
+        return _("in {} days".format(cint(days)))
     if days < 12:
-        return _('in a week')
+        return _("in a week")
     if days < 31:
-        return _('in {} weeks'.format(cint(days / 7.0)))
+        return _("in {} weeks".format(cint(days / 7.0)))
     if days < 46:
-        return _('in a month')
+        return _("in a month")
     if days < 365:
-        return _('in {} months'.format(cint(days / 30.0)))
+        return _("in {} months".format(cint(days / 30.0)))
     if days < 550:
-        return _('in a year')
-    return _('in {} years'.format(cint(days / 365.0)))
+        return _("in a year")
+    return _("in {} years".format(cint(days / 365.0)))
