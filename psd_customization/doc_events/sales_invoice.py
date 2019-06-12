@@ -22,9 +22,9 @@ def validate(doc, method):
                 {
                     "item_code": x.item_code,
                     "item_name": x.item_name,
-                    "from_date": getdate(x.gym_from_date),
-                    "to_date": getdate(x.gym_to_date),
-                    "is_lifetime": x.gym_is_lifetime,
+                    "from_date": getdate(x.gym_from_date) if x.gym_from_date else None,
+                    "to_date": getdate(x.gym_to_date) if x.gym_to_date else None,
+                    "is_lifetime": cint(x.gym_is_lifetime),
                 }
             ),
         ),

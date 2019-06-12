@@ -251,18 +251,20 @@ def _has_valid_requirements(
             ]
         )
     )
+    for sub in subscriptions:
+        if sub.is_lifetime:
+            return True
     sort_and_merge = compose(
-        merge_intervals, partial(sorted, key=lambda x: getdate(x.get("from_date")))
+        merge_intervals, partial(sorted, key=lambda x: x.from_date)
     )
     try:
         for sub in sort_and_merge(subscriptions):
-            if getdate(sub.get("from_date")) <= getdate(from_date) and getdate(
-                sub.get("to_date")
-            ) >= getdate(to_date):
-                return True
-    except KeyError:
-        for sub in subscriptions:
-            if sub.get("is_lifetime"):
+            if (
+                sub.from_date
+                and sub.from_date <= from_date
+                and sub.to_date
+                and sub.to_date >= to_date
+            ):
                 return True
     except IndexError:
         pass
