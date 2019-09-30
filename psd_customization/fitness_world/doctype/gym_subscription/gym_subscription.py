@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import cint, getdate, date_diff, add_days, flt
 from frappe.model.document import Document
+from functools import partial
+from toolz import compose, pluck
 
 from psd_customization.fitness_world.api.gym_subscription import validate_dependencies
 from psd_customization.fitness_world.api.trainer_allocation import remove
@@ -105,7 +107,8 @@ class GymSubscription(Document):
                 )
 
     def on_cancel(self):
-        for ta in frappe.get_all(
+        get_names = compose(partial(pluck, "name"), frappe.get_all)
+        for ta in get_names(
             "Trainer Allocation", filters={"gym_subscription": self.name}
         ):
             remove(ta)
