@@ -8,12 +8,15 @@ from frappe.utils import cint, getdate, date_diff, add_days, flt
 from frappe.model.document import Document
 
 from psd_customization.fitness_world.api.gym_subscription import validate_dependencies
+from psd_customization.fitness_world.api.trainer_allocation import remove
 from psd_customization.utils.datetime import month_diff
 
 
 class GymSubscription(Document):
     def onload(self):
-        if self.reference_invoice:
+        if self.reference_invoice and frappe.db.exists(
+            "Sales Invoice", self.reference_invoice
+        ):
             rounded_total, status = frappe.db.get_value(
                 "Sales Invoice", self.reference_invoice, ["rounded_total", "status"]
             )
@@ -100,3 +103,9 @@ class GymSubscription(Document):
                 frappe.db.set_value(
                     "Sales Invoice Item", row_item_name, "gym_subscription", None
                 )
+
+    def on_cancel(self):
+        for ta in frappe.get_all(
+            "Trainer Allocation", filters={"gym_subscription": self.name}
+        ):
+            remove(ta)
