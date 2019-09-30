@@ -2,16 +2,16 @@ var psd = (function () {
   'use strict';
 
   /*!
-   * Vue.js v2.5.17
-   * (c) 2014-2018 Evan You
+   * Vue.js v2.5.22
+   * (c) 2014-2019 Evan You
    * Released under the MIT License.
    */
   /*  */
 
   var emptyObject = Object.freeze({});
 
-  // these helpers produces better vm code in JS engines due to their
-  // explicitness and function inlining
+  // These helpers produce better VM code in JS engines due to their
+  // explicitness and function inlining.
   function isUndef (v) {
     return v === undefined || v === null
   }
@@ -29,7 +29,7 @@ var psd = (function () {
   }
 
   /**
-   * Check if value is primitive
+   * Check if value is primitive.
    */
   function isPrimitive (value) {
     return (
@@ -51,7 +51,7 @@ var psd = (function () {
   }
 
   /**
-   * Get the raw type string of a value e.g. [object Object]
+   * Get the raw type string of a value, e.g., [object Object].
    */
   var _toString = Object.prototype.toString;
 
@@ -91,7 +91,7 @@ var psd = (function () {
   }
 
   /**
-   * Convert a input value to a number for persistence.
+   * Convert an input value to a number for persistence.
    * If the conversion fails, return original string.
    */
   function toNumber (val) {
@@ -123,12 +123,12 @@ var psd = (function () {
   var isBuiltInTag = makeMap('slot,component', true);
 
   /**
-   * Check if a attribute is a reserved attribute.
+   * Check if an attribute is a reserved attribute.
    */
   var isReservedAttribute = makeMap('key,ref,slot,slot-scope,is');
 
   /**
-   * Remove an item from an array
+   * Remove an item from an array.
    */
   function remove (arr, item) {
     if (arr.length) {
@@ -140,7 +140,7 @@ var psd = (function () {
   }
 
   /**
-   * Check whether the object has the property.
+   * Check whether an object has the property.
    */
   var hasOwnProperty = Object.prototype.hasOwnProperty;
   function hasOwn (obj, key) {
@@ -182,11 +182,11 @@ var psd = (function () {
   });
 
   /**
-   * Simple bind polyfill for environments that do not support it... e.g.
-   * PhantomJS 1.x. Technically we don't need this anymore since native bind is
-   * now more performant in most browsers, but removing it would be breaking for
-   * code that was able to run in PhantomJS 1.x, so this must be kept for
-   * backwards compatibility.
+   * Simple bind polyfill for environments that do not support it,
+   * e.g., PhantomJS 1.x. Technically, we don't need this anymore
+   * since native bind is now performant enough in most browsers.
+   * But removing it would mean breaking code that was able to run in
+   * PhantomJS 1.x, so this must be kept for backward compatibility.
    */
 
   /* istanbul ignore next */
@@ -248,10 +248,12 @@ var psd = (function () {
     return res
   }
 
+  /* eslint-disable no-unused-vars */
+
   /**
    * Perform no operation.
    * Stubbing args to make Flow happy without leaving useless transpiled code
-   * with ...rest (https://flow.org/blog/2017/05/07/Strict-Function-Call-Arity/)
+   * with ...rest (https://flow.org/blog/2017/05/07/Strict-Function-Call-Arity/).
    */
   function noop (a, b, c) {}
 
@@ -260,15 +262,12 @@ var psd = (function () {
    */
   var no = function (a, b, c) { return false; };
 
+  /* eslint-enable no-unused-vars */
+
   /**
-   * Return same value
+   * Return the same value.
    */
   var identity = function (_) { return _; };
-
-  /**
-   * Generate a static keys string from compiler modules.
-   */
-
 
   /**
    * Check if two values are loosely equal - that is,
@@ -286,6 +285,8 @@ var psd = (function () {
           return a.length === b.length && a.every(function (e, i) {
             return looseEqual(e, b[i])
           })
+        } else if (a instanceof Date && b instanceof Date) {
+          return a.getTime() === b.getTime()
         } else if (!isArrayA && !isArrayB) {
           var keysA = Object.keys(a);
           var keysB = Object.keys(b);
@@ -307,6 +308,11 @@ var psd = (function () {
     }
   }
 
+  /**
+   * Return the first index at which a loosely equal value can be
+   * found in the array (if value is a plain object, the array must
+   * contain an object of the same shape), or -1 if it is not present.
+   */
   function looseIndexOf (arr, val) {
     for (var i = 0; i < arr.length; i++) {
       if (looseEqual(arr[i], val)) { return i }
@@ -350,6 +356,8 @@ var psd = (function () {
   ];
 
   /*  */
+
+
 
   var config = ({
     /**
@@ -432,6 +440,12 @@ var psd = (function () {
      * Platform-dependent.
      */
     mustUseProp: no,
+
+    /**
+     * Perform updates asynchronously. Intended to be used by Vue Test Utils
+     * This will significantly reduce performance if set to false.
+     */
+    async: true,
 
     /**
      * Exposed for legacy reasons
@@ -522,7 +536,7 @@ var psd = (function () {
       if (!inBrowser && !inWeex && typeof global !== 'undefined') {
         // detect presence of vue-server-renderer and avoid
         // Webpack shimming the process
-        _isServer = global['process'].env.VUE_ENV === 'server';
+        _isServer = global['process'] && global['process'].env.VUE_ENV === 'server';
       } else {
         _isServer = false;
       }
@@ -549,7 +563,7 @@ var psd = (function () {
     _Set = Set;
   } else {
     // a non-standard Set polyfill that only works with primitive keys.
-    _Set = (function () {
+    _Set = /*@__PURE__*/(function () {
       function Set () {
         this.set = Object.create(null);
       }
@@ -572,7 +586,6 @@ var psd = (function () {
   var warn = noop;
 
   /*  */
-
 
   var uid = 0;
 
@@ -607,19 +620,20 @@ var psd = (function () {
     }
   };
 
-  // the current target watcher being evaluated.
-  // this is globally unique because there could be only one
-  // watcher being evaluated at any time.
+  // The current target watcher being evaluated.
+  // This is globally unique because only one watcher
+  // can be evaluated at a time.
   Dep.target = null;
   var targetStack = [];
 
-  function pushTarget (_target) {
-    if (Dep.target) { targetStack.push(Dep.target); }
-    Dep.target = _target;
+  function pushTarget (target) {
+    targetStack.push(target);
+    Dep.target = target;
   }
 
   function popTarget () {
-    Dep.target = targetStack.pop();
+    targetStack.pop();
+    Dep.target = targetStack[targetStack.length - 1];
   }
 
   /*  */
@@ -690,7 +704,10 @@ var psd = (function () {
     var cloned = new VNode(
       vnode.tag,
       vnode.data,
-      vnode.children,
+      // #7975
+      // clone children array to avoid mutating original in case of cloning
+      // a child.
+      vnode.children && vnode.children.slice(),
       vnode.text,
       vnode.elm,
       vnode.context,
@@ -704,6 +721,7 @@ var psd = (function () {
     cloned.fnContext = vnode.fnContext;
     cloned.fnOptions = vnode.fnOptions;
     cloned.fnScopeId = vnode.fnScopeId;
+    cloned.asyncMeta = vnode.asyncMeta;
     cloned.isCloned = true;
     return cloned
   }
@@ -781,10 +799,11 @@ var psd = (function () {
     this.vmCount = 0;
     def(value, '__ob__', this);
     if (Array.isArray(value)) {
-      var augment = hasProto
-        ? protoAugment
-        : copyAugment;
-      augment(value, arrayMethods, arrayKeys);
+      if (hasProto) {
+        protoAugment(value, arrayMethods);
+      } else {
+        copyAugment(value, arrayMethods, arrayKeys);
+      }
       this.observeArray(value);
     } else {
       this.walk(value);
@@ -792,14 +811,14 @@ var psd = (function () {
   };
 
   /**
-   * Walk through each property and convert them into
+   * Walk through all properties and convert them into
    * getter/setters. This method should only be called when
    * value type is Object.
    */
   Observer.prototype.walk = function walk (obj) {
     var keys = Object.keys(obj);
     for (var i = 0; i < keys.length; i++) {
-      defineReactive(obj, keys[i]);
+      defineReactive$$1(obj, keys[i]);
     }
   };
 
@@ -815,17 +834,17 @@ var psd = (function () {
   // helpers
 
   /**
-   * Augment an target Object or Array by intercepting
+   * Augment a target Object or Array by intercepting
    * the prototype chain using __proto__
    */
-  function protoAugment (target, src, keys) {
+  function protoAugment (target, src) {
     /* eslint-disable no-proto */
     target.__proto__ = src;
     /* eslint-enable no-proto */
   }
 
   /**
-   * Augment an target Object or Array by defining
+   * Augment a target Object or Array by defining
    * hidden properties.
    */
   /* istanbul ignore next */
@@ -866,7 +885,7 @@ var psd = (function () {
   /**
    * Define a reactive property on an Object.
    */
-  function defineReactive (
+  function defineReactive$$1 (
     obj,
     key,
     val,
@@ -882,10 +901,10 @@ var psd = (function () {
 
     // cater for pre-defined getter/setters
     var getter = property && property.get;
-    if (!getter && arguments.length === 2) {
+    var setter = property && property.set;
+    if ((!getter || setter) && arguments.length === 2) {
       val = obj[key];
     }
-    var setter = property && property.set;
 
     var childOb = !shallow && observe(val);
     Object.defineProperty(obj, key, {
@@ -910,6 +929,8 @@ var psd = (function () {
         if (newVal === value || (newVal !== newVal && value !== value)) {
           return
         }
+        // #7981: for accessor properties without setter
+        if (getter && !setter) { return }
         if (setter) {
           setter.call(obj, newVal);
         } else {
@@ -944,7 +965,7 @@ var psd = (function () {
       target[key] = val;
       return val
     }
-    defineReactive(ob.value, key, val);
+    defineReactive$$1(ob.value, key, val);
     ob.dep.notify();
     return val
   }
@@ -1007,7 +1028,11 @@ var psd = (function () {
       fromVal = from[key];
       if (!hasOwn(to, key)) {
         set(to, key, fromVal);
-      } else if (isPlainObject(toVal) && isPlainObject(fromVal)) {
+      } else if (
+        toVal !== fromVal &&
+        isPlainObject(toVal) &&
+        isPlainObject(fromVal)
+      ) {
         mergeData(toVal, fromVal);
       }
     }
@@ -1082,13 +1107,26 @@ var psd = (function () {
     parentVal,
     childVal
   ) {
-    return childVal
+    var res = childVal
       ? parentVal
         ? parentVal.concat(childVal)
         : Array.isArray(childVal)
           ? childVal
           : [childVal]
-      : parentVal
+      : parentVal;
+    return res
+      ? dedupeHooks(res)
+      : res
+  }
+
+  function dedupeHooks (hooks) {
+    var res = [];
+    for (var i = 0; i < hooks.length; i++) {
+      if (res.indexOf(hooks[i]) === -1) {
+        res.push(hooks[i]);
+      }
+    }
+    return res
   }
 
   LIFECYCLE_HOOKS.forEach(function (hook) {
@@ -1278,15 +1316,22 @@ var psd = (function () {
     normalizeProps(child, vm);
     normalizeInject(child, vm);
     normalizeDirectives(child);
-    var extendsFrom = child.extends;
-    if (extendsFrom) {
-      parent = mergeOptions(parent, extendsFrom, vm);
-    }
-    if (child.mixins) {
-      for (var i = 0, l = child.mixins.length; i < l; i++) {
-        parent = mergeOptions(parent, child.mixins[i], vm);
+
+    // Apply extends and mixins on the child options,
+    // but only if it is a raw options object that isn't
+    // the result of another mergeOptions call.
+    // Only merged options has the _base property.
+    if (!child._base) {
+      if (child.extends) {
+        parent = mergeOptions(parent, child.extends, vm);
+      }
+      if (child.mixins) {
+        for (var i = 0, l = child.mixins.length; i < l; i++) {
+          parent = mergeOptions(parent, child.mixins[i], vm);
+        }
       }
     }
+
     var options = {};
     var key;
     for (key in parent) {
@@ -1332,6 +1377,8 @@ var psd = (function () {
   }
 
   /*  */
+
+
 
   function validateProp (
     key,
@@ -1462,7 +1509,6 @@ var psd = (function () {
   }
 
   /*  */
-  /* globals MessageChannel */
 
   var callbacks = [];
   var pending = false;
@@ -1540,9 +1586,11 @@ var psd = (function () {
   function withMacroTask (fn) {
     return fn._withTask || (fn._withTask = function () {
       useMacroTask = true;
-      var res = fn.apply(null, arguments);
-      useMacroTask = false;
-      return res
+      try {
+        return fn.apply(null, arguments)
+      } finally {
+        useMacroTask = false;    
+      }
     })
   }
 
@@ -1653,19 +1701,22 @@ var psd = (function () {
     oldOn,
     add,
     remove$$1,
+    createOnceHandler,
     vm
   ) {
-    var name, def, cur, old, event;
+    var name, def$$1, cur, old, event;
     for (name in on) {
-      def = cur = on[name];
+      def$$1 = cur = on[name];
       old = oldOn[name];
       event = normalizeEvent(name);
-      /* istanbul ignore if */
       if (isUndef(cur)) ; else if (isUndef(old)) {
         if (isUndef(cur.fns)) {
           cur = on[name] = createFnInvoker(cur);
         }
-        add(event.name, cur, event.once, event.capture, event.passive, event.params);
+        if (isTrue(event.once)) {
+          cur = on[name] = createOnceHandler(event.name, cur, event.capture);
+        }
+        add(event.name, cur, event.capture, event.passive, event.params);
       } else if (cur !== old) {
         old.fns = cur;
         on[name] = old;
@@ -1904,9 +1955,13 @@ var psd = (function () {
       var contexts = factory.contexts = [context];
       var sync = true;
 
-      var forceRender = function () {
+      var forceRender = function (renderCompleted) {
         for (var i = 0, l = contexts.length; i < l; i++) {
           contexts[i].$forceUpdate();
+        }
+
+        if (renderCompleted) {
+          contexts.length = 0;
         }
       };
 
@@ -1916,14 +1971,16 @@ var psd = (function () {
         // invoke callbacks only if this is not a synchronous resolve
         // (async resolves are shimmed as synchronous during SSR)
         if (!sync) {
-          forceRender();
+          forceRender(true);
+        } else {
+          contexts.length = 0;
         }
       });
 
       var reject = once(function (reason) {
         if (isDef(factory.errorComp)) {
           factory.error = true;
-          forceRender();
+          forceRender(true);
         }
       });
 
@@ -1950,7 +2007,7 @@ var psd = (function () {
               setTimeout(function () {
                 if (isUndef(factory.resolved) && isUndef(factory.error)) {
                   factory.loading = true;
-                  forceRender();
+                  forceRender(false);
                 }
               }, res.delay || 200);
             }
@@ -2011,16 +2068,22 @@ var psd = (function () {
 
   var target;
 
-  function add (event, fn, once) {
-    if (once) {
-      target.$once(event, fn);
-    } else {
-      target.$on(event, fn);
-    }
+  function add (event, fn) {
+    target.$on(event, fn);
   }
 
   function remove$1 (event, fn) {
     target.$off(event, fn);
+  }
+
+  function createOnceHandler (event, fn) {
+    var _target = target;
+    return function onceHandler () {
+      var res = fn.apply(null, arguments);
+      if (res !== null) {
+        _target.$off(event, onceHandler);
+      }
+    }
   }
 
   function updateComponentListeners (
@@ -2029,19 +2092,17 @@ var psd = (function () {
     oldListeners
   ) {
     target = vm;
-    updateListeners(listeners, oldListeners || {}, add, remove$1, vm);
+    updateListeners(listeners, oldListeners || {}, add, remove$1, createOnceHandler, vm);
     target = undefined;
   }
 
   function eventsMixin (Vue) {
     var hookRE = /^hook:/;
     Vue.prototype.$on = function (event, fn) {
-      var this$1 = this;
-
       var vm = this;
       if (Array.isArray(event)) {
         for (var i = 0, l = event.length; i < l; i++) {
-          this$1.$on(event[i], fn);
+          vm.$on(event[i], fn);
         }
       } else {
         (vm._events[event] || (vm._events[event] = [])).push(fn);
@@ -2066,8 +2127,6 @@ var psd = (function () {
     };
 
     Vue.prototype.$off = function (event, fn) {
-      var this$1 = this;
-
       var vm = this;
       // all
       if (!arguments.length) {
@@ -2076,8 +2135,8 @@ var psd = (function () {
       }
       // array of events
       if (Array.isArray(event)) {
-        for (var i = 0, l = event.length; i < l; i++) {
-          this$1.$off(event[i], fn);
+        for (var i$1 = 0, l = event.length; i$1 < l; i$1++) {
+          vm.$off(event[i$1], fn);
         }
         return vm
       }
@@ -2090,16 +2149,14 @@ var psd = (function () {
         vm._events[event] = null;
         return vm
       }
-      if (fn) {
-        // specific handler
-        var cb;
-        var i$1 = cbs.length;
-        while (i$1--) {
-          cb = cbs[i$1];
-          if (cb === fn || cb.fn === fn) {
-            cbs.splice(i$1, 1);
-            break
-          }
+      // specific handler
+      var cb;
+      var i = cbs.length;
+      while (i--) {
+        cb = cbs[i];
+        if (cb === fn || cb.fn === fn) {
+          cbs.splice(i, 1);
+          break
         }
       }
       return vm
@@ -2193,6 +2250,14 @@ var psd = (function () {
 
   var activeInstance = null;
 
+  function setActiveInstance(vm) {
+    var prevActiveInstance = activeInstance;
+    activeInstance = vm;
+    return function () {
+      activeInstance = prevActiveInstance;
+    }
+  }
+
   function initLifecycle (vm) {
     var options = vm.$options;
 
@@ -2222,31 +2287,20 @@ var psd = (function () {
   function lifecycleMixin (Vue) {
     Vue.prototype._update = function (vnode, hydrating) {
       var vm = this;
-      if (vm._isMounted) {
-        callHook(vm, 'beforeUpdate');
-      }
       var prevEl = vm.$el;
       var prevVnode = vm._vnode;
-      var prevActiveInstance = activeInstance;
-      activeInstance = vm;
+      var restoreActiveInstance = setActiveInstance(vm);
       vm._vnode = vnode;
       // Vue.prototype.__patch__ is injected in entry points
       // based on the rendering backend used.
       if (!prevVnode) {
         // initial render
-        vm.$el = vm.__patch__(
-          vm.$el, vnode, hydrating, false /* removeOnly */,
-          vm.$options._parentElm,
-          vm.$options._refElm
-        );
-        // no need for the ref nodes after initial patch
-        // this prevents keeping a detached DOM tree in memory (#5851)
-        vm.$options._parentElm = vm.$options._refElm = null;
+        vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
       } else {
         // updates
         vm.$el = vm.__patch__(prevVnode, vnode);
       }
-      activeInstance = prevActiveInstance;
+      restoreActiveInstance();
       // update __vue__ reference
       if (prevEl) {
         prevEl.__vue__ = null;
@@ -2335,7 +2389,13 @@ var psd = (function () {
     // we set this to vm._watcher inside the watcher's constructor
     // since the watcher's initial patch may call $forceUpdate (e.g. inside child
     // component's mounted hook), which relies on vm._watcher being already defined
-    new Watcher(vm, updateComponent, noop, null, true /* isRenderWatcher */);
+    new Watcher(vm, updateComponent, noop, {
+      before: function before () {
+        if (vm._isMounted && !vm._isDestroyed) {
+          callHook(vm, 'beforeUpdate');
+        }
+      }
+    }, true /* isRenderWatcher */);
     hydrating = false;
 
     // manually mounted instance, call mounted on self
@@ -2503,6 +2563,9 @@ var psd = (function () {
     // as we run existing watchers
     for (index = 0; index < queue.length; index++) {
       watcher = queue[index];
+      if (watcher.before) {
+        watcher.before();
+      }
       id = watcher.id;
       has[id] = null;
       watcher.run();
@@ -2530,7 +2593,7 @@ var psd = (function () {
     while (i--) {
       var watcher = queue[i];
       var vm = watcher.vm;
-      if (vm._watcher === watcher && vm._isMounted) {
+      if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
         callHook(vm, 'updated');
       }
     }
@@ -2584,6 +2647,8 @@ var psd = (function () {
 
   /*  */
 
+
+
   var uid$1 = 0;
 
   /**
@@ -2609,6 +2674,7 @@ var psd = (function () {
       this.user = !!options.user;
       this.lazy = !!options.lazy;
       this.sync = !!options.sync;
+      this.before = options.before;
     } else {
       this.deep = this.user = this.lazy = this.sync = false;
     }
@@ -2627,7 +2693,7 @@ var psd = (function () {
     } else {
       this.getter = parsePath(expOrFn);
       if (!this.getter) {
-        this.getter = function () {};
+        this.getter = noop;
       }
     }
     this.value = this.lazy
@@ -2680,13 +2746,11 @@ var psd = (function () {
    * Clean up for dependency collection.
    */
   Watcher.prototype.cleanupDeps = function cleanupDeps () {
-      var this$1 = this;
-
     var i = this.deps.length;
     while (i--) {
-      var dep = this$1.deps[i];
-      if (!this$1.newDepIds.has(dep.id)) {
-        dep.removeSub(this$1);
+      var dep = this.deps[i];
+      if (!this.newDepIds.has(dep.id)) {
+        dep.removeSub(this);
       }
     }
     var tmp = this.depIds;
@@ -2758,11 +2822,9 @@ var psd = (function () {
    * Depend on all deps collected by this watcher.
    */
   Watcher.prototype.depend = function depend () {
-      var this$1 = this;
-
     var i = this.deps.length;
     while (i--) {
-      this$1.deps[i].depend();
+      this.deps[i].depend();
     }
   };
 
@@ -2770,8 +2832,6 @@ var psd = (function () {
    * Remove self from all dependencies' subscriber list.
    */
   Watcher.prototype.teardown = function teardown () {
-      var this$1 = this;
-
     if (this.active) {
       // remove self from vm's watcher list
       // this is a somewhat expensive operation so we skip it
@@ -2781,7 +2841,7 @@ var psd = (function () {
       }
       var i = this.deps.length;
       while (i--) {
-        this$1.deps[i].removeSub(this$1);
+        this.deps[i].removeSub(this);
       }
       this.active = false;
     }
@@ -2838,7 +2898,7 @@ var psd = (function () {
       var value = validateProp(key, propsOptions, propsData, vm);
       /* istanbul ignore else */
       {
-        defineReactive(props, key, value);
+        defineReactive$$1(props, key, value);
       }
       // static props are already proxied on the component's prototype
       // during Vue.extend(). We only need to proxy props defined at
@@ -2928,17 +2988,15 @@ var psd = (function () {
     if (typeof userDef === 'function') {
       sharedPropertyDefinition.get = shouldCache
         ? createComputedGetter(key)
-        : userDef;
+        : createGetterInvoker(userDef);
       sharedPropertyDefinition.set = noop;
     } else {
       sharedPropertyDefinition.get = userDef.get
         ? shouldCache && userDef.cache !== false
           ? createComputedGetter(key)
-          : userDef.get
+          : createGetterInvoker(userDef.get)
         : noop;
-      sharedPropertyDefinition.set = userDef.set
-        ? userDef.set
-        : noop;
+      sharedPropertyDefinition.set = userDef.set || noop;
     }
     Object.defineProperty(target, key, sharedPropertyDefinition);
   }
@@ -2958,10 +3016,16 @@ var psd = (function () {
     }
   }
 
+  function createGetterInvoker(fn) {
+    return function computedGetter () {
+      return fn.call(this, this)
+    }
+  }
+
   function initMethods (vm, methods) {
     var props = vm.$options.props;
     for (var key in methods) {
-      vm[key] = methods[key] == null ? noop : bind(methods[key], vm);
+      vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm);
     }
   }
 
@@ -3021,7 +3085,11 @@ var psd = (function () {
       options.user = true;
       var watcher = new Watcher(vm, expOrFn, cb, options);
       if (options.immediate) {
-        cb.call(vm, watcher.value);
+        try {
+          cb.call(vm, watcher.value);
+        } catch (error) {
+          handleError(error, vm, ("callback for immediate watcher \"" + (watcher.expression) + "\""));
+        }
       }
       return function unwatchFn () {
         watcher.teardown();
@@ -3047,7 +3115,7 @@ var psd = (function () {
       Object.keys(result).forEach(function (key) {
         /* istanbul ignore else */
         {
-          defineReactive(vm, key, result[key]);
+          defineReactive$$1(vm, key, result[key]);
         }
       });
       toggleObserving(true);
@@ -3117,9 +3185,10 @@ var psd = (function () {
         ret[i] = render(val[key], key, i);
       }
     }
-    if (isDef(ret)) {
-      (ret)._isVList = true;
+    if (!isDef(ret)) {
+      ret = [];
     }
+    (ret)._isVList = true;
     return ret
   }
 
@@ -3143,12 +3212,7 @@ var psd = (function () {
       }
       nodes = scopedSlotFn(props) || fallback;
     } else {
-      var slotNodes = this.$slots[name];
-      // warn duplicate slot usage
-      if (slotNodes) {
-        slotNodes._rendered = true;
-      }
-      nodes = slotNodes || fallback;
+      nodes = this.$slots[name] || fallback;
     }
 
     var target = props && props.slot;
@@ -3231,12 +3295,13 @@ var psd = (function () {
               ? data.domProps || (data.domProps = {})
               : data.attrs || (data.attrs = {});
           }
-          if (!(key in hash)) {
+          var camelizedKey = camelize(key);
+          if (!(key in hash) && !(camelizedKey in hash)) {
             hash[key] = value[key];
 
             if (isSync) {
               var on = data.on || (data.on = {});
-              on[("update:" + key)] = function ($event) {
+              on[("update:" + camelizedKey)] = function ($event) {
                 value[key] = $event;
               };
             }
@@ -3437,18 +3502,18 @@ var psd = (function () {
     var vnode = options.render.call(null, renderContext._c, renderContext);
 
     if (vnode instanceof VNode) {
-      return cloneAndMarkFunctionalResult(vnode, data, renderContext.parent, options)
+      return cloneAndMarkFunctionalResult(vnode, data, renderContext.parent, options, renderContext)
     } else if (Array.isArray(vnode)) {
       var vnodes = normalizeChildren(vnode) || [];
       var res = new Array(vnodes.length);
       for (var i = 0; i < vnodes.length; i++) {
-        res[i] = cloneAndMarkFunctionalResult(vnodes[i], data, renderContext.parent, options);
+        res[i] = cloneAndMarkFunctionalResult(vnodes[i], data, renderContext.parent, options, renderContext);
       }
       return res
     }
   }
 
-  function cloneAndMarkFunctionalResult (vnode, data, contextVm, options) {
+  function cloneAndMarkFunctionalResult (vnode, data, contextVm, options, renderContext) {
     // #7817 clone node before setting fnContext, otherwise if the node is reused
     // (e.g. it was from a cached normal slot) the fnContext causes named slots
     // that should not be matched to match.
@@ -3469,20 +3534,7 @@ var psd = (function () {
 
   /*  */
 
-
-
-
-  // Register the component hook to weex native render engine.
-  // The hook will be triggered by native, not javascript.
-
-
-  // Updates the state of the component to weex native render engine.
-
   /*  */
-
-  // https://github.com/Hanks10100/weex-native-directive/tree/master/component
-
-  // listening on native callback
 
   /*  */
 
@@ -3490,12 +3542,7 @@ var psd = (function () {
 
   // inline hooks to be invoked on component VNodes during patch
   var componentVNodeHooks = {
-    init: function init (
-      vnode,
-      hydrating,
-      parentElm,
-      refElm
-    ) {
+    init: function init (vnode, hydrating) {
       if (
         vnode.componentInstance &&
         !vnode.componentInstance._isDestroyed &&
@@ -3507,9 +3554,7 @@ var psd = (function () {
       } else {
         var child = vnode.componentInstance = createComponentInstanceForVnode(
           vnode,
-          activeInstance,
-          parentElm,
-          refElm
+          activeInstance
         );
         child.$mount(hydrating ? vnode.elm : undefined, hydrating);
       }
@@ -3655,25 +3700,17 @@ var psd = (function () {
       asyncFactory
     );
 
-    // Weex specific: invoke recycle-list optimized @render function for
-    // extracting cell-slot template.
-    // https://github.com/Hanks10100/weex-native-directive/tree/master/component
-    /* istanbul ignore if */
     return vnode
   }
 
   function createComponentInstanceForVnode (
     vnode, // we know it's MountedComponentVNode but flow doesn't
-    parent, // activeInstance in lifecycle state
-    parentElm,
-    refElm
+    parent // activeInstance in lifecycle state
   ) {
     var options = {
       _isComponent: true,
-      parent: parent,
       _parentVnode: vnode,
-      _parentElm: parentElm || null,
-      _refElm: refElm || null
+      parent: parent
     };
     // check inline-template render functions
     var inlineTemplate = vnode.data.inlineTemplate;
@@ -3688,20 +3725,43 @@ var psd = (function () {
     var hooks = data.hook || (data.hook = {});
     for (var i = 0; i < hooksToMerge.length; i++) {
       var key = hooksToMerge[i];
-      hooks[key] = componentVNodeHooks[key];
+      var existing = hooks[key];
+      var toMerge = componentVNodeHooks[key];
+      if (existing !== toMerge && !(existing && existing._merged)) {
+        hooks[key] = existing ? mergeHook$1(toMerge, existing) : toMerge;
+      }
     }
+  }
+
+  function mergeHook$1 (f1, f2) {
+    var merged = function (a, b) {
+      // flow complains about extra args which is why we use any
+      f1(a, b);
+      f2(a, b);
+    };
+    merged._merged = true;
+    return merged
   }
 
   // transform component v-model info (value and callback) into
   // prop and event handler respectively.
   function transformModel (options, data) {
     var prop = (options.model && options.model.prop) || 'value';
-    var event = (options.model && options.model.event) || 'input';(data.props || (data.props = {}))[prop] = data.model.value;
+    var event = (options.model && options.model.event) || 'input'
+    ;(data.props || (data.props = {}))[prop] = data.model.value;
     var on = data.on || (data.on = {});
-    if (isDef(on[event])) {
-      on[event] = [data.model.callback].concat(on[event]);
+    var existing = on[event];
+    var callback = data.model.callback;
+    if (isDef(existing)) {
+      if (
+        Array.isArray(existing)
+          ? existing.indexOf(callback) === -1
+          : existing !== callback
+      ) {
+        on[event] = [callback].concat(existing);
+      }
     } else {
-      on[event] = data.model.callback;
+      on[event] = callback;
     }
   }
 
@@ -3772,7 +3832,7 @@ var psd = (function () {
           config.parsePlatformTagName(tag), data, children,
           undefined, undefined, context
         );
-      } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+      } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
         // component
         vnode = createComponent(Ctor, data, context, children, tag);
       } else {
@@ -3854,8 +3914,8 @@ var psd = (function () {
 
     /* istanbul ignore else */
     {
-      defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true);
-      defineReactive(vm, '$listeners', options._parentListeners || emptyObject, null, true);
+      defineReactive$$1(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true);
+      defineReactive$$1(vm, '$listeners', options._parentListeners || emptyObject, null, true);
     }
   }
 
@@ -3955,8 +4015,6 @@ var psd = (function () {
     var parentVnode = options._parentVnode;
     opts.parent = options.parent;
     opts._parentVnode = parentVnode;
-    opts._parentElm = options._parentElm;
-    opts._refElm = options._refElm;
 
     var vnodeComponentOptions = parentVnode.componentOptions;
     opts.propsData = vnodeComponentOptions.propsData;
@@ -3997,34 +4055,14 @@ var psd = (function () {
   function resolveModifiedOptions (Ctor) {
     var modified;
     var latest = Ctor.options;
-    var extended = Ctor.extendOptions;
     var sealed = Ctor.sealedOptions;
     for (var key in latest) {
       if (latest[key] !== sealed[key]) {
         if (!modified) { modified = {}; }
-        modified[key] = dedupe(latest[key], extended[key], sealed[key]);
+        modified[key] = latest[key];
       }
     }
     return modified
-  }
-
-  function dedupe (latest, extended, sealed) {
-    // compare latest and sealed to ensure lifecycle hooks won't be duplicated
-    // between merges
-    if (Array.isArray(latest)) {
-      var res = [];
-      sealed = Array.isArray(sealed) ? sealed : [sealed];
-      extended = Array.isArray(extended) ? extended : [extended];
-      for (var i = 0; i < latest.length; i++) {
-        // push original options and not sealed options to exclude duplicated options
-        if (extended.indexOf(latest[i]) >= 0 || sealed.indexOf(latest[i]) < 0) {
-          res.push(latest[i]);
-        }
-      }
-      return res
-    } else {
-      return latest
-    }
   }
 
   function Vue (options) {
@@ -4187,6 +4225,8 @@ var psd = (function () {
 
   /*  */
 
+
+
   function getComponentName (opts) {
     return opts && (opts.Ctor.options.name || opts.tag)
   }
@@ -4250,10 +4290,8 @@ var psd = (function () {
     },
 
     destroyed: function destroyed () {
-      var this$1 = this;
-
-      for (var key in this$1.cache) {
-        pruneCacheEntry(this$1.cache, key, this$1.keys);
+      for (var key in this.cache) {
+        pruneCacheEntry(this.cache, key, this.keys);
       }
     },
 
@@ -4334,7 +4372,7 @@ var psd = (function () {
       warn: warn,
       extend: extend,
       mergeOptions: mergeOptions,
-      defineReactive: defineReactive
+      defineReactive: defineReactive$$1
     };
 
     Vue.set = set;
@@ -4376,7 +4414,7 @@ var psd = (function () {
     value: FunctionalRenderContext
   });
 
-  Vue.version = '2.5.17';
+  Vue.version = '2.5.22';
 
   /*  */
 
@@ -4531,8 +4569,6 @@ var psd = (function () {
     true
   );
 
-
-
   var isReservedTag = function (tag) {
     return isHTMLTag(tag) || isSVG(tag)
   };
@@ -4651,20 +4687,19 @@ var psd = (function () {
     node.setAttribute(scopeId, '');
   }
 
-
-  var nodeOps = Object.freeze({
-  	createElement: createElement$1,
-  	createElementNS: createElementNS,
-  	createTextNode: createTextNode,
-  	createComment: createComment,
-  	insertBefore: insertBefore,
-  	removeChild: removeChild,
-  	appendChild: appendChild,
-  	parentNode: parentNode,
-  	nextSibling: nextSibling,
-  	tagName: tagName,
-  	setTextContent: setTextContent,
-  	setStyleScope: setStyleScope
+  var nodeOps = /*#__PURE__*/Object.freeze({
+    createElement: createElement$1,
+    createElementNS: createElementNS,
+    createTextNode: createTextNode,
+    createComment: createComment,
+    insertBefore: insertBefore,
+    removeChild: removeChild,
+    appendChild: appendChild,
+    parentNode: parentNode,
+    nextSibling: nextSibling,
+    tagName: tagName,
+    setTextContent: setTextContent,
+    setStyleScope: setStyleScope
   });
 
   /*  */
@@ -4783,13 +4818,13 @@ var psd = (function () {
     }
 
     function createRmCb (childElm, listeners) {
-      function remove () {
-        if (--remove.listeners === 0) {
+      function remove$$1 () {
+        if (--remove$$1.listeners === 0) {
           removeNode(childElm);
         }
       }
-      remove.listeners = listeners;
-      return remove
+      remove$$1.listeners = listeners;
+      return remove$$1
     }
 
     function removeNode (el) {
@@ -4855,7 +4890,7 @@ var psd = (function () {
       if (isDef(i)) {
         var isReactivated = isDef(vnode.componentInstance) && i.keepAlive;
         if (isDef(i = i.hook) && isDef(i = i.init)) {
-          i(vnode, false /* hydrating */, parentElm, refElm);
+          i(vnode, false /* hydrating */);
         }
         // after calling the init hook, if the vnode is a child component
         // it should've created a child instance and mounted it. the child
@@ -4863,6 +4898,7 @@ var psd = (function () {
         // in that case we can just return the element and be done.
         if (isDef(vnode.componentInstance)) {
           initComponent(vnode, insertedVnodeQueue);
+          insert(parentElm, vnode.elm, refElm);
           if (isTrue(isReactivated)) {
             reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm);
           }
@@ -4914,7 +4950,7 @@ var psd = (function () {
     function insert (parent, elm, ref$$1) {
       if (isDef(parent)) {
         if (isDef(ref$$1)) {
-          if (ref$$1.parentNode === parent) {
+          if (nodeOps.parentNode(ref$$1) === parent) {
             nodeOps.insertBefore(parent, elm, ref$$1);
           }
         } else {
@@ -5062,20 +5098,20 @@ var psd = (function () {
         } else if (isUndef(oldEndVnode)) {
           oldEndVnode = oldCh[--oldEndIdx];
         } else if (sameVnode(oldStartVnode, newStartVnode)) {
-          patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue);
+          patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
           oldStartVnode = oldCh[++oldStartIdx];
           newStartVnode = newCh[++newStartIdx];
         } else if (sameVnode(oldEndVnode, newEndVnode)) {
-          patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue);
+          patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
           oldEndVnode = oldCh[--oldEndIdx];
           newEndVnode = newCh[--newEndIdx];
         } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
-          patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue);
+          patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
           canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm));
           oldStartVnode = oldCh[++oldStartIdx];
           newEndVnode = newCh[--newEndIdx];
         } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
-          patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue);
+          patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
           canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm);
           oldEndVnode = oldCh[--oldEndIdx];
           newStartVnode = newCh[++newStartIdx];
@@ -5089,7 +5125,7 @@ var psd = (function () {
           } else {
             vnodeToMove = oldCh[idxInOld];
             if (sameVnode(vnodeToMove, newStartVnode)) {
-              patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue);
+              patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
               oldCh[idxInOld] = undefined;
               canMove && nodeOps.insertBefore(parentElm, vnodeToMove.elm, oldStartVnode.elm);
             } else {
@@ -5115,9 +5151,21 @@ var psd = (function () {
       }
     }
 
-    function patchVnode (oldVnode, vnode, insertedVnodeQueue, removeOnly) {
+    function patchVnode (
+      oldVnode,
+      vnode,
+      insertedVnodeQueue,
+      ownerArray,
+      index,
+      removeOnly
+    ) {
       if (oldVnode === vnode) {
         return
+      }
+
+      if (isDef(vnode.elm) && isDef(ownerArray)) {
+        // clone reused vnode
+        vnode = ownerArray[index] = cloneVNode(vnode);
       }
 
       var elm = vnode.elm = oldVnode.elm;
@@ -5263,7 +5311,7 @@ var psd = (function () {
       return true
     }
 
-    return function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
+    return function patch (oldVnode, vnode, hydrating, removeOnly) {
       if (isUndef(vnode)) {
         if (isDef(oldVnode)) { invokeDestroyHook(oldVnode); }
         return
@@ -5275,12 +5323,12 @@ var psd = (function () {
       if (isUndef(oldVnode)) {
         // empty mount (likely as component), create new root element
         isInitialPatch = true;
-        createElm(vnode, insertedVnodeQueue, parentElm, refElm);
+        createElm(vnode, insertedVnodeQueue);
       } else {
         var isRealElement = isDef(oldVnode.nodeType);
         if (!isRealElement && sameVnode(oldVnode, vnode)) {
           // patch existing root node
-          patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly);
+          patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly);
         } else {
           if (isRealElement) {
             // mounting to a real element
@@ -5303,7 +5351,7 @@ var psd = (function () {
 
           // replacing existing element
           var oldElm = oldVnode.elm;
-          var parentElm$1 = nodeOps.parentNode(oldElm);
+          var parentElm = nodeOps.parentNode(oldElm);
 
           // create new node
           createElm(
@@ -5312,7 +5360,7 @@ var psd = (function () {
             // extremely rare edge case: do not insert if old element is in a
             // leaving transition. Only happens when combining transition +
             // keep-alive + HOCs. (#4590)
-            oldElm._leaveCb ? null : parentElm$1,
+            oldElm._leaveCb ? null : parentElm,
             nodeOps.nextSibling(oldElm)
           );
 
@@ -5347,8 +5395,8 @@ var psd = (function () {
           }
 
           // destroy old node
-          if (isDef(parentElm$1)) {
-            removeVnodes(parentElm$1, [oldVnode], 0, 0);
+          if (isDef(parentElm)) {
+            removeVnodes(parentElm, [oldVnode], 0, 0);
           } else if (isDef(oldVnode.tag)) {
             invokeDestroyHook(oldVnode);
           }
@@ -5563,7 +5611,7 @@ var psd = (function () {
       /* istanbul ignore if */
       if (
         isIE && !isIE9 &&
-        el.tagName === 'TEXTAREA' &&
+        (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') &&
         key === 'placeholder' && !el.__ieph
       ) {
         var blocker = function (e) {
@@ -5625,38 +5673,7 @@ var psd = (function () {
 
   /*  */
 
-
-
-
-
-
-
-
-
-  // add a raw attr (use this in preTransforms)
-
-
-
-
-
-
-
-
-  // note: this only removes the attr from the Array (attrsList) so that it
-  // doesn't get processed by processAttrs.
-  // By default it does NOT remove it from the map (attrsMap) because the map is
-  // needed during codegen.
-
   /*  */
-
-  /**
-   * Cross-platform code generation for component v-model
-   */
-
-
-  /**
-   * Cross-platform codegen helper for generating v-model value assignment code.
-   */
 
   /*  */
 
@@ -5690,7 +5707,7 @@ var psd = (function () {
 
   var target$1;
 
-  function createOnceHandler (handler, event, capture) {
+  function createOnceHandler$1 (event, handler, capture) {
     var _target = target$1; // save current target element in closure
     return function onceHandler () {
       var res = handler.apply(null, arguments);
@@ -5703,12 +5720,10 @@ var psd = (function () {
   function add$1 (
     event,
     handler,
-    once$$1,
     capture,
     passive
   ) {
     handler = withMacroTask(handler);
-    if (once$$1) { handler = createOnceHandler(handler, event, capture); }
     target$1.addEventListener(
       event,
       handler,
@@ -5739,7 +5754,7 @@ var psd = (function () {
     var oldOn = oldVnode.data.on || {};
     target$1 = vnode.elm;
     normalizeEvents(on);
-    updateListeners(on, oldOn, add$1, remove$2, vnode.context);
+    updateListeners(on, oldOn, add$1, remove$2, createOnceHandler$1, vnode.context);
     target$1 = undefined;
   }
 
@@ -6005,6 +6020,8 @@ var psd = (function () {
 
   /*  */
 
+  var whitespaceRE = /\s+/;
+
   /**
    * Add class with compatibility for SVG since classList is not supported on
    * SVG elements in IE
@@ -6018,7 +6035,7 @@ var psd = (function () {
     /* istanbul ignore else */
     if (el.classList) {
       if (cls.indexOf(' ') > -1) {
-        cls.split(/\s+/).forEach(function (c) { return el.classList.add(c); });
+        cls.split(whitespaceRE).forEach(function (c) { return el.classList.add(c); });
       } else {
         el.classList.add(cls);
       }
@@ -6043,7 +6060,7 @@ var psd = (function () {
     /* istanbul ignore else */
     if (el.classList) {
       if (cls.indexOf(' ') > -1) {
-        cls.split(/\s+/).forEach(function (c) { return el.classList.remove(c); });
+        cls.split(whitespaceRE).forEach(function (c) { return el.classList.remove(c); });
       } else {
         el.classList.remove(cls);
       }
@@ -6067,20 +6084,20 @@ var psd = (function () {
 
   /*  */
 
-  function resolveTransition (def) {
-    if (!def) {
+  function resolveTransition (def$$1) {
+    if (!def$$1) {
       return
     }
     /* istanbul ignore else */
-    if (typeof def === 'object') {
+    if (typeof def$$1 === 'object') {
       var res = {};
-      if (def.css !== false) {
-        extend(res, autoCssTransition(def.name || 'v'));
+      if (def$$1.css !== false) {
+        extend(res, autoCssTransition(def$$1.name || 'v'));
       }
-      extend(res, def);
+      extend(res, def$$1);
       return res
-    } else if (typeof def === 'string') {
-      return autoCssTransition(def)
+    } else if (typeof def$$1 === 'string') {
+      return autoCssTransition(def$$1)
     }
   }
 
@@ -6183,11 +6200,12 @@ var psd = (function () {
 
   function getTransitionInfo (el, expectedType) {
     var styles = window.getComputedStyle(el);
-    var transitionDelays = styles[transitionProp + 'Delay'].split(', ');
-    var transitionDurations = styles[transitionProp + 'Duration'].split(', ');
+    // JSDOM may return undefined for transition properties
+    var transitionDelays = (styles[transitionProp + 'Delay'] || '').split(', ');
+    var transitionDurations = (styles[transitionProp + 'Duration'] || '').split(', ');
     var transitionTimeout = getTimeout(transitionDelays, transitionDurations);
-    var animationDelays = styles[animationProp + 'Delay'].split(', ');
-    var animationDurations = styles[animationProp + 'Duration'].split(', ');
+    var animationDelays = (styles[animationProp + 'Delay'] || '').split(', ');
+    var animationDurations = (styles[animationProp + 'Duration'] || '').split(', ');
     var animationTimeout = getTimeout(animationDelays, animationDurations);
 
     var type;
@@ -6241,8 +6259,12 @@ var psd = (function () {
     }))
   }
 
+  // Old versions of Chromium (below 61.0.3163.100) formats floating pointer numbers
+  // in a locale-dependent way, using a comma instead of a dot.
+  // If comma is not replaced with a dot, the input will be rounded down (i.e. acting
+  // as a floor function) causing unexpected behaviors
   function toMs (s) {
-    return Number(s.slice(0, -1)) * 1000
+    return Number(s.slice(0, -1).replace(',', '.')) * 1000
   }
 
   /*  */
@@ -6466,7 +6488,7 @@ var psd = (function () {
         return
       }
       // record leaving element
-      if (!vnode.data.show) {
+      if (!vnode.data.show && el.parentNode) {
         (el.parentNode._pending || (el.parentNode._pending = {}))[(vnode.key)] = vnode;
       }
       beforeLeave && beforeLeave(el);
@@ -6762,9 +6784,6 @@ var psd = (function () {
 
   /*  */
 
-  // Provides transition support for a single element/component.
-  // supports transition mode (out-in / in-out)
-
   var transitionProps = {
     name: String,
     appear: Boolean,
@@ -6830,6 +6849,10 @@ var psd = (function () {
     return oldChild.key === child.key && oldChild.tag === child.tag
   }
 
+  var isNotTextNode = function (c) { return c.tag || isAsyncPlaceholder(c); };
+
+  var isVShowDirective = function (d) { return d.name === 'show'; };
+
   var Transition = {
     name: 'transition',
     props: transitionProps,
@@ -6844,7 +6867,7 @@ var psd = (function () {
       }
 
       // filter out text nodes (possible whitespaces)
-      children = children.filter(function (c) { return c.tag || isAsyncPlaceholder(c); });
+      children = children.filter(isNotTextNode);
       /* istanbul ignore if */
       if (!children.length) {
         return
@@ -6890,7 +6913,7 @@ var psd = (function () {
 
       // mark v-show
       // so that the transition module can hand over the control to the directive
-      if (child.data.directives && child.data.directives.some(function (d) { return d.name === 'show'; })) {
+      if (child.data.directives && child.data.directives.some(isVShowDirective)) {
         child.data.show = true;
       }
 
@@ -6932,17 +6955,6 @@ var psd = (function () {
 
   /*  */
 
-  // Provides transition support for list items.
-  // supports move transitions using the FLIP technique.
-
-  // Because the vdom's children update algorithm is "unstable" - i.e.
-  // it doesn't guarantee the relative positioning of removed elements,
-  // we force transition-group to update its children into two passes:
-  // in the first pass, we remove all nodes that need to be removed,
-  // triggering their leaving transition; in the second pass, we insert/move
-  // into the final desired state. This way in the second pass removed
-  // nodes will remain where they should be.
-
   var props = extend({
     tag: String,
     moveClass: String
@@ -6952,6 +6964,25 @@ var psd = (function () {
 
   var TransitionGroup = {
     props: props,
+
+    beforeMount: function beforeMount () {
+      var this$1 = this;
+
+      var update = this._update;
+      this._update = function (vnode, hydrating) {
+        var restoreActiveInstance = setActiveInstance(this$1);
+        // force removing pass
+        this$1.__patch__(
+          this$1._vnode,
+          this$1.kept,
+          false, // hydrating
+          true // removeOnly (!important, avoids unnecessary moves)
+        );
+        this$1._vnode = this$1.kept;
+        restoreActiveInstance();
+        update.call(this$1, vnode, hydrating);
+      };
+    },
 
     render: function render (h) {
       var tag = this.tag || this.$vnode.data.tag || 'span';
@@ -6992,17 +7023,6 @@ var psd = (function () {
       return h(tag, null, children)
     },
 
-    beforeUpdate: function beforeUpdate () {
-      // force removing pass
-      this.__patch__(
-        this._vnode,
-        this.kept,
-        false, // hydrating
-        true // removeOnly (!important, avoids unnecessary moves)
-      );
-      this._vnode = this.kept;
-    },
-
     updated: function updated () {
       var children = this.prevChildren;
       var moveClass = this.moveClass || ((this.name || 'v') + '-move');
@@ -7028,6 +7048,9 @@ var psd = (function () {
           addTransitionClass(el, moveClass);
           s.transform = s.WebkitTransform = s.transitionDuration = '';
           el.addEventListener(transitionEndEvent, el._moveCb = function cb (e) {
+            if (e && e.target !== el) {
+              return
+            }
             if (!e || /transform$/.test(e.propertyName)) {
               el.removeEventListener(transitionEndEvent, cb);
               el._moveCb = null;
@@ -8987,9 +9010,96 @@ var psd = (function () {
     }
   };
 
+  function normalizeComponent(template, style, script, scopeId, isFunctionalTemplate, moduleIdentifier
+  /* server only */
+  , shadowMode, createInjector, createInjectorSSR, createInjectorShadow) {
+    if (typeof shadowMode !== 'boolean') {
+      createInjectorSSR = createInjector;
+      createInjector = shadowMode;
+      shadowMode = false;
+    } // Vue.extend constructor export interop.
+
+
+    var options = typeof script === 'function' ? script.options : script; // render functions
+
+    if (template && template.render) {
+      options.render = template.render;
+      options.staticRenderFns = template.staticRenderFns;
+      options._compiled = true; // functional template
+
+      if (isFunctionalTemplate) {
+        options.functional = true;
+      }
+    } // scopedId
+
+
+    if (scopeId) {
+      options._scopeId = scopeId;
+    }
+
+    var hook;
+
+    if (moduleIdentifier) {
+      // server build
+      hook = function hook(context) {
+        // 2.3 injection
+        context = context || // cached call
+        this.$vnode && this.$vnode.ssrContext || // stateful
+        this.parent && this.parent.$vnode && this.parent.$vnode.ssrContext; // functional
+        // 2.2 with runInNewContext: true
+
+        if (!context && typeof __VUE_SSR_CONTEXT__ !== 'undefined') {
+          context = __VUE_SSR_CONTEXT__;
+        } // inject component styles
+
+
+        if (style) {
+          style.call(this, createInjectorSSR(context));
+        } // register component module identifier for async chunk inference
+
+
+        if (context && context._registeredComponents) {
+          context._registeredComponents.add(moduleIdentifier);
+        }
+      }; // used by ssr in case component is cached and beforeCreate
+      // never gets called
+
+
+      options._ssrRegister = hook;
+    } else if (style) {
+      hook = shadowMode ? function () {
+        style.call(this, createInjectorShadow(this.$root.$options.shadowRoot));
+      } : function (context) {
+        style.call(this, createInjector(context));
+      };
+    }
+
+    if (hook) {
+      if (options.functional) {
+        // register for functional component in vue file
+        var originalRender = options.render;
+
+        options.render = function renderWithStyleInjection(h, context) {
+          hook.call(context);
+          return originalRender(h, context);
+        };
+      } else {
+        // inject component registration as beforeCreate hook
+        var existing = options.beforeCreate;
+        options.beforeCreate = existing ? [].concat(existing, hook) : [hook];
+      }
+    }
+
+    return script;
+  }
+
+  var normalizeComponent_1 = normalizeComponent;
+
   /* script */
-              const __vue_script__ = script;
-              
+  const __vue_script__ = script;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script.__file = "Field.vue";
+
   /* template */
   var __vue_render__ = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{ref:"wrapper"})};
   var __vue_staticRenderFns__ = [];
@@ -9002,36 +9112,13 @@ var psd = (function () {
     const __vue_module_identifier__ = undefined;
     /* functional template */
     const __vue_is_functional_template__ = false;
-    /* component normalizer */
-    function __vue_normalize__(
-      template, style, script$$1,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script$$1 === 'function' ? script$$1.options : script$$1) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "Field.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      return component
-    }
     /* style inject */
     
     /* style inject SSR */
     
 
     
-    var Field = __vue_normalize__(
+    var Field = normalizeComponent_1(
       { render: __vue_render__, staticRenderFns: __vue_staticRenderFns__ },
       __vue_inject_styles__,
       __vue_script__,
@@ -9081,8 +9168,10 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$1 = script$1;
-              
+  const __vue_script__$1 = script$1;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$1.__file = "FieldLink.vue";
+
   /* template */
   var __vue_render__$1 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('field',_vm._b({},'field',{ df: _vm.df, events: _vm.events, value: _vm.value },false))};
   var __vue_staticRenderFns__$1 = [];
@@ -9095,36 +9184,13 @@ var psd = (function () {
     const __vue_module_identifier__$1 = undefined;
     /* functional template */
     const __vue_is_functional_template__$1 = false;
-    /* component normalizer */
-    function __vue_normalize__$1(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "FieldLink.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      return component
-    }
     /* style inject */
     
     /* style inject SSR */
     
 
     
-    var FieldLink = __vue_normalize__$1(
+    var FieldLink = normalizeComponent_1(
       { render: __vue_render__$1, staticRenderFns: __vue_staticRenderFns__$1 },
       __vue_inject_styles__$1,
       __vue_script__$1,
@@ -9347,8 +9413,10 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$2 = script$2;
-              
+  const __vue_script__$2 = script$2;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$2.__file = "TrainingScheduleChart.vue";
+
   /* template */
   var __vue_render__$2 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{ref:"wrapper"})};
   var __vue_staticRenderFns__$2 = [];
@@ -9361,36 +9429,13 @@ var psd = (function () {
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
     const __vue_is_functional_template__$2 = false;
-    /* component normalizer */
-    function __vue_normalize__$2(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "TrainingScheduleChart.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      return component
-    }
     /* style inject */
     
     /* style inject SSR */
     
 
     
-    var TrainingScheduleChart = __vue_normalize__$2(
+    var TrainingScheduleChart = normalizeComponent_1(
       { render: __vue_render__$2, staticRenderFns: __vue_staticRenderFns__$2 },
       __vue_inject_styles__$2,
       __vue_script__$2,
@@ -10263,9 +10308,11 @@ var psd = (function () {
           }, _callee, this);
         }));
 
-        return function member(_x, _x2) {
+        function member(_x, _x2) {
           return _member.apply(this, arguments);
-        };
+        }
+
+        return member;
       }()
     },
     methods: {
@@ -10319,9 +10366,11 @@ var psd = (function () {
           }, _callee2, this);
         }));
 
-        return function set_details() {
+        function set_details() {
           return _set_details.apply(this, arguments);
-        };
+        }
+
+        return set_details;
       }(),
       set_schedules: function () {
         var _set_schedules = _asyncToGenerator(
@@ -10371,9 +10420,11 @@ var psd = (function () {
           }, _callee3, this);
         }));
 
-        return function set_schedules() {
+        function set_schedules() {
           return _set_schedules.apply(this, arguments);
-        };
+        }
+
+        return set_schedules;
       }(),
       create: function () {
         var _create = _asyncToGenerator(
@@ -10438,9 +10489,11 @@ var psd = (function () {
           }, _callee5, this);
         }));
 
-        return function create(_x3, _x4) {
+        function create(_x3, _x4) {
           return _create.apply(this, arguments);
-        };
+        }
+
+        return create;
       }(),
       update: function () {
         var _update = _asyncToGenerator(
@@ -10481,9 +10534,11 @@ var psd = (function () {
           }, _callee6, this);
         }));
 
-        return function update(_x5, _x6) {
+        function update(_x5, _x6) {
           return _update.apply(this, arguments);
-        };
+        }
+
+        return update;
       }(),
       remove: function () {
         var _remove = _asyncToGenerator(
@@ -10525,9 +10580,11 @@ var psd = (function () {
           }, _callee7, this);
         }));
 
-        return function remove(_x7) {
+        function remove(_x7) {
           return _remove.apply(this, arguments);
-        };
+        }
+
+        return remove;
       }()
     },
     mounted: function mounted() {
@@ -10538,17 +10595,69 @@ var psd = (function () {
     }
   };
 
+  var isOldIE = typeof navigator !== 'undefined' && /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
+  function createInjector(context) {
+    return function (id, style) {
+      return addStyle(id, style);
+    };
+  }
+  var HEAD = document.head || document.getElementsByTagName('head')[0];
+  var styles = {};
+
+  function addStyle(id, css) {
+    var group = isOldIE ? css.media || 'default' : id;
+    var style = styles[group] || (styles[group] = {
+      ids: new Set(),
+      styles: []
+    });
+
+    if (!style.ids.has(id)) {
+      style.ids.add(id);
+      var code = css.source;
+
+      if (css.map) {
+        // https://developer.chrome.com/devtools/docs/javascript-debugging
+        // this makes source maps inside style tags work properly in Chrome
+        code += '\n/*# sourceURL=' + css.map.sources[0] + ' */'; // http://stackoverflow.com/a/26603875
+
+        code += '\n/*# sourceMappingURL=data:application/json;base64,' + btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) + ' */';
+      }
+
+      if (!style.element) {
+        style.element = document.createElement('style');
+        style.element.type = 'text/css';
+        if (css.media) style.element.setAttribute('media', css.media);
+        HEAD.appendChild(style.element);
+      }
+
+      if ('styleSheet' in style.element) {
+        style.styles.push(code);
+        style.element.styleSheet.cssText = style.styles.filter(Boolean).join('\n');
+      } else {
+        var index = style.ids.size - 1;
+        var textNode = document.createTextNode(code);
+        var nodes = style.element.childNodes;
+        if (nodes[index]) style.element.removeChild(nodes[index]);
+        if (nodes.length) style.element.insertBefore(textNode, nodes[index]);else style.element.appendChild(textNode);
+      }
+    }
+  }
+
+  var browser = createInjector;
+
   /* script */
-              const __vue_script__$3 = script$3;
-              
+  const __vue_script__$3 = script$3;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$3.__file = "TrainingSchedule.vue";
+
   /* template */
-  var __vue_render__$3 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"section"},[_c('FieldLink',{attrs:{"fieldname":"member","label":"Member","options":"Gym Member","value":_vm.member,"read_only":!!_vm.member,"onchange":_vm.handle_field}}),_vm._v(" "),_c('FieldLink',{attrs:{"fieldname":"subscription","label":"Subscription","options":"Gym Subscription","value":_vm.subscription,"read_only":!!_vm.subscription,"get_query":_vm.subscription_query,"onchange":_vm.handle_field}}),_vm._v(" "),_c('div',{staticClass:"action"},[_c('button',{staticClass:"btn",attrs:{"type":"button","name":"button"},on:{"click":_vm.clear}},[_vm._v("Clear")])])],1),_vm._v(" "),(_vm.item_name)?_c('div',{staticClass:"section info-section"},[_c('div',[_c('span',[_vm._v("Member Name")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.member_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Item")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.item_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Start Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.start_date))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("End Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.end_date))])])]):_vm._e(),_vm._v(" "),_c('div',{staticClass:"section list-section"},[(_vm.schedules.length > 0)?_c('table',{staticClass:"table"},[_vm._m(0),_vm._v(" "),_c('tbody',_vm._l((_vm.schedules),function(schedule){return _c('tr',[_c('td',[_vm._v("\n            "+_vm._s(schedule.from)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_from_date"},on:{"click":function($event){_vm.update(schedule.name, 'from_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.to)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_to_date"},on:{"click":function($event){_vm.update(schedule.name, 'to_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.slot || '-')+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_slot"},on:{"click":function($event){_vm.update(schedule.name, 'slot');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_c('span',{staticClass:"indicator"},[_c('i',{style:({ backgroundColor: schedule.color })})]),_vm._v("\n            "+_vm._s(schedule.trainer_name || 'Unallocated')+"\n            "),(!schedule.name)?_c('button',{attrs:{"type":"button","name":"create"},on:{"click":function($event){_vm.create(schedule.from, schedule.to);}}},[_c('i',{staticClass:"fa fa-plus"})]):_c('button',{attrs:{"type":"button","name":"remove"},on:{"click":function($event){_vm.remove(schedule.name);}}},[_c('i',{staticClass:"fa fa-remove"})])])])}))]):_vm._e(),_vm._v(" "),(_vm.schedules.length > 0)?_c('training-schedule-chart',_vm._b({staticClass:"chart"},'training-schedule-chart',{ schedules: _vm.schedules },false)):_vm._e()],1)])};
+  var __vue_render__$3 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"section"},[_c('FieldLink',{attrs:{"fieldname":"member","label":"Member","options":"Gym Member","value":_vm.member,"read_only":!!_vm.member,"onchange":_vm.handle_field}}),_vm._v(" "),_c('FieldLink',{attrs:{"fieldname":"subscription","label":"Subscription","options":"Gym Subscription","value":_vm.subscription,"read_only":!!_vm.subscription,"get_query":_vm.subscription_query,"onchange":_vm.handle_field}}),_vm._v(" "),_c('div',{staticClass:"action"},[_c('button',{staticClass:"btn",attrs:{"type":"button","name":"button"},on:{"click":_vm.clear}},[_vm._v("Clear")])])],1),_vm._v(" "),(_vm.item_name)?_c('div',{staticClass:"section info-section"},[_c('div',[_c('span',[_vm._v("Member Name")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.member_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Item")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.item_name))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("Start Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.start_date))])]),_vm._v(" "),_c('div',[_c('span',[_vm._v("End Date")]),_vm._v(" "),_c('span',[_vm._v(_vm._s(_vm.end_date))])])]):_vm._e(),_vm._v(" "),_c('div',{staticClass:"section list-section"},[(_vm.schedules.length > 0)?_c('table',{staticClass:"table"},[_vm._m(0),_vm._v(" "),_c('tbody',_vm._l((_vm.schedules),function(schedule){return _c('tr',[_c('td',[_vm._v("\n            "+_vm._s(schedule.from)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_from_date"},on:{"click":function($event){_vm.update(schedule.name, 'from_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.to)+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_to_date"},on:{"click":function($event){_vm.update(schedule.name, 'to_date');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_vm._v("\n            "+_vm._s(schedule.slot || '-')+"\n            "),(schedule.name)?_c('button',{attrs:{"type":"button","name":"update_slot"},on:{"click":function($event){_vm.update(schedule.name, 'slot');}}},[_c('i',{staticClass:"fa fa-pencil"})]):_vm._e()]),_vm._v(" "),_c('td',[_c('span',{staticClass:"indicator"},[_c('i',{style:({ backgroundColor: schedule.color })})]),_vm._v("\n            "+_vm._s(schedule.trainer_name || 'Unallocated')+"\n            "),(!schedule.name)?_c('button',{attrs:{"type":"button","name":"create"},on:{"click":function($event){_vm.create(schedule.from, schedule.to);}}},[_c('i',{staticClass:"fa fa-plus"})]):_c('button',{attrs:{"type":"button","name":"remove"},on:{"click":function($event){_vm.remove(schedule.name);}}},[_c('i',{staticClass:"fa fa-remove"})])])])}),0)]):_vm._e(),_vm._v(" "),(_vm.schedules.length > 0)?_c('training-schedule-chart',_vm._b({staticClass:"chart"},'training-schedule-chart',{ schedules: _vm.schedules },false)):_vm._e()],1)])};
   var __vue_staticRenderFns__$3 = [function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('thead',[_c('tr',[_c('th',[_vm._v("From")]),_vm._v(" "),_c('th',[_vm._v("To")]),_vm._v(" "),_c('th',[_vm._v("Slot")]),_vm._v(" "),_c('th',[_vm._v("Trainer")]),_vm._v(" "),_c('th')])])}];
 
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-45c887c4_0", { source: "\n.section[data-v-45c887c4]{display:flex;flex-flow:row wrap;padding-top:12px\n}\n.section>div[data-v-45c887c4]{margin:0 8px;box-sizing:border-box;min-width:196px\n}\n.action[data-v-45c887c4]{display:flex;align-items:flex-end;padding-bottom:10px\n}\n.info-section>div[data-v-45c887c4]{min-height:48px\n}\n.info-section>div>span[data-v-45c887c4]{display:block;white-space:nowrap\n}\n.info-section>div>span[data-v-45c887c4]:first-of-type{font-size:12px;color:#8d99a6\n}\n.info-section>div>span[data-v-45c887c4]:last-of-type{font-weight:700\n}\n.list-section button[data-v-45c887c4]{border:none;background-color:inherit;opacity:0\n}\n.list-section .chart[data-v-45c887c4]{width:100%\n}\n.list-section tr:hover button[data-v-45c887c4]{opacity:1\n}\n.list-section>table th[data-v-45c887c4]{color:#8d99a6\n}\n.list-section>table button[data-v-45c887c4]:hover{color:#8d99a6\n}\n.list-section .indicator>i[data-v-45c887c4]{display:inline-block;height:8px;width:8px;border-radius:8px;margin:0 4px 0 0\n}\n.list-section .indicator[data-v-45c887c4]::before{display:none\n}", map: undefined, media: undefined });
+      inject("data-v-45c887c4_0", { source: ".section[data-v-45c887c4]{display:flex;flex-flow:row wrap;padding-top:12px}.section>div[data-v-45c887c4]{margin:0 8px;box-sizing:border-box;min-width:196px}.action[data-v-45c887c4]{display:flex;align-items:flex-end;padding-bottom:10px}.info-section>div[data-v-45c887c4]{min-height:48px}.info-section>div>span[data-v-45c887c4]{display:block;white-space:nowrap}.info-section>div>span[data-v-45c887c4]:first-of-type{font-size:12px;color:#8d99a6}.info-section>div>span[data-v-45c887c4]:last-of-type{font-weight:700}.list-section button[data-v-45c887c4]{border:none;background-color:inherit;opacity:0}.list-section .chart[data-v-45c887c4]{width:100%}.list-section tr:hover button[data-v-45c887c4]{opacity:1}.list-section>table th[data-v-45c887c4]{color:#8d99a6}.list-section>table button[data-v-45c887c4]:hover{color:#8d99a6}.list-section .indicator>i[data-v-45c887c4]{display:inline-block;height:8px;width:8px;border-radius:8px;margin:0 4px 0 0}.list-section .indicator[data-v-45c887c4]::before{display:none}", map: undefined, media: undefined });
 
     };
     /* scoped */
@@ -10557,133 +10666,18 @@ var psd = (function () {
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
     const __vue_is_functional_template__$3 = false;
-    /* component normalizer */
-    function __vue_normalize__$3(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "TrainingSchedule.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      {
-        let hook;
-        if (style) {
-          hook = function(context) {
-            style.call(this, createInjector(context));
-          };
-        }
-
-        if (hook !== undefined) {
-          if (component.functional) {
-            // register for functional component in vue file
-            const originalRender = component.render;
-            component.render = function renderWithStyleInjection(h, context) {
-              hook.call(context);
-              return originalRender(h, context)
-            };
-          } else {
-            // inject component registration as beforeCreate hook
-            const existing = component.beforeCreate;
-            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
-          }
-        }
-      }
-
-      return component
-    }
-    /* style inject */
-    function __vue_create_injector__() {
-      const head = document.head || document.getElementsByTagName('head')[0];
-      const styles = __vue_create_injector__.styles || (__vue_create_injector__.styles = {});
-      const isOldIE =
-        typeof navigator !== 'undefined' &&
-        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
-
-      return function addStyle(id, css) {
-        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
-
-        const group = isOldIE ? css.media || 'default' : id;
-        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
-
-        if (!style.ids.includes(id)) {
-          let code = css.source;
-          let index = style.ids.length;
-
-          style.ids.push(id);
-
-          if (css.map) {
-            // https://developer.chrome.com/devtools/docs/javascript-debugging
-            // this makes source maps inside style tags work properly in Chrome
-            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
-            // http://stackoverflow.com/a/26603875
-            code +=
-              '\n/*# sourceMappingURL=data:application/json;base64,' +
-              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
-              ' */';
-          }
-
-          if (isOldIE) {
-            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
-          }
-
-          if (!style.element) {
-            const el = style.element = document.createElement('style');
-            el.type = 'text/css';
-
-            if (css.media) el.setAttribute('media', css.media);
-            if (isOldIE) {
-              el.setAttribute('data-group', group);
-              el.setAttribute('data-next-index', '0');
-            }
-
-            head.appendChild(el);
-          }
-
-          if (isOldIE) {
-            index = parseInt(style.element.getAttribute('data-next-index'));
-            style.element.setAttribute('data-next-index', index + 1);
-          }
-
-          if (style.element.styleSheet) {
-            style.parts.push(code);
-            style.element.styleSheet.cssText = style.parts
-              .filter(Boolean)
-              .join('\n');
-          } else {
-            const textNode = document.createTextNode(code);
-            const nodes = style.element.childNodes;
-            if (nodes[index]) style.element.removeChild(nodes[index]);
-            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
-            else style.element.appendChild(textNode);
-          }
-        }
-      }
-    }
     /* style inject SSR */
     
 
     
-    var TrainingSchedule = __vue_normalize__$3(
+    var TrainingSchedule = normalizeComponent_1(
       { render: __vue_render__$3, staticRenderFns: __vue_staticRenderFns__$3 },
       __vue_inject_styles__$3,
       __vue_script__$3,
       __vue_scope_id__$3,
       __vue_is_functional_template__$3,
       __vue_module_identifier__$3,
-      __vue_create_injector__,
+      browser,
       undefined
     );
 
@@ -10723,8 +10717,10 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$4 = script$4;
-              
+  const __vue_script__$4 = script$4;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$4.__file = "DashboardItem.vue";
+
   /* template */
   var __vue_render__$4 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"col-sm-3 psd-dashboard-item"},[_c('span',{class:_vm.indicator}),_vm._v(" "),_c('dl',[_c('dt',[_vm._v(_vm._s(_vm.label))]),_vm._v(" "),_c('dd',[_vm._v(_vm._s(_vm.content))])])])};
   var __vue_staticRenderFns__$4 = [];
@@ -10732,7 +10728,7 @@ var psd = (function () {
     /* style */
     const __vue_inject_styles__$4 = function (inject) {
       if (!inject) return
-      inject("data-v-639af32a_0", { source: "\n.psd-dashboard-item[data-v-639af32a]{display:flex;flex-flow:row nowrap\n}\n.psd-dashboard-item dt[data-v-639af32a]{text-transform:uppercase;font-size:.8em;font-weight:400\n}\n.psd-dashboard-item dd[data-v-639af32a]{font-size:1.2em;font-weight:700\n}", map: undefined, media: undefined });
+      inject("data-v-639af32a_0", { source: ".psd-dashboard-item[data-v-639af32a]{display:flex;flex-flow:row nowrap}.psd-dashboard-item dt[data-v-639af32a]{text-transform:uppercase;font-size:.8em;font-weight:400}.psd-dashboard-item dd[data-v-639af32a]{font-size:1.2em;font-weight:700}", map: undefined, media: undefined });
 
     };
     /* scoped */
@@ -10741,133 +10737,18 @@ var psd = (function () {
     const __vue_module_identifier__$4 = undefined;
     /* functional template */
     const __vue_is_functional_template__$4 = false;
-    /* component normalizer */
-    function __vue_normalize__$4(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "DashboardItem.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      {
-        let hook;
-        if (style) {
-          hook = function(context) {
-            style.call(this, createInjector(context));
-          };
-        }
-
-        if (hook !== undefined) {
-          if (component.functional) {
-            // register for functional component in vue file
-            const originalRender = component.render;
-            component.render = function renderWithStyleInjection(h, context) {
-              hook.call(context);
-              return originalRender(h, context)
-            };
-          } else {
-            // inject component registration as beforeCreate hook
-            const existing = component.beforeCreate;
-            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
-          }
-        }
-      }
-
-      return component
-    }
-    /* style inject */
-    function __vue_create_injector__$1() {
-      const head = document.head || document.getElementsByTagName('head')[0];
-      const styles = __vue_create_injector__$1.styles || (__vue_create_injector__$1.styles = {});
-      const isOldIE =
-        typeof navigator !== 'undefined' &&
-        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
-
-      return function addStyle(id, css) {
-        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
-
-        const group = isOldIE ? css.media || 'default' : id;
-        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
-
-        if (!style.ids.includes(id)) {
-          let code = css.source;
-          let index = style.ids.length;
-
-          style.ids.push(id);
-
-          if (css.map) {
-            // https://developer.chrome.com/devtools/docs/javascript-debugging
-            // this makes source maps inside style tags work properly in Chrome
-            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
-            // http://stackoverflow.com/a/26603875
-            code +=
-              '\n/*# sourceMappingURL=data:application/json;base64,' +
-              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
-              ' */';
-          }
-
-          if (isOldIE) {
-            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
-          }
-
-          if (!style.element) {
-            const el = style.element = document.createElement('style');
-            el.type = 'text/css';
-
-            if (css.media) el.setAttribute('media', css.media);
-            if (isOldIE) {
-              el.setAttribute('data-group', group);
-              el.setAttribute('data-next-index', '0');
-            }
-
-            head.appendChild(el);
-          }
-
-          if (isOldIE) {
-            index = parseInt(style.element.getAttribute('data-next-index'));
-            style.element.setAttribute('data-next-index', index + 1);
-          }
-
-          if (style.element.styleSheet) {
-            style.parts.push(code);
-            style.element.styleSheet.cssText = style.parts
-              .filter(Boolean)
-              .join('\n');
-          } else {
-            const textNode = document.createTextNode(code);
-            const nodes = style.element.childNodes;
-            if (nodes[index]) style.element.removeChild(nodes[index]);
-            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
-            else style.element.appendChild(textNode);
-          }
-        }
-      }
-    }
     /* style inject SSR */
     
 
     
-    var DashboardItem = __vue_normalize__$4(
+    var DashboardItem = normalizeComponent_1(
       { render: __vue_render__$4, staticRenderFns: __vue_staticRenderFns__$4 },
       __vue_inject_styles__$4,
       __vue_script__$4,
       __vue_scope_id__$4,
       __vue_is_functional_template__$4,
       __vue_module_identifier__$4,
-      __vue_create_injector__$1,
+      browser,
       undefined
     );
 
@@ -10955,8 +10836,10 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$5 = script$5;
-              
+  const __vue_script__$5 = script$5;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$5.__file = "CurrentSubscriptionItem.vue";
+
   /* template */
   var __vue_render__$5 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"psd-current-sub"},[_c('div',{staticClass:"psd-current-sub-description"},[_c('span',{class:_vm.colorClass}),_vm._v(" "),_c('a',{attrs:{"href":_vm.docUrl}},[_vm._v(_vm._s(_vm.item_name))]),_vm._v(" "),(_vm.is_lifetime && _vm.status === 'Active')?_c('span',{staticClass:"badge psd-badge-info"},[_vm._v("\n      Lifetime\n    ")]):_vm._e()]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-interval"},[_vm._v("\n    "+_vm._s(_vm.interval)+"\n  ")]),_vm._v(" "),_c('div',{staticClass:"psd-current-sub-remarks"},[_vm._v("\n    "+_vm._s(_vm.eta)+"\n  ")])])};
   var __vue_staticRenderFns__$5 = [];
@@ -10964,7 +10847,7 @@ var psd = (function () {
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-0d8e2928_0", { source: "\n.psd-current-sub[data-v-0d8e2928]{display:flex;flex-flow:row wrap;font-size:.94em\n}\n.psd-current-sub>div[data-v-0d8e2928]{flex:0 0 30%\n}\n.psd-current-sub>div[data-v-0d8e2928]:first-of-type{flex:auto\n}\n.badge[data-v-0d8e2928]{font-variant:all-small-caps\n}\n.psd-badge-info[data-v-0d8e2928]{background-color:#935eff;color:#fff\n}\n.psd-info_item-badge-warning[data-v-0d8e2928]{background-color:#ffa00a\n}", map: undefined, media: undefined });
+      inject("data-v-0d8e2928_0", { source: ".psd-current-sub[data-v-0d8e2928]{display:flex;flex-flow:row wrap;font-size:.94em}.psd-current-sub>div[data-v-0d8e2928]{flex:0 0 30%}.psd-current-sub>div[data-v-0d8e2928]:first-of-type{flex:auto}.badge[data-v-0d8e2928]{font-variant:all-small-caps}.psd-badge-info[data-v-0d8e2928]{background-color:#935eff;color:#fff}.psd-info_item-badge-warning[data-v-0d8e2928]{background-color:#ffa00a}", map: undefined, media: undefined });
 
     };
     /* scoped */
@@ -10973,133 +10856,18 @@ var psd = (function () {
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
     const __vue_is_functional_template__$5 = false;
-    /* component normalizer */
-    function __vue_normalize__$5(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "CurrentSubscriptionItem.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      {
-        let hook;
-        if (style) {
-          hook = function(context) {
-            style.call(this, createInjector(context));
-          };
-        }
-
-        if (hook !== undefined) {
-          if (component.functional) {
-            // register for functional component in vue file
-            const originalRender = component.render;
-            component.render = function renderWithStyleInjection(h, context) {
-              hook.call(context);
-              return originalRender(h, context)
-            };
-          } else {
-            // inject component registration as beforeCreate hook
-            const existing = component.beforeCreate;
-            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
-          }
-        }
-      }
-
-      return component
-    }
-    /* style inject */
-    function __vue_create_injector__$2() {
-      const head = document.head || document.getElementsByTagName('head')[0];
-      const styles = __vue_create_injector__$2.styles || (__vue_create_injector__$2.styles = {});
-      const isOldIE =
-        typeof navigator !== 'undefined' &&
-        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
-
-      return function addStyle(id, css) {
-        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
-
-        const group = isOldIE ? css.media || 'default' : id;
-        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
-
-        if (!style.ids.includes(id)) {
-          let code = css.source;
-          let index = style.ids.length;
-
-          style.ids.push(id);
-
-          if (css.map) {
-            // https://developer.chrome.com/devtools/docs/javascript-debugging
-            // this makes source maps inside style tags work properly in Chrome
-            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
-            // http://stackoverflow.com/a/26603875
-            code +=
-              '\n/*# sourceMappingURL=data:application/json;base64,' +
-              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
-              ' */';
-          }
-
-          if (isOldIE) {
-            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
-          }
-
-          if (!style.element) {
-            const el = style.element = document.createElement('style');
-            el.type = 'text/css';
-
-            if (css.media) el.setAttribute('media', css.media);
-            if (isOldIE) {
-              el.setAttribute('data-group', group);
-              el.setAttribute('data-next-index', '0');
-            }
-
-            head.appendChild(el);
-          }
-
-          if (isOldIE) {
-            index = parseInt(style.element.getAttribute('data-next-index'));
-            style.element.setAttribute('data-next-index', index + 1);
-          }
-
-          if (style.element.styleSheet) {
-            style.parts.push(code);
-            style.element.styleSheet.cssText = style.parts
-              .filter(Boolean)
-              .join('\n');
-          } else {
-            const textNode = document.createTextNode(code);
-            const nodes = style.element.childNodes;
-            if (nodes[index]) style.element.removeChild(nodes[index]);
-            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
-            else style.element.appendChild(textNode);
-          }
-        }
-      }
-    }
     /* style inject SSR */
     
 
     
-    var CurrentSubscriptionItem = __vue_normalize__$5(
+    var CurrentSubscriptionItem = normalizeComponent_1(
       { render: __vue_render__$5, staticRenderFns: __vue_staticRenderFns__$5 },
       __vue_inject_styles__$5,
       __vue_script__$5,
       __vue_scope_id__$5,
       __vue_is_functional_template__$5,
       __vue_module_identifier__$5,
-      __vue_create_injector__$2,
+      browser,
       undefined
     );
 
@@ -11112,16 +10880,18 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$6 = script$6;
-              
+  const __vue_script__$6 = script$6;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$6.__file = "CurrentSubscriptions.vue";
+
   /* template */
-  var __vue_render__$6 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('h6',[_vm._v("Existing Subscriptions")]),_vm._v(" "),(_vm.subscriptions && _vm.subscriptions.length > 0)?_c('div',_vm._l((_vm.subscriptions),function(subscription){return _c('div',[_c('current-subscription-item',_vm._b({},'current-subscription-item',subscription,false))],1)})):_c('div',{staticClass:"psd-no-data"},[_vm._v("\n    Currently none\n  ")])])};
+  var __vue_render__$6 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('h6',[_vm._v("Existing Subscriptions")]),_vm._v(" "),(_vm.subscriptions && _vm.subscriptions.length > 0)?_c('div',_vm._l((_vm.subscriptions),function(subscription){return _c('div',[_c('current-subscription-item',_vm._b({},'current-subscription-item',subscription,false))],1)}),0):_c('div',{staticClass:"psd-no-data"},[_vm._v("\n    Currently none\n  ")])])};
   var __vue_staticRenderFns__$6 = [];
 
     /* style */
     const __vue_inject_styles__$6 = function (inject) {
       if (!inject) return
-      inject("data-v-243244e3_0", { source: "\n.psd-no-data[data-v-243244e3]{color:#8d99a6\n}", map: undefined, media: undefined });
+      inject("data-v-243244e3_0", { source: ".psd-no-data[data-v-243244e3]{color:#8d99a6}", map: undefined, media: undefined });
 
     };
     /* scoped */
@@ -11130,133 +10900,18 @@ var psd = (function () {
     const __vue_module_identifier__$6 = undefined;
     /* functional template */
     const __vue_is_functional_template__$6 = false;
-    /* component normalizer */
-    function __vue_normalize__$6(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "CurrentSubscriptions.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      {
-        let hook;
-        if (style) {
-          hook = function(context) {
-            style.call(this, createInjector(context));
-          };
-        }
-
-        if (hook !== undefined) {
-          if (component.functional) {
-            // register for functional component in vue file
-            const originalRender = component.render;
-            component.render = function renderWithStyleInjection(h, context) {
-              hook.call(context);
-              return originalRender(h, context)
-            };
-          } else {
-            // inject component registration as beforeCreate hook
-            const existing = component.beforeCreate;
-            component.beforeCreate = existing ? [].concat(existing, hook) : [hook];
-          }
-        }
-      }
-
-      return component
-    }
-    /* style inject */
-    function __vue_create_injector__$3() {
-      const head = document.head || document.getElementsByTagName('head')[0];
-      const styles = __vue_create_injector__$3.styles || (__vue_create_injector__$3.styles = {});
-      const isOldIE =
-        typeof navigator !== 'undefined' &&
-        /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
-
-      return function addStyle(id, css) {
-        if (document.querySelector('style[data-vue-ssr-id~="' + id + '"]')) return // SSR styles are present.
-
-        const group = isOldIE ? css.media || 'default' : id;
-        const style = styles[group] || (styles[group] = { ids: [], parts: [], element: undefined });
-
-        if (!style.ids.includes(id)) {
-          let code = css.source;
-          let index = style.ids.length;
-
-          style.ids.push(id);
-
-          if (css.map) {
-            // https://developer.chrome.com/devtools/docs/javascript-debugging
-            // this makes source maps inside style tags work properly in Chrome
-            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
-            // http://stackoverflow.com/a/26603875
-            code +=
-              '\n/*# sourceMappingURL=data:application/json;base64,' +
-              btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
-              ' */';
-          }
-
-          if (isOldIE) {
-            style.element = style.element || document.querySelector('style[data-group=' + group + ']');
-          }
-
-          if (!style.element) {
-            const el = style.element = document.createElement('style');
-            el.type = 'text/css';
-
-            if (css.media) el.setAttribute('media', css.media);
-            if (isOldIE) {
-              el.setAttribute('data-group', group);
-              el.setAttribute('data-next-index', '0');
-            }
-
-            head.appendChild(el);
-          }
-
-          if (isOldIE) {
-            index = parseInt(style.element.getAttribute('data-next-index'));
-            style.element.setAttribute('data-next-index', index + 1);
-          }
-
-          if (style.element.styleSheet) {
-            style.parts.push(code);
-            style.element.styleSheet.cssText = style.parts
-              .filter(Boolean)
-              .join('\n');
-          } else {
-            const textNode = document.createTextNode(code);
-            const nodes = style.element.childNodes;
-            if (nodes[index]) style.element.removeChild(nodes[index]);
-            if (nodes.length) style.element.insertBefore(textNode, nodes[index]);
-            else style.element.appendChild(textNode);
-          }
-        }
-      }
-    }
     /* style inject SSR */
     
 
     
-    var CurrentSubscriptions = __vue_normalize__$6(
+    var CurrentSubscriptions = normalizeComponent_1(
       { render: __vue_render__$6, staticRenderFns: __vue_staticRenderFns__$6 },
       __vue_inject_styles__$6,
       __vue_script__$6,
       __vue_scope_id__$6,
       __vue_is_functional_template__$6,
       __vue_module_identifier__$6,
-      __vue_create_injector__$3,
+      browser,
       undefined
     );
 
@@ -11293,8 +10948,10 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$7 = script$7;
-              
+  const __vue_script__$7 = script$7;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$7.__file = "MemberDashboard.vue";
+
   /* template */
   var __vue_render__$7 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.outstanding_cpt,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoices,false)),_vm._v(" "),_c('dashboard-item',_vm._b({},'dashboard-item',_vm.trainer,false))],1),_vm._v(" "),_c('current-subscriptions',{attrs:{"subscriptions":_vm.subscriptions}})],1)};
   var __vue_staticRenderFns__$7 = [];
@@ -11307,36 +10964,13 @@ var psd = (function () {
     const __vue_module_identifier__$7 = undefined;
     /* functional template */
     const __vue_is_functional_template__$7 = false;
-    /* component normalizer */
-    function __vue_normalize__$7(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "MemberDashboard.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      return component
-    }
     /* style inject */
     
     /* style inject SSR */
     
 
     
-    var MemberDashboard = __vue_normalize__$7(
+    var MemberDashboard = normalizeComponent_1(
       { render: __vue_render__$7, staticRenderFns: __vue_staticRenderFns__$7 },
       __vue_inject_styles__$7,
       __vue_script__$7,
@@ -11398,9 +11032,11 @@ var psd = (function () {
           }, _callee, this);
         }));
 
-        return function primary_action() {
+        function primary_action() {
           return _primary_action.apply(this, arguments);
-        };
+        }
+
+        return primary_action;
       }()
     });
   }
@@ -11520,9 +11156,11 @@ var psd = (function () {
         }, _callee2, this);
       }));
 
-      return function notification_contact(_x) {
+      function notification_contact(_x) {
         return _notification_contact.apply(this, arguments);
-      };
+      }
+
+      return notification_contact;
     }()
   };
 
@@ -11565,8 +11203,10 @@ var psd = (function () {
   };
 
   /* script */
-              const __vue_script__$8 = script$8;
-              
+  const __vue_script__$8 = script$8;
+  // For security concerns, we use only base name in production mode. See https://github.com/vuejs/rollup-plugin-vue/issues/258
+  script$8.__file = "SubscriptionDashboard.vue";
+
   /* template */
   var __vue_render__$8 = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"row"},[_c('dashboard-item',_vm._b({},'dashboard-item',_vm.invoice_cpt,false))],1)};
   var __vue_staticRenderFns__$8 = [];
@@ -11579,36 +11219,13 @@ var psd = (function () {
     const __vue_module_identifier__$8 = undefined;
     /* functional template */
     const __vue_is_functional_template__$8 = false;
-    /* component normalizer */
-    function __vue_normalize__$8(
-      template, style, script,
-      scope, functional, moduleIdentifier,
-      createInjector, createInjectorSSR
-    ) {
-      const component = (typeof script === 'function' ? script.options : script) || {};
-
-      // For security concerns, we use only base name in production mode.
-      component.__file = "SubscriptionDashboard.vue";
-
-      if (!component.render) {
-        component.render = template.render;
-        component.staticRenderFns = template.staticRenderFns;
-        component._compiled = true;
-
-        if (functional) component.functional = true;
-      }
-
-      component._scopeId = scope;
-
-      return component
-    }
     /* style inject */
     
     /* style inject SSR */
     
 
     
-    var SubscriptionDashboard = __vue_normalize__$8(
+    var SubscriptionDashboard = normalizeComponent_1(
       { render: __vue_render__$8, staticRenderFns: __vue_staticRenderFns__$8 },
       __vue_inject_styles__$8,
       __vue_script__$8,
@@ -11980,9 +11597,11 @@ var psd = (function () {
           }, _callee, this);
         }));
 
-        return function register(_x, _x2, _x3) {
+        function register(_x, _x2, _x3) {
           return _register.apply(this, arguments);
-        };
+        }
+
+        return register;
       }()
     }, {
       key: "show",
@@ -12133,9 +11752,11 @@ var psd = (function () {
         }, _callee, this);
       }));
 
-      return function gym_member(_x2) {
+      function gym_member(_x2) {
         return _gym_member.apply(this, arguments);
-      };
+      }
+
+      return gym_member;
     }()
   };
 
@@ -12191,7 +11812,7 @@ var psd = (function () {
       var _item_code = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee2(frm, cdt, cdn) {
-        var _frappe$get_doc, item_code, is_gym_subscription;
+        var _frappe$get_doc, _item_code2, is_gym_subscription;
 
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
@@ -12202,15 +11823,15 @@ var psd = (function () {
                   break;
                 }
 
-                _frappe$get_doc = frappe.get_doc(cdt, cdn), item_code = _frappe$get_doc.item_code;
+                _frappe$get_doc = frappe.get_doc(cdt, cdn), _item_code2 = _frappe$get_doc.item_code;
 
-                if (!item_code) {
+                if (!_item_code2) {
                   _context2.next = 10;
                   break;
                 }
 
                 _context2.next = 5;
-                return frappe.db.exists('Gym Subscription Item', item_code);
+                return frappe.db.exists('Gym Subscription Item', _item_code2);
 
               case 5:
                 is_gym_subscription = _context2.sent;
@@ -12230,9 +11851,11 @@ var psd = (function () {
         }, _callee2, this);
       }));
 
-      return function item_code(_x6, _x7, _x8) {
+      function item_code(_x6, _x7, _x8) {
         return _item_code.apply(this, arguments);
-      };
+      }
+
+      return item_code;
     }(),
     is_gym_subscription: function () {
       var _is_gym_subscription = _asyncToGenerator(
@@ -12302,9 +11925,11 @@ var psd = (function () {
         }, _callee3, this);
       }));
 
-      return function is_gym_subscription(_x9, _x10, _x11) {
+      function is_gym_subscription(_x9, _x10, _x11) {
         return _is_gym_subscription.apply(this, arguments);
-      };
+      }
+
+      return is_gym_subscription;
     }(),
     gym_from_date: set_qty,
     gym_to_date: set_qty,
@@ -12339,9 +11964,11 @@ var psd = (function () {
         }, _callee4, this);
       }));
 
-      return function gym_is_lifetime(_x12, _x13, _x14) {
+      function gym_is_lifetime(_x12, _x13, _x14) {
         return _gym_is_lifetime.apply(this, arguments);
-      };
+      }
+
+      return gym_is_lifetime;
     }()
   };
 
@@ -12405,9 +12032,11 @@ var psd = (function () {
         }, _callee, this);
       }));
 
-      return function set_training_data(_x) {
+      function set_training_data(_x) {
         return _set_training_data.apply(this, arguments);
-      };
+      }
+
+      return set_training_data;
     }(),
     calculate_training_earnings: function () {
       var _calculate_training_earnings = _asyncToGenerator(
@@ -12446,9 +12075,11 @@ var psd = (function () {
         }, _callee2, this);
       }));
 
-      return function calculate_training_earnings(_x2) {
+      function calculate_training_earnings(_x2) {
         return _calculate_training_earnings.apply(this, arguments);
-      };
+      }
+
+      return calculate_training_earnings;
     }(),
     toggle_training_section: function toggle_training_section(frm) {
       frm.toggle_display(['training_section', 'trainings'], cint(frm.doc.salary_slip_based_on_training) === 1);
@@ -12546,9 +12177,11 @@ var psd = (function () {
         }, _callee3, this);
       }));
 
-      return function training(_x3, _x4, _x5) {
+      function training(_x3, _x4, _x5) {
         return _training.apply(this, arguments);
-      };
+      }
+
+      return training;
     }(),
     months: function months(frm, cdt, cdn) {
       calculate_training_months(frm);
@@ -12665,9 +12298,11 @@ var psd = (function () {
         }, _callee2, this);
       }));
 
-      return function print_dn(_x) {
+      function print_dn(_x) {
         return _print_dn.apply(this, arguments);
-      };
+      }
+
+      return print_dn;
     }(),
     skip: function skip(frm) {
       frm.save();
