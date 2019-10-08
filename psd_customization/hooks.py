@@ -89,8 +89,6 @@ fixtures = [
 app_include_css = ["/assets/css/psd_customization.css"]
 app_include_js = [
     "/assets/js/psd_customization.min.js",
-    "/assets/psd_customization/js/naming_series.js",
-    "/assets/psd_customization/js/gym_member_quick_entry.js",
     "/assets/psd_customization/js/psd_customization.iife.js",
 ]
 

@@ -1,4 +1,4 @@
-frappe.ui.form.GymMemberQuickEntryForm = frappe.ui.form.QuickEntryForm.extend({
+const quick_entry = {
   init: function(doctype, after_insert) {
     this._super(doctype, after_insert);
   },
@@ -71,4 +71,8 @@ frappe.ui.form.GymMemberQuickEntryForm = frappe.ui.form.QuickEntryForm.extend({
       },
     ];
   },
-});
+};
+
+export default {
+  quick_entry,
+};
