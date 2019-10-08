@@ -3,13 +3,8 @@
   "version": "0.10.17",
   "description": "Customizations for PSD SELF",
   "entry": "src/index.js",
-  "main": "psd_customization/public/js/psd_customization.iife.js",
   "scripts": {
-    "watch": "rollup -c --watch",
-    "build": "rollup -c --environment NODE_ENV:production",
-    "preversion": "npm run build; git add $npm_package_main",
-    "version": "sed -i \"s/__version__.*/__version__ = '$npm_package_version'/\" $npm_package_name/__init__.py; git add -A $npm_package_name/__init__.py",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "version": "sed -i \"s/__version__.*/__version__ = \\\"$npm_package_version\\\"/\" $npm_package_name/__init__.py; git add -A $npm_package_name/__init__.py"
   },
   "repository": {
     "type": "git",
@@ -22,18 +17,6 @@
   },
   "homepage": "https://github.com/libermatic/psd_customization#readme",
   "dependencies": {
-    "@babel/runtime": "^7.6.2",
-    "vue": "^2.6.10"
   },
-  "devDependencies": {
-    "@babel/core": "^7.6.2",
-    "@babel/preset-env": "^7.6.2",
-    "rollup": "^0.67.0",
-    "rollup-plugin-babel": "^4.3.3",
-    "rollup-plugin-commonjs": "^9.3.4",
-    "rollup-plugin-node-resolve": "^3.4.0",
-    "rollup-plugin-replace": "^2.2.0",
-    "rollup-plugin-vue": "^4.7.2",
-    "vue-template-compiler": "^2.6.10"
-  }
+  "devDependencies": {}
 }
