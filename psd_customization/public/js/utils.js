@@ -1,10 +1,7 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-frappe.provide('psd_customization');
-frappe.provide('psd_customization.utils');
-
-psd_customization.utils.month_diff_dec = function(d1, d2) {
+export function month_diff_dec(d1, d2) {
   const last_start = frappe.datetime.add_days(d2, 1);
   let next_start = d1;
   let cur_start = d1;
@@ -19,4 +16,4 @@ psd_customization.utils.month_diff_dec = function(d1, d2) {
   const rem_days = frappe.datetime.get_day_diff(last_start, cur_start);
   const days_in_month = frappe.datetime.get_day_diff(next_start, cur_start);
   return cur_months + rem_days / days_in_month;
-};
+}
