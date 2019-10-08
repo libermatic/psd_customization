@@ -5,11 +5,7 @@
 from __future__ import unicode_literals
 from functools import reduce
 from copy import deepcopy
-from toolz import assoc, filter, keyfilter
-
-
-def compose(*funcs):
-    return reduce(lambda f, g: lambda x: f(g(x)), funcs, lambda x: x)
+from toolz import assoc, filter, keyfilter, compose
 
 
 def update(kv_dict):
@@ -17,12 +13,14 @@ def update(kv_dict):
         new_item = deepcopy(item)
         new_item.update(kv_dict)
         return new_item
+
     return fn
 
 
 def join(sep):
     def fn(items):
         return sep.join(items)
+
     return fn
 
 
@@ -31,6 +29,7 @@ def pick(fields, from_dict):
         if from_dict.get(x):
             return assoc(a, x, from_dict.get(x))
         return a
+
     return reduce(set_field, fields, {})
 
 
@@ -40,3 +39,6 @@ def omit(blacklist, d):
 
 def compact(iter):
     return filter(None, iter)
+
+
+mapr = compose(list, map)
