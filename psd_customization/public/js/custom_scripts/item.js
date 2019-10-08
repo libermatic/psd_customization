@@ -1,7 +1,10 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Item', {
+import JsBarcode from 'jsbarcode';
+import domtoimage from 'dom-to-image-more';
+
+export default {
   refresh: function(frm) {
     frm.trigger('add_menu_item');
     frm.trigger('render_barcode_details');
@@ -51,51 +54,42 @@ frappe.ui.form.on('Item', {
           frappe.render_template('barcode_label', { doc: label_data })
         );
         const barcode_area = frm.dashboard.wrapper.find('.psd-barcode-area');
-        frappe.require('assets/frappe/js/lib/JsBarcode.all.min.js', function() {
-          try {
-            barcode_area.html('<svg />');
-            JsBarcode(barcode_area.find('svg')[0], label_data.barcode, {
-              format: 'ean13',
-              margin: 0,
-              marginTop: 4,
-              marginBottom: 4,
-              height: 40,
-              width: 2,
-              fontSize: 11,
-              flat: true,
-            });
-            frappe.require(
-              'assets/psd_customization/js/lib/dom-to-image.min.js',
-              function() {
-                const node = frm.dashboard.wrapper.find('#barcode-label')[0];
-                async function download_label() {
-                  try {
-                    const dataUrl = await domtoimage.toPng(node);
-                    $('<a />')
-                      .attr({
-                        href: dataUrl,
-                        download: `${label_data.item_code} - ${
-                          label_data.barcode
-                        }.png`,
-                      })[0]
-                      .click();
-                  } catch (e) {
-                    console.error('oops, something went wrong!', e);
-                  }
-                }
-                $(dashboard_section)
-                  .find('.download_image')
-                  .click(download_label);
-              }
-            );
-          } catch (e) {
-            barcode_area.text('INVALID');
-            $(dashboard_section)
-              .find('.download_image')
-              .addClass('disabled');
+        try {
+          barcode_area.html('<svg />');
+          JsBarcode(barcode_area.find('svg')[0], label_data.barcode, {
+            format: 'ean13',
+            margin: 0,
+            marginTop: 4,
+            marginBottom: 4,
+            height: 40,
+            width: 2,
+            fontSize: 11,
+            flat: true,
+          });
+          const node = frm.dashboard.wrapper.find('#barcode-label')[0];
+          async function download_label() {
+            try {
+              const dataUrl = await domtoimage.toPng(node);
+              $('<a />')
+                .attr({
+                  href: dataUrl,
+                  download: `${label_data.item_code} - ${label_data.barcode}.png`,
+                })[0]
+                .click();
+            } catch (e) {
+              console.error('oops, something went wrong!', e);
+            }
           }
-        });
+          $(dashboard_section)
+            .find('.download_image')
+            .click(download_label);
+        } catch (e) {
+          barcode_area.text('INVALID');
+          $(dashboard_section)
+            .find('.download_image')
+            .addClass('disabled');
+        }
       }
     }
   },
-});
+};

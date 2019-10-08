@@ -5,11 +5,14 @@
  * Sets query for Branch based on selected Company
  */
 
-frappe.ui.form.on('Journal Entry', {
+import { set_naming_series } from '../utils';
+
+export default {
   refresh: function(frm) {
     frm.trigger('set_queries');
   },
-  company: function(frm) {
+  company: function(frm, dt) {
+    set_naming_series(frm, dt);
     frm.trigger('set_queries');
   },
   set_queries: function(frm) {
@@ -17,4 +20,4 @@ frappe.ui.form.on('Journal Entry', {
     frm.toggle_display('branch', !!company);
     frm.set_query('branch', { filters: { company } });
   },
-});
+};

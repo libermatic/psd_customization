@@ -101,10 +101,6 @@ app_include_js = [
 
 # include js in doctype views
 doctype_js = {
-    "Journal Entry": "public/js/journal_entry.js",
-    "Item": "public/js/item.js",
-    "Purchase Receipt": "public/js/serial_reader.js",
-    "Purchase Invoice": "public/js/serial_reader.js",
     "Sales Invoice": "public/js/cscripts/sales_invoice.js",
     "Salary Structure": "public/js/cscripts/salary_structure.js",
     "Salary Slip": "public/js/cscripts/salary_slip.js",
