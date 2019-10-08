@@ -4,3 +4,5 @@ export { default as sales_invoice } from './sales_invoice';
 export { default as item } from './item';
 export { default as purchase_receipt } from './purchase_receipt';
 export { default as purchase_invoice } from './purchase_invoice';
+export { default as salary_slip } from './salary_slip';
+export { default as salary_structure } from './salary_structure';

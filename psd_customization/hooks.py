@@ -87,10 +87,7 @@ fixtures = [
 
 # include js, css files in header of desk.html
 app_include_css = ["/assets/css/psd_customization.css"]
-app_include_js = [
-    "/assets/js/psd_customization.min.js",
-    "/assets/psd_customization/js/psd_customization.iife.js",
-]
+app_include_js = ["/assets/js/psd_customization.min.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/psd_customization/css/psd_customization.css"
@@ -100,11 +97,7 @@ app_include_js = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-    "Sales Invoice": "public/js/cscripts/sales_invoice.js",
-    "Salary Structure": "public/js/cscripts/salary_structure.js",
-    "Salary Slip": "public/js/cscripts/salary_slip.js",
-}
+doctype_js = {"Salary Slip": "public/js/include_scripts/salary_slip.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
