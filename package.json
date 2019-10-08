@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/libermatic/psd_customization#readme",
   "dependencies": {
+    "dom-to-image-more": "^2.8.0",
+    "jsbarcode": "^3.11.0"
   },
   "devDependencies": {}
 }
