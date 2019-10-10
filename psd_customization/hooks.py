@@ -96,7 +96,7 @@ app_include_js = ["/assets/js/psd_customization.min.js"]
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Salary Slip": "public/js/include_scripts/salary_slip.js"}
+# doctype_js = {"doctype": "public/js/include_scripts/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

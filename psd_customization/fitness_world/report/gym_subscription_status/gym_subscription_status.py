@@ -9,23 +9,25 @@ from toolz import compose, assoc, get, merge, concatv
 
 
 def execute(filters=None):
-    return get_columns(), compose(
-        partial(filter, status_filter(filters)),
-        partial(map, make_row),
-    )(get_data(filters))
+    return (
+        get_columns(),
+        compose(list, partial(filter, status_filter(filters)), partial(map, make_row))(
+            get_data(filters)
+        ),
+    )
 
 
 def get_columns():
     columns = [
-        _('Member ID') + ':Link/Gym Member:120',
-        _('Member Name') + '::180',
-        _('Subscription Item') + '::90',
-        _('Item Name') + '::150',
-        _('Stated On') + ':Date:90',
-        _('Expires On') + ':Date:90',
-        _('Expiry (In Days)') + ':Int:60',
-        _('Lifetime') + '::60',
-        _('Status') + '::90',
+        _("Member ID") + ":Link/Gym Member:120",
+        _("Member Name") + "::180",
+        _("Subscription Item") + "::90",
+        _("Item Name") + "::150",
+        _("Stated On") + ":Date:90",
+        _("Expires On") + ":Date:90",
+        _("Expiry (In Days)") + ":Int:60",
+        _("Lifetime") + "::60",
+        _("Status") + "::90",
     ]
     return columns
 
@@ -33,9 +35,10 @@ def get_columns():
 def add_filter_clause(filters, field):
     def fn(clauses):
         if filters.get(field):
-            clause = ['a.{field}=%({field})s'.format(field=field)]
+            clause = ["a.{field}=%({field})s".format(field=field)]
             return concatv(clauses, clause)
         return clauses
+
     return fn
 
 
@@ -45,31 +48,23 @@ def add_filter_value(filters, field):
             value = {field: filters.get(field)}
             return merge(values, value)
         return values
+
     return fn
 
 
 def make_filter_composer(filters, fields):
     def fn(add_fn):
-        return compose(
-            *map(
-                lambda field: add_fn(filters, field),
-                fields,
-            )
-        )
+        return compose(*map(lambda field: add_fn(filters, field), fields))
+
     return fn
 
 
 def make_conditions(filters):
-    init_clauses, init_values = ['a.docstatus=1'], {}
-    filter_composer = make_filter_composer(
-        filters, ['member', 'subscription_item']
-    )
+    init_clauses, init_values = ["a.docstatus=1"], {}
+    filter_composer = make_filter_composer(filters, ["member", "subscription_item"])
     make_clauses = filter_composer(add_filter_clause)
     make_values = filter_composer(add_filter_value)
-    return (
-        " AND ".join(make_clauses(init_clauses)),
-        make_values(init_values),
-    )
+    return (" AND ".join(make_clauses(init_clauses)), make_values(init_values))
 
 
 def get_data(filters):
@@ -99,7 +94,9 @@ def get_data(filters):
                 a.subscription_item = b.subscription_item AND
                 a.from_date = b.from_date
             WHERE {clauses}
-        """.format(clauses=clauses),
+        """.format(
+            clauses=clauses
+        ),
         values=values,
         as_dict=1,
         debug=1,
@@ -107,43 +104,40 @@ def get_data(filters):
 
 
 def make_row(row):
-    lifetime = 'Yes' if row.get('is_lifetime') else ''
+    lifetime = "Yes" if row.get("is_lifetime") else ""
     expiry_in_days = (
-        row.get('expiry_date') - frappe.utils.datetime.date.today()
-    ).days if row.get('expiry_date') else 0
+        (row.get("expiry_date") - frappe.utils.datetime.date.today()).days
+        if row.get("expiry_date")
+        else 0
+    )
 
     def get_status():
-        if not row.get('is_lifetime') and expiry_in_days < 0:
-            return 'Expired'
-        return row.get('raw_status')
+        if not row.get("is_lifetime") and expiry_in_days < 0:
+            return "Expired"
+        return row.get("raw_status")
 
-    add_lifetime = partial(
-        assoc, key='lifetime', value=lifetime
-    )
-    set_expiry_eta = partial(
-        assoc, key='expiry_in_days', value=expiry_in_days,
-    )
-    set_status = partial(
-        assoc, key='status', value=get_status(),
-    )
+    add_lifetime = partial(assoc, key="lifetime", value=lifetime)
+    set_expiry_eta = partial(assoc, key="expiry_in_days", value=expiry_in_days)
+    set_status = partial(assoc, key="status", value=get_status())
 
     keys = [
-        'member', 'member_name',
-        'item', 'item_name',
-        'start_date', 'expiry_date', 'expiry_in_days', 'lifetime',
-        'status',
+        "member",
+        "member_name",
+        "item",
+        "item_name",
+        "start_date",
+        "expiry_date",
+        "expiry_in_days",
+        "lifetime",
+        "status",
     ]
-    return compose(
-        partial(get, keys),
-        set_status,
-        set_expiry_eta,
-        add_lifetime
-    )(row)
+    return compose(partial(get, keys), set_status, set_expiry_eta, add_lifetime)(row)
 
 
 def status_filter(filters):
     def fn(row):
-        if filters.get('status'):
-            return row[-1] == filters.get('status')
+        if filters.get("status"):
+            return row[-1] == filters.get("status")
         return True
+
     return fn

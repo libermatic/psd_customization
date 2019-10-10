@@ -35,7 +35,7 @@ def make_sales_invoice(source_name):
         "naming_series": settings.naming_series,
         "taxes_and_charges": settings.default_tax_template,
     }
-    for field, value in args.iteritems():
+    for field, value in args.items():
         si.set(field, value)
     qty = (
         (
@@ -282,7 +282,7 @@ def validate_dependencies(member, items):
     subscription_exists = partial(_get_existing_subscription, member=member)
     requirements_fulfilled = partial(_has_valid_requirements, member=member)
 
-    filter_items = _filter_item(items)
+    filter_items = compose(list, _filter_item(items))
     for item in items:
         existing = subscription_exists(
             item=item.item_code,
@@ -395,4 +395,6 @@ def set_expired_susbcriptions(posting_date):
             ["to_date", "<", posting_date],
         ],
     )
-    return compose(partial(map, _set_expiry), partial(pluck, "name"))(subscriptions)
+    return compose(list, partial(map, _set_expiry), partial(pluck, "name"))(
+        subscriptions
+    )

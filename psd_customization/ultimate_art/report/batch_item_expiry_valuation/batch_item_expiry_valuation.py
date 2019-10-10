@@ -6,29 +6,29 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 from functools import partial
-from psd_customization.utils.fp import compose
+from psd_customization.utils.fp import compose, mapr
 
 
 def execute(filters={}):
     data = query_stock_entry_ledger(filters)
     filter_post_query = filter_data(filters)
-    post_proced = map(inject_cols, data)
-    return get_columns(), map(make_row, filter_post_query(post_proced))
+    post_proced = mapr(inject_cols, data)
+    return get_columns(), mapr(make_row, filter_post_query(post_proced))
 
 
 def get_columns():
     columns = [
-        _('Item') + ':Link/Item:90',
-        _('Item Name') + '::120',
-        _('Warehouse') + ':Link/Warehouse:90',
-        _('Batch') + ':Link/Batch:120',
-        _('Expires On') + ':Date:90',
-        _('Expiry (In Days)') + ':Int:90',
-        _('Quantity') + ':Float:90',
-        _('Item Rate') + ':Currency/currency:90',
-        _('Amount') + ':Currency/currency:90',
-        _('Valuation Rate') + ':Currency/currency:90',
-        _('Total Valuation') + ':Currency/currency:90',
+        _("Item") + ":Link/Item:90",
+        _("Item Name") + "::120",
+        _("Warehouse") + ":Link/Warehouse:90",
+        _("Batch") + ":Link/Batch:120",
+        _("Expires On") + ":Date:90",
+        _("Expiry (In Days)") + ":Int:90",
+        _("Quantity") + ":Float:90",
+        _("Item Rate") + ":Currency/currency:90",
+        _("Amount") + ":Currency/currency:90",
+        _("Valuation Rate") + ":Currency/currency:90",
+        _("Total Valuation") + ":Currency/currency:90",
     ]
     return columns
 
@@ -65,46 +65,41 @@ def query_stock_entry_ledger(filters):
                 AND %s
             GROUP BY sle.batch_no, sle.warehouse
             ORDER BY batch.expiry_date, sle.item_code
-        """ % (
-            sub_query,
-            ' AND '.join(make_conditions(filters)),
-        ),
+        """
+        % (sub_query, " AND ".join(make_conditions(filters))),
         as_dict=1,
     )
 
 
 def make_conditions(filters):
     conds = []
-    if filters.get('from_date') and filters.get('to_date'):
+    if filters.get("from_date") and filters.get("to_date"):
         conds.append(
             "sle.posting_date BETWEEN '{}' AND '{}'".format(
-                filters.get('from_date'), filters.get('to_date')
+                filters.get("from_date"), filters.get("to_date")
             )
         )
     else:
-        frappe.throw(_('Dates are required'))
-    if filters.get('warehouse'):
-        conds.append(
-            "sle.warehouse = '{}'".format(filters.get('warehouse'))
-        )
+        frappe.throw(_("Dates are required"))
+    if filters.get("warehouse"):
+        conds.append("sle.warehouse = '{}'".format(filters.get("warehouse")))
     conds.append(
-        "price.price_list = '{}'".format(
-            filters.get('price_list', 'Standard Selling')
-        )
+        "price.price_list = '{}'".format(filters.get("price_list", "Standard Selling"))
     )
     return conds
 
 
 def filter_data(filters):
     def filter_by_days(x):
-        days_to_expiry = filters.get('days_to_expiry')
+        days_to_expiry = filters.get("days_to_expiry")
         if days_to_expiry:
-            return x.get('expiry_status') <= cint(days_to_expiry)
+            return x.get("expiry_status") <= cint(days_to_expiry)
         return True
 
     return compose(
+        list,
         partial(filter, filter_by_days),
-        partial(filter, lambda x: x.get('qty') > 0),
+        partial(filter, lambda x: x.get("qty") > 0),
     )
 
 
@@ -121,8 +116,16 @@ def inject_cols(row):
 
 def make_row(row):
     keys = [
-        'item_code', 'item_name', 'warehouse',
-        'batch_no', 'expiry_date', 'expiry_status',
-        'qty', 'rate', 'amount', 'valuation_rate', 'valuation',
+        "item_code",
+        "item_name",
+        "warehouse",
+        "batch_no",
+        "expiry_date",
+        "expiry_status",
+        "qty",
+        "rate",
+        "amount",
+        "valuation_rate",
+        "valuation",
     ]
-    return map(lambda x: row.get(x), keys)
+    return mapr(lambda x: row.get(x), keys)

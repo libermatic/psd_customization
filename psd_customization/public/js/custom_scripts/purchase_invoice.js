@@ -5,14 +5,10 @@
 import {
   make_parse_serial_dialog,
   handle_parse_serial_dialog,
-} from '../ultimate_art';
+} from './purchase_receipt';
 
 const purchase_invoice_item = {
   parse_serial: handle_parse_serial_dialog,
-  barcode: function(frm, cdt, cdn) {
-    const transaction_controller = new erpnext.TransactionController();
-    transaction_controller.barcode(frm, cdt, cdn);
-  },
 };
 
 export default {

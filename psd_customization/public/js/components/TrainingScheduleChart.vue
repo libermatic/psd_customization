@@ -4,8 +4,9 @@
 
 <script>
 import { colorHash } from '../utils/colors';
+import { PercentageChart } from 'frappe-charts';
 
-class Chart extends frappeChart.PercentageChart {
+class Chart extends PercentageChart {
   renderLegend() {}
 }
 

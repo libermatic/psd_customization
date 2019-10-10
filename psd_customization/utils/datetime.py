@@ -33,7 +33,7 @@ def month_diff(d1, d2, as_dec=0):
     gen_start = _get_next_start(first_start)
     while next_start <= last_start:
         cur_start, cur_months = next_start, months
-        next_start, months = gen_start.next()
+        next_start, months = next(gen_start)
     rem_days = date_diff(last_start, cur_start)
     if cint(as_dec):
         days_in_month = date_diff(next_start, cur_start)

@@ -7,21 +7,19 @@ import frappe
 from toolz import merge
 
 from psd_customization.ultimate_art.api.item import get_label_data
+from psd_customization.utils.fp import mapr
 
 
 @frappe.whitelist()
 def get_items(print_dt, print_dn, company, price_list):
     doc = frappe.get_doc(print_dt, print_dn) or []
-    return map(
-        _make_item(company, price_list),
-        doc.items,
-    )
+    return mapr(_make_item(company, price_list), doc.items)
 
 
 def _make_item(company, price_list):
     def fn(item):
         return merge(
-            get_label_data(item.item_code, company, price_list),
-            {'qty': item.qty}
+            get_label_data(item.item_code, company, price_list), {"qty": item.qty}
         )
+
     return fn

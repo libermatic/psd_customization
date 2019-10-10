@@ -110,7 +110,7 @@ def get_data(filters):
     make_row = compose(
         partial(get, get_keys(_columns)), _set_subscription_status(getdate())
     )
-    return map(make_row, allocations)
+    return list(map(make_row, allocations))
 
 
 def _set_subscription_status(today):

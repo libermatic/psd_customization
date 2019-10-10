@@ -115,7 +115,7 @@ class GymMember(Document):
             ),
             as_dict=True,
         )
-        unpaid_subscriptions = filter(
+        unpaid_subscriptions = compose(list, filter)(
             lambda x: x.get("status") != "Paid", all_subscriptions
         )
         outstanding = reduce(operator.add, pluck("amount", unpaid_subscriptions), 0)

@@ -55,7 +55,7 @@ const salary_slip_training = {
 };
 
 async function set_training_data(frm) {
-  await frappe.call({
+  return frappe.call({
     method:
       'psd_customization.fitness_world.api.salary_slip.set_trainings_in_salary_slip',
     args: { doc_json: frm.doc, set_in_response: 1 },
@@ -92,6 +92,13 @@ function toggle_training_section(frm) {
   );
 }
 
+async function get_emp_and_leave_details(frm, dt, dn) {
+  const { doc } = frm;
+  await frappe.call({ method: 'get_emp_and_leave_details', doc });
+  await set_training_data({ doc });
+  frm.refresh();
+}
+
 export default {
   salary_slip_training,
   setup: function(frm) {
@@ -103,6 +110,7 @@ export default {
         filters: { employee: frm.doc.employee },
       };
     };
+    frm.events.get_emp_and_leave_details = get_emp_and_leave_details;
   },
   refresh: toggle_training_section,
   salary_slip_based_on_training: toggle_training_section,

@@ -16,6 +16,7 @@ from psd_customization.fitness_world.api.trainer_allocation import (
 
 def validate(doc, method):
     filter_and_make_items = compose(
+        list,
         partial(
             map,
             lambda x: frappe._dict(

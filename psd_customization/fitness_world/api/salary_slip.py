@@ -10,6 +10,8 @@ import json
 from functools import partial
 from toolz import merge, pluck, compose
 
+from psd_customization.utils.fp import mapr
+
 
 @frappe.whitelist()
 def set_trainings_in_salary_slip(doc_json, set_in_response=0):
@@ -87,7 +89,7 @@ def get_trainings_for_salary_slip(employee, end_date):
         values={"trainer": trainer, "end_date": end_date},
         as_dict=1,
     )
-    return map(_set_days(end_date), trainings)
+    return mapr(_set_days(end_date), trainings)
 
 
 def add_earning_for_training(doc, salary_component, amount):
