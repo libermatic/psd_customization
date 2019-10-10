@@ -60,7 +60,7 @@
     padding: 0.1em 0.3em;
     font-size: 0.7em;
     font-weight: normal;
-    background-color:  #d1d8dd;
+    background-color: #d1d8dd;
   }
   .psd-details dl {
     margin: 0;
@@ -96,8 +96,7 @@
     <div class="col-xs-6">
       <dl>
         <dt>
-          {{ __("POS No") }}
-          {% if status != "Paid" %}
+          {{ __("POS No") }} {% if status != "Paid" %}
           <span class="psd-indicator">{{ _("Unpaid")}}</span>
           {% endif %}
         </dt>
@@ -112,7 +111,7 @@
   <table class="table table-condensed">
     <thead>
       <tr>
-        <th width="40%">{{ __("Item") }}</b></th>
+        <th width="40%"><b>{{ __("Item") }}</b></th>
         <th width="23%" class="text-right">{{ __("Qty") }}</th>
         <th width="17%" class="text-right">{{ __("Discount") }}</th>
         <th width="20%" class="text-right">{{ __("Amount") }}</th>
@@ -123,14 +122,14 @@
       <tr>
         <td>{{ item.item_name }}</td>
         <td class="text-right">
-          {{ format_number(item.qty, null, precision("difference")) }}
-          {{ item.stock_uom }}<br/>
+          {{ format_number(item.qty, null, precision("difference")) }} {{
+          item.stock_uom }}<br />
           @ {{ format_currency(item.price_list_rate, currency) }}
         </td>
         <td class="text-right">
-          {% if item.discount_percentage %}
-          {{ format_currency(item.qty * item.price_list_rate * item.discount_percentage / 100, currency) }}
-          {% else %} - {% endif %}
+          {% if item.discount_percentage %} {{ format_currency(item.qty *
+          item.price_list_rate * item.discount_percentage / 100, currency) }} {%
+          else %} - {% endif %}
         </td>
         <td class="text-right">{{ format_currency(item.amount, currency) }}</td>
       </tr>
@@ -142,16 +141,12 @@
         <td colspan="3">{{ __("Total") }}</td>
         <td>{{ format_currency(total, currency) }}</td>
       </tr>
-      {% endif %}
-      {% for row in taxes %}
-      {% if not row.included_in_print_rate %}
+      {% endif %} {% for row in taxes %} {% if not row.included_in_print_rate %}
       <tr>
         <td colspan="3">{{ row.description }}</td>
         <td>{{ format_currency(row.tax_amount, currency) }}</td>
       </tr>
-      {% endif %}
-      {% endfor %}
-      {% if discount_amount %}
+      {% endif %} {% endfor %} {% if discount_amount %}
       <tr>
         <td colspan="3">{{ __("Discount") }}</td>
         <td>{{ format_currency(discount_amount, currency) }}</td>
@@ -164,17 +159,19 @@
       {% if rounding_adjustment %}
       <tr>
         <td colspan="3">
-          {{ __("Round Off") }} ({{ format_currency(rounding_adjustment, currency) }})
+          {{ __("Round Off") }} ({{ format_currency(rounding_adjustment,
+          currency) }})
         </td>
         <td>{{ format_currency(rounded_total, currency) }}</td>
       </tr>
-      {% endif %}
-      {% if write_off_amount %}
+      {% endif %} {% if write_off_amount %}
       <tr>
         <td colspan="3">
           {{ _("Less") }} ({{ format_currency(write_off_amount, currency) }})
         </td>
-        <td>{{ format_currency(rounded_total - write_off_amount, currency) }}</td>
+        <td>
+          {{ format_currency(rounded_total - write_off_amount, currency) }}
+        </td>
       </tr>
       {% endif %}
     </tfoot>

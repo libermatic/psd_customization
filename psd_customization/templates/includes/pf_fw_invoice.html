@@ -59,9 +59,8 @@
 </style>
 
 <div class="fw-inv">
-  {% if not no_letterhead and doc.letter_head %}
-  {{ frappe.db.get_value('Letter Head', doc.letter_head, 'content') }}
-  {% endif %}
+  {% if not no_letterhead and doc.letter_head %} {{ frappe.db.get_value('Letter
+  Head', doc.letter_head, 'content') }} {% endif %}
   <section class="fw-inv-title">
     <h1>Sales Invoice</h1>
   </section>
@@ -96,17 +95,14 @@
       {% for item in doc.items %}
       <tr>
         <td>
-          {{ item.description }}
-          {% if item.gym_subscription %}
+          {{ item.description }} {% if item.gym_subscription %}
           <span class="fw-mono">{{ item.gym_subscription }}</span>
           <br />
-          Validity:
-          {% if item.gym_is_lifetime %}
-          <span class="fw-strong">Lifetime</span> starting {{ item.get_formatted('gym_from_date') }}
-          {% else %}
-          {{ item.get_formatted('gym_from_date') }} – {{ item.get_formatted('gym_to_date') }}
-          {% endif %}
-          {% endif %}
+          Validity: {% if item.gym_is_lifetime %}
+          <span class="fw-strong">Lifetime</span> starting {{
+          item.get_formatted('gym_from_date') }} {% else %} {{
+          item.get_formatted('gym_from_date') }} – {{
+          item.get_formatted('gym_to_date') }} {% endif %} {% endif %}
         </td>
         <td class="text-right">{{ item.get_formatted('amount', doc) }}</td>
       </tr>
@@ -115,10 +111,8 @@
     <tfoot>
       <tr>
         <td class="text-right">
-          Total
-          {% if doc.total_taxes_and_charges %}
-          (Inclusive of GST {{ doc.get_formatted('total_taxes_and_charges') }})
-          {% endif %}
+          Total {% if doc.total_taxes_and_charges %} (Inclusive of GST {{
+          doc.get_formatted('total_taxes_and_charges') }}) {% endif %}
         </td>
         <td class="text-right">{{ doc.get_formatted('total') }}</td>
       </tr>
@@ -128,12 +122,12 @@
       </tr>
       <tr>
         <td class="text-right">
-          Grant Total
-          {% if doc.rounding_adjustment %}
-          (Round Off: {{ doc.get_formatted('rounding_adjustment') }})
-          {% endif %}
+          Grant Total {% if doc.rounding_adjustment %} (Round Off: {{
+          doc.get_formatted('rounding_adjustment') }}) {% endif %}
         </td>
-        <td class="text-right fw-strong">{{ doc.get_formatted('rounded_total') }}</td>
+        <td class="text-right fw-strong">
+          {{ doc.get_formatted('rounded_total') }}
+        </td>
       </tr>
       <tr>
         <td colspan="2" class="text-right fw-emphasized">{{ doc.in_words }}</td>
@@ -144,7 +138,9 @@
       </tr>
       <tr>
         <td class="text-right">Outstanding</td>
-        <td class="text-right fw-strong">{{ doc.get_formatted('outstanding_amount') }}</td>
+        <td class="text-right fw-strong">
+          {{ doc.get_formatted('outstanding_amount') }}
+        </td>
       </tr>
     </tfoot>
   </table>
@@ -154,5 +150,4 @@
     {{ doc.terms }}
   </section>
   {% endif %}
-
 </div>

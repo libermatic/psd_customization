@@ -32,7 +32,6 @@ export default {
   },
   refresh: function(frm) {
     frm.disable_save();
-    frm.toolbar.print_icon.hide();
     add_buttons(frm);
     set_doc_query(frm);
   },
@@ -59,8 +58,5 @@ export default {
   },
   skip: function(frm) {
     frm.save();
-  },
-  before_print: function(frm) {
-    console.log('prit');
   },
 };

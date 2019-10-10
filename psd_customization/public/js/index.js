@@ -1,4 +1,3 @@
-import * as ultimate_art from './ultimate_art';
 import * as utils from './utils';
 import * as scripts from './scripts';
 import * as custom_scripts from './custom_scripts';
@@ -41,8 +40,6 @@ frappe.ui.form.GymMemberQuickEntryForm = frappe.ui.form.QuickEntryForm.extend(
 );
 
 frappe.provide('psd_customization');
-
-psd_customization = { ultimate_art, utils };
 
 frappe.provide('psd');
 psd = {

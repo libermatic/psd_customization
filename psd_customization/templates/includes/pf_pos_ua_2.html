@@ -148,14 +148,13 @@
       </div>
     </div>
     {% endfor %}
-    <div class=psd-pos-items-summary>
+    <div class="psd-pos-items-summary">
       {% if doc.discount_amount %}
       <div>
         <div>Discount</div>
         <div>{{ doc.get_formatted('discount_amount') }}</div>
       </div>
-      {% endif %}
-      {% if doc.rounding_adjustment %}
+      {% endif %} {% if doc.rounding_adjustment %}
       <div>
         <div>Round Off</div>
         <div>{{ doc.get_formatted('rounding_adjustment') }}</div>

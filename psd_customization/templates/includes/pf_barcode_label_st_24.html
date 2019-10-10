@@ -1,11 +1,14 @@
-<link rel="stylesheet" type="text/css" href="/assets/css/psd_customization.css">
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="/assets/css/psd_customization.css"
+/>
 
-{% set page_margin_horz = 'calc((210mm - {cols} * {width} - ({cols} - 1) * {gap}) / 2)'.format(
-  cols=col_num or 1, width=label_width or '0mm', gap=column_gap or '0mm'
-) %}
-{% set page_margin_vert = 'calc((297mm - {rows} * {height} - ({rows} - 1) * {gap}) / 2)'.format(
-  rows=row_num or 1, height=label_height or '0mm', gap=row_gap or '0mm'
-) %}
+{% set page_margin_horz = 'calc((210mm - {cols} * {width} - ({cols} - 1) *
+{gap}) / 2)'.format( cols=col_num or 1, width=label_width or '0mm',
+gap=column_gap or '0mm' ) %} {% set page_margin_vert = 'calc((297mm - {rows} *
+{height} - ({rows} - 1) * {gap}) / 2)'.format( rows=row_num or 1,
+height=label_height or '0mm', gap=row_gap or '0mm' ) %}
 
 <style>
   @page {
@@ -57,38 +60,32 @@
   }
 </style>
 
-{% set items = [] %}
-{% for c in range(0, frappe.utils.cint(doc.skip) or 0) %}
-{% set _0 = items.append(None) %}
-{% endfor %}
-
-{% for item in doc.items %}
-{% for c in range(0, frappe.utils.cint(item.qty)) %}
-{% set _0 = items.append(item) %}
-{% endfor %}
-{% endfor %}
-
-{% set num_of_labels = col_num * row_num if col_num and row_num else 1 %}
+{% set items = [] %} {% for c in range(0, frappe.utils.cint(doc.skip) or 0) %}
+{% set _0 = items.append(None) %} {% endfor %} {% for item in doc.items %} {%
+for c in range(0, frappe.utils.cint(item.qty)) %} {% set _0 = items.append(item)
+%} {% endfor %} {% endfor %} {% set num_of_labels = col_num * row_num if col_num
+and row_num else 1 %}
 
 <table class="psd-barcode">
   <tbody>
     {% for p in range(0, items|length, num_of_labels) %}
     <tr>
       <td class="psd-barcode-page">
-        {% for item in items[p: [items|length, p + num_of_labels]|min] %}
-        {% if item %}
+        {% for item in items[p: [items|length, p + num_of_labels]|min] %} {% if
+        item %}
         <div class="psd-barcode-label-container">
           <div class="psd-barcode-label">
             <div class="psd-barcode-header">{{ doc.company }}</div>
             <div class="psd-barcode-text">
               <span class="psd-barcode-strong">{{ item.item_code }}</span>
-              {% if item.item_code != item.item_name %}
-              : <span>{{ item.item_name }}</span>
+              {% if item.item_code != item.item_name %} :
+              <span>{{ item.item_name }}</span>
               {% endif %}
             </div>
             <div class="psd-barcode-area">
               {% if item.barcode %}
-              <svg class="barcode"
+              <svg
+                class="barcode"
                 jsbarcode-format="ean13"
                 jsbarcode-margin="0"
                 jsbarcode-margintop="4"
@@ -102,24 +99,28 @@
               <span>NO_DATA</span>
               {% endif %}
             </div>
-            <div class="psd-barcode-foot psd-barcode-strong psd-barcode-rotated">
+            <div
+              class="psd-barcode-foot psd-barcode-strong psd-barcode-rotated"
+            >
               {{ frappe.utils.fmt_money(item.price, currency=item.currency) }}
             </div>
           </div>
         </div>
         {% else %}
         <div class="psd-barcode-skip">{{ loop.index }}</div>
-        {% endif %}
-        {% endfor %}
+        {% endif %} {% endfor %}
       </td>
     </tr>
     {% endfor %}
-
   </tbody>
 </table>
 
-<script src="/assets/frappe/js/lib/JsBarcode.all.min.js"></script>
-
-<script>
-JsBarcode('.barcode').init();
+<script
+  type="text/javascript"
+  src="/assets/js/libermatic_print.min.js"
+></script>
+<script type="text/javascript">
+  const barcode = JsBarcode('.barcode');
+  barcode.options({ flat: true });
+  barcode.init();
 </script>
