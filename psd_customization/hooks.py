@@ -23,7 +23,6 @@ fixtures = [
                 "in",
                 [
                     "Batch-batch_id-reqd",
-                    "Batch-batch_id-default",
                     "Batch-expiry_date-bold",
                     "Purchase Invoice Item-qty-columns",
                     "Purchase Invoice Item-rate-columns",
@@ -152,10 +151,6 @@ doctype_js = {"Salary Slip": "public/js/include_scripts/salary_slip.js"}
 # Hook on document methods and events
 
 doc_events = {
-    "Batch": {
-        "before_save": "psd_customization.doc_events.batch.before_save",
-        "autoname": "psd_customization.doc_events.batch.autoname",
-    },
     "Sales Invoice": {
         "validate": "psd_customization.doc_events.sales_invoice.validate",
         "on_submit": "psd_customization.doc_events.sales_invoice.on_submit",

@@ -2,10 +2,6 @@
 
 Customizations for PSD SELF
 
-### Batch
-
-`name` is set using `expiry_date` and `item_code`. Customization should deprecate once ERPNext core **Batch** changes are pushedto stable.
-
 ### Naming Series
 
 Custom series for DocTypes
