@@ -10,9 +10,10 @@ from frappe.contacts.address_and_contact import (
     load_address_and_contact,
     delete_contact_and_address,
 )
+from erpnext.selling.doctype.customer.customer import make_contact, make_address
 import operator
 from functools import reduce, partial
-from toolz import count, pluck, compose, first, excepts
+from toolz import count, pluck, compose, first, excepts, merge
 
 from psd_customization.utils.fp import pick
 from psd_customization.fitness_world.api.gym_subscription import get_currents
@@ -142,35 +143,13 @@ class GymMember(Document):
 
     def make_contact_and_address(self, args, is_primary_contact=1):
         if any(field in args.keys() for field in ["email_id", "mobile_no"]):
-            contact = frappe.get_doc(
-                {
-                    "doctype": "Contact",
-                    "first_name": self.member_name,
-                    "email_id": args.get("email_id"),
-                    "mobile_no": args.get("mobile_no"),
-                    "is_primary_contact": is_primary_contact,
-                    "links": [{"link_doctype": "Gym Member", "link_name": self.name}],
-                }
-            ).insert()
-            # sets notification_contact and number
+            contact = make_contact(self)
+            frappe.db.set_value("Contact", contact.name, "first_name", self.member_name)
             self.db_set("notification_contact", contact.name)
             self.db_set("notification_number", contact.mobile_no)
         if all(field in args.keys() for field in ["address_line1", "city"]):
-            frappe.get_doc(
-                {
-                    "doctype": "Address",
-                    "address_title": self.member_name,
-                    "address_type": "Personal",
-                    "address_line1": args.get("address_line1"),
-                    "address_line2": args.get("address_line2"),
-                    "city": args.get("city"),
-                    "state": args.get("state"),
-                    "pincode": args.get("pincode"),
-                    "country": args.get("country"),
-                    "links": [{"link_doctype": "Gym Member", "link_name": self.name}],
-                }
-            ).insert()
-        print("done")
+            address = make_address(self)
+            frappe.db.set_value("Address", address.name, "address_type", "Personal")
 
     def create_customer(self):
         customer_group = frappe.get_value(

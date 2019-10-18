@@ -7,7 +7,7 @@ import frappe
 from functools import partial
 from erpnext.accounts.party import get_party_account
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
-from toolz import pluck, compose, first, drop
+from toolz import pluck, compose, first, drop, excepts, get
 
 
 def get_member_contacts(doctype, txt, searchfield, start, page_len, filters):
@@ -38,6 +38,23 @@ def link_member_to_doctype(member, doctype, docname):
             )
             link_doc.save()
     return link_doc
+
+
+@frappe.whitelist()
+def get_number_from_contact(contact):
+    get_number = compose(
+        lambda x: x.get("phone"),
+        excepts(StopIteration, first, lambda __: {}),
+        frappe.db.sql,
+    )
+    return get_number(
+        """
+            SELECT phone FROM `tabContact Phone`
+            WHERE parent = %(parent)s AND is_primary_mobile_no = 1
+        """,
+        values={"parent": contact},
+        as_dict=1,
+    )
 
 
 def _make_new_pe(member):

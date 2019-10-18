@@ -177,6 +177,7 @@ const quick_entry = {
         fieldname: 'country',
         fieldtype: 'Link',
         options: 'Country',
+        default: frappe.defaults.get_default('country'),
       },
     ];
   },
@@ -218,7 +219,15 @@ export default {
     }
   },
   notification_contact: async function(frm) {
-    if (!frm.doc['notification_contact']) {
+    const { notification_contact: contact } = frm.doc;
+    if (contact) {
+      const { message: notification_number } = await frappe.call({
+        method:
+          'psd_customization.fitness_world.api.gym_member.get_number_from_contact',
+        args: { contact },
+      });
+      frm.set_value({ notification_number });
+    } else {
       frm.set_value('notification_number', null);
     }
   },
