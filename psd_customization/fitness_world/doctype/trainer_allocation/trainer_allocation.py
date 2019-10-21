@@ -57,8 +57,8 @@ class TrainerAllocation(Document):
             frappe.throw("Another allocation already exists during this time frame.")
 
     def before_save(self):
-        self.gym_member = frappe.db.get_value(
-            "Gym Subscription", self.gym_subscription, "member"
+        self.gym_member, self.gym_member_name = frappe.db.get_value(
+            "Gym Subscription", self.gym_subscription, ["member", "member_name"]
         )
         self.gym_trainer_name = frappe.db.get_value(
             "Gym Trainer", self.gym_trainer, "trainer_name"
