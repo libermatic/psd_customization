@@ -1,7 +1,7 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "GM.#####",
- "beta": 1,
  "creation": "2018-08-15 16:26:40.010159",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -142,7 +142,8 @@
   }
  ],
  "image_field": "member_image",
- "modified": "2019-10-19 01:55:59.007587",
+ "links": [],
+ "modified": "2021-09-06 11:16:32.843356",
  "modified_by": "Administrator",
  "module": "Fitness World",
  "name": "Gym Member",
