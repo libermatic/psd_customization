@@ -286,11 +286,11 @@ export default {
             freeze: true,
           });
           dialog.hide();
-          dialog.$wrapper.remove();
           this.set_schedules();
         }.bind(this)
       );
       dialog.show();
+      dialog.onhide = () => dialog.$wrapper.remove();
     },
     update: async function(name, key) {
       const field = make_dialog_field(key);
