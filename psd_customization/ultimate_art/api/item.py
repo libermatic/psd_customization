@@ -5,9 +5,6 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.utils import fmt_money
-from toolz import merge
-
-from psd_customization.utils.fp import mapr
 
 
 @frappe.whitelist()
@@ -15,23 +12,22 @@ def get_label_data(item_code, company=None, price_list=None):
     item = frappe.get_doc("Item", item_code)
     if not item:
         return None
+
     settings = frappe.get_single("Retail Settings")
     price = _get_price(
         item.item_code, price_list or settings.barcode_price_list, item.variant_of
     )
-    return mapr(
-        lambda x: merge(
-            {
-                "company": company or settings.barcode_company,
-                "item_code": item.item_code,
-                "item_name": item.item_name,
-                "barcode": x.barcode,
-                "type": x.barcode_type,
-            },
-            _make_price(price),
-        ),
-        item.barcodes,
-    )
+    return [
+        {
+            **_make_price(price),
+            "company": company or settings.barcode_company,
+            "item_code": item.item_code,
+            "item_name": item.item_name,
+            "barcode": x.barcode,
+            "type": x.barcode_type,
+        }
+        for x in item.barcodes
+    ]
 
 
 def _get_price(item_code, price_list, template_item_code=None):
@@ -51,10 +47,6 @@ def _get_price(item_code, price_list, template_item_code=None):
         if price:
             return price[0]
     return None
-
-
-def get_price(item_code, price_list):
-    return _get_price(item_code, price_list)
 
 
 def _make_price(price):
