@@ -116,7 +116,6 @@ def get_data(filters):
 def _set_subscription_status(today):
     def fn(row):
         subscription_end = row.get("subscription_end")
-        print(row)
         subscription_status = (
             "Expired"
             if subscription_end and subscription_end < today

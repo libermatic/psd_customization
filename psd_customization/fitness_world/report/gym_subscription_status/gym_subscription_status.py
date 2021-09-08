@@ -99,7 +99,6 @@ def get_data(filters):
         ),
         values=values,
         as_dict=1,
-        debug=1,
     )
 
 
