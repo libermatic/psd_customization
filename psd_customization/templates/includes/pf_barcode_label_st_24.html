@@ -82,18 +82,20 @@ and row_num else 1 %}
               <span>{{ item.item_name }}</span>
               {% endif %}
             </div>
+            {% set barcode = item.batch_no if doc.encode_field == 'Batch No' else item.barcode %}
+            {% set barcode_type = 'ean13' if doc.encode_field != 'Batch No' and item.barcode_type == 'EAN' else 'auto' %}
             <div class="psd-barcode-area">
-              {% if item.barcode %}
+              {% if barcode %}
               <svg
                 class="barcode"
-                jsbarcode-format="ean13"
+                jsbarcode-format="{{ barcode_type }}"
                 jsbarcode-margin="0"
                 jsbarcode-margintop="4"
                 jsbarcode-marginbottom="4"
                 jsbarcode-height="40"
                 jsbarcode-width="2"
                 jsbarcode-fontsize="11"
-                jsbarcode-value="{{ item.barcode }}"
+                jsbarcode-value="{{ barcode }}"
               />
               {% else %}
               <span>NO_DATA</span>
@@ -117,10 +119,20 @@ and row_num else 1 %}
 
 <script
   type="text/javascript"
-  src="/assets/js/libermatic_print.min.js"
+  src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"
 ></script>
 <script type="text/javascript">
-  const barcode = JsBarcode('.barcode');
-  barcode.options({ flat: true });
-  barcode.init();
+  const iframe = document.getElementsByClassName('print-format-container')[0];
+  if (iframe) {
+      const elements = iframe.contentDocument.getElementsByClassName("barcode");
+      for (let element of elements) {
+        const barcode = JsBarcode(element);
+        barcode.options({ flat: true });
+        barcode.init();
+      }
+  } else {
+    const barcode = JsBarcode('.barcode');
+    barcode.options({ flat: true });
+    barcode.init();
+  }
 </script>
