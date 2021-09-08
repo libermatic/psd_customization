@@ -9,8 +9,12 @@
   "item_name",
   "qty",
   "price",
-  "currency",
-  "barcode"
+  "column_break_5",
+  "barcode",
+  "barcode_type",
+  "batch_no",
+  "manufacturing_date",
+  "expiry_date"
  ],
  "fields": [
   {
@@ -21,11 +25,11 @@
    "options": "Item"
   },
   {
+   "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Read Only",
    "in_list_view": 1,
-   "label": "Item Name",
-   "options": "item_code.item_name"
+   "label": "Item Name"
   },
   {
    "fieldname": "qty",
@@ -37,24 +41,47 @@
    "fieldname": "price",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Price"
+   "label": "Price",
+   "options": "Company:company:default_currency"
   },
   {
-   "fieldname": "currency",
-   "fieldtype": "Link",
-   "label": "Currency",
-   "options": "Currency"
-  },
-  {
+   "fetch_from": "item_code.barcode",
    "fieldname": "barcode",
    "fieldtype": "Read Only",
-   "label": "Barcode",
-   "options": "item_code.barcode"
+   "label": "Barcode"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "barcode_type",
+   "fieldtype": "Read Only",
+   "label": "Barcode Type"
+  },
+  {
+   "fieldname": "batch_no",
+   "fieldtype": "Link",
+   "label": "Batch No",
+   "options": "Batch"
+  },
+  {
+   "fetch_from": "batch_no.manufacturing_date",
+   "fieldname": "manufacturing_date",
+   "fieldtype": "Date",
+   "label": "Manufacturing Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2021-09-06 10:43:46.199433",
+ "modified": "2021-09-08 13:52:08.098523",
  "modified_by": "Administrator",
  "module": "Ultimate Art",
  "name": "Label Printer Item",
