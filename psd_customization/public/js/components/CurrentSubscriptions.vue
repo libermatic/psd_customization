@@ -2,7 +2,7 @@
   <div>
     <h6>Existing Subscriptions</h6>
     <div v-if="subscriptions && subscriptions.length > 0">
-      <div v-for="subscription in subscriptions">
+      <div v-for="subscription in subscriptions" :key="subscription.name">
         <current-subscription-item v-bind="subscription" />
       </div>
     </div>

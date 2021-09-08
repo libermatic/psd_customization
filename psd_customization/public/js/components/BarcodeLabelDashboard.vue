@@ -1,12 +1,10 @@
 <template>
   <div class="root psd-dashboard-section">
-    <barcode-label v-bind="label" v-for="label in labels" />
+    <barcode-label v-bind="label" v-for="label in labels" :key="label.barcode" />
   </div>
 </template>
 
 <script>
-import JsBarcode from 'jsbarcode';
-
 import BarcodeLabel from './BarcodeLabel.vue';
 
 export default {

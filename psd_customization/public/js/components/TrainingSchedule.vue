@@ -54,7 +54,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="schedule in schedules">
+          <tr v-for="schedule in schedules" :key="schedule.name">
             <td>
               {{ schedule.from }}
               <button
