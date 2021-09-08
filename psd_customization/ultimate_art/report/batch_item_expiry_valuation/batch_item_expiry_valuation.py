@@ -6,14 +6,14 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 from functools import partial
-from psd_customization.utils.fp import compose, mapr
+from psd_customization.utils.fp import compose
 
 
 def execute(filters={}):
     data = query_stock_entry_ledger(filters)
     filter_post_query = filter_data(filters)
-    post_proced = mapr(inject_cols, data)
-    return get_columns(), mapr(make_row, filter_post_query(post_proced))
+    post_proced = [inject_cols(x) for x in data]
+    return get_columns(), [make_row(x) for x in filter_post_query(post_proced)]
 
 
 def get_columns():
@@ -93,7 +93,7 @@ def filter_data(filters):
     def filter_by_days(x):
         days_to_expiry = filters.get("days_to_expiry")
         if days_to_expiry:
-            return x.get("expiry_status") <= cint(days_to_expiry)
+            return x.get("expiry_status") is not None and x.get("expiry_status") <= cint(days_to_expiry)
         return True
 
     return compose(
@@ -128,4 +128,5 @@ def make_row(row):
         "valuation_rate",
         "valuation",
     ]
-    return mapr(lambda x: row.get(x), keys)
+
+    return [row.get(x) for x in keys]
