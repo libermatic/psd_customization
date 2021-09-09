@@ -1,9 +1,6 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-import JsBarcode from 'jsbarcode';
-import domtoimage from 'dom-to-image-more';
-
 import BarcodeLabelDashboard from '../components/BarcodeLabelDashboard.vue';
 
 export default {
