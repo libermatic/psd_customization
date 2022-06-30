@@ -161,6 +161,9 @@ doc_events = {
         "on_submit": "psd_customization.doc_events.salary_slip.on_submit",
         "on_cancel": "psd_customization.doc_events.salary_slip.on_cancel",
     },
+    "Stock Entry": {
+        "before_validate": "psd_customization.doc_events.stock_entry.before_validate"
+    },
 }
 
 on_session_creation = "psd_customization.doc_events.defaults.set_user_defaults"
