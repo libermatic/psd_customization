@@ -1,4 +1,0 @@
-frappe
-erpnext
-toolz
-sms_extras
