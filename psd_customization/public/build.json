@@ -1,7 +1,0 @@
-{
-  "css/psd_customization.css": ["public/css/barcode.css"],
-  "js/psd_customization.min.js": [
-    "public/js/barcode_label.html",
-    "public/js/index.js"
-  ]
-}

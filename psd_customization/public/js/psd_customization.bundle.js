@@ -2,6 +2,7 @@ import * as utils from './utils';
 import * as scripts from './scripts';
 import * as custom_scripts from './custom_scripts';
 import TrainingSchedule from './components/TrainingSchedule.vue';
+import { __version__ } from './version';
 
 frappe.ui.form.on('Sales Invoice', custom_scripts.sales_invoice);
 frappe.ui.form.on(
@@ -50,4 +51,5 @@ psd = {
     }),
   scripts,
   utils,
+  __version__,
 };
