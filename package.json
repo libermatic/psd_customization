@@ -4,8 +4,8 @@
   "description": "Customizations for PSD SELF",
   "entry": "src/index.js",
   "scripts": {
-    "version": "sed -i \"s/__version__.*/__version__ = \\\"$npm_package_version\\\"/\" $npm_package_name/__init__.py; git add -A $npm_package_name/__init__.py",
-    "prerelease": "git tag -d v${npm_package_version}; git push; git log --pretty=\"%s\" $(git describe --tags --abbrev=0)..HEAD^1 > /tmp/${npm_package_name}_release_notes",
+    "version": "sed -i \"s/__version__.*/__version__ = \\\"$npm_package_version\\\"/\" $npm_package_name/__init__.py; sed -i \"s/__version__ = '.*';/__version__ = '$npm_package_version';/\" $npm_package_name/public/js/version.js; git add -A .",
+    "prerelease": "gen-release-notes > /tmp/${npm_package_name}_release_notes",
     "release": "gh release create v${npm_package_version} -F /tmp/${npm_package_name}_release_notes"
   },
   "repository": {
