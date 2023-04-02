@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.query_builder.functions import IfNull, Sum
 from frappe import _
 from frappe.utils import cint
 from functools import partial
@@ -34,59 +35,74 @@ def get_columns():
 
 
 def query_stock_entry_ledger(filters):
-    sub_query = """
-        SELECT valuation_rate
-        FROM `tabStock Ledger Entry`
-        WHERE item_code = sle.item_code
-        ORDER BY posting_date DESC, posting_time DESC, name DESC
-        LIMIT 1
-    """
-    return frappe.db.sql(
-        """
-            SELECT
-                sle.item_code,
-                item.item_name,
-                sle.warehouse,
-                sle.batch_no,
-                batch.expiry_date,
-                SUM(sle.actual_qty) AS qty,
-                price.price_list_rate AS rate,
-                (%s) AS valuation_rate
-            FROM
-                `tabStock Ledger Entry` AS sle,
-                `tabBatch` AS batch,
-                `tabItem` AS item,
-                `tabItem Price` as price
-            WHERE sle.docstatus < 2
-                AND IFNULL(sle.batch_no, '') != ''
-                AND sle.batch_no = batch.name
-                AND sle.item_code = item.name
-                AND sle.item_code = price.item_code
-                AND %s
-            GROUP BY sle.batch_no, sle.warehouse
-            ORDER BY batch.expiry_date, sle.item_code
-        """
-        % (sub_query, " AND ".join(make_conditions(filters))),
-        as_dict=1,
-    )
+    StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
+    Batch = frappe.qb.DocType("Batch")
+    Item = frappe.qb.DocType("Item")
+    ItemPrice = frappe.qb.DocType("Item Price")
+    Bin = frappe.qb.DocType("Bin")
 
-
-def make_conditions(filters):
-    conds = []
-    if filters.get("from_date") and filters.get("to_date"):
-        conds.append(
-            "sle.posting_date BETWEEN '{}' AND '{}'".format(
-                filters.get("from_date"), filters.get("to_date")
+    q = (
+        frappe.qb.from_(StockLedgerEntry)
+        .left_join(Batch)
+        .on(Batch.name == StockLedgerEntry.batch_no)
+        .left_join(Item)
+        .on(Item.name == StockLedgerEntry.item_code)
+        .left_join(Bin)
+        .on(Bin.item_code == StockLedgerEntry.item_code)
+        .where(
+            (StockLedgerEntry.docstatus == 1)
+            & (IfNull(StockLedgerEntry.batch_no, "") != "")
+            & (
+                StockLedgerEntry.posting_date[
+                    filters.get("from_date") : filters.get("to_date")
+                ]
             )
         )
-    else:
-        frappe.throw(_("Dates are required"))
-    if filters.get("warehouse"):
-        conds.append("sle.warehouse = '{}'".format(filters.get("warehouse")))
-    conds.append(
-        "price.price_list = '{}'".format(filters.get("price_list", "Standard Selling"))
+        .select(
+            StockLedgerEntry.item_code,
+            Item.item_name,
+            StockLedgerEntry.warehouse,
+            StockLedgerEntry.batch_no,
+            Batch.expiry_date,
+            Sum(StockLedgerEntry.actual_qty).as_("qty"),
+            Bin.valuation_rate,
+        )
+        .groupby(StockLedgerEntry.batch_no, StockLedgerEntry.warehouse)
+        .orderby(Batch.expiry_date)
+        .orderby(StockLedgerEntry.item_code)
     )
-    return conds
+    if filters.get("warehouse"):
+        q = q.where(StockLedgerEntry.warehouse == filters.get("warehouse"))
+
+    entries = q.run(as_dict=True)
+
+    price_list = filters.get("price_list") or "Standard Selling"
+    prices = (
+        {
+            (x.item_code, x.batch_no): x.price_list_rate
+            for x in (
+                frappe.qb.from_(ItemPrice)
+                .select(
+                    ItemPrice.item_code,
+                    ItemPrice.batch_no,
+                    ItemPrice.price_list_rate,
+                )
+                .where(
+                    (ItemPrice.price_list == price_list)
+                    & ItemPrice.item_code.isin([x.get("item_code") for x in entries])
+                )
+                .orderby(ItemPrice.valid_from)
+            ).run(as_dict=True)
+        }
+        if entries
+        else {}
+    )
+    for entry in entries:
+        entry.rate = prices.get((entry.item_code, entry.batch_no)) or prices.get(
+            (entry.item_code, None)
+        )
+
+    return entries
 
 
 def filter_data(filters):
@@ -109,7 +125,7 @@ def inject_cols(row):
         row_dict.expiry_status = (
             row.expiry_date - frappe.utils.datetime.date.today()
         ).days
-    row_dict.amount = row_dict.qty * row_dict.rate
+    row_dict.amount = row_dict.qty * (row_dict.rate or 0)
     row_dict.valuation = row_dict.qty * row_dict.valuation_rate
     return row_dict
 

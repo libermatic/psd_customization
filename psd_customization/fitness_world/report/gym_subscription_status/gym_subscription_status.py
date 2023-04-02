@@ -3,9 +3,10 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.query_builder.functions import Max
 from frappe import _
 from functools import partial
-from toolz import compose, assoc, get, merge, concatv
+from toolz import compose, assoc, get
 
 
 def execute(filters=None):
@@ -32,74 +33,45 @@ def get_columns():
     return columns
 
 
-def add_filter_clause(filters, field):
-    def fn(clauses):
-        if filters.get(field):
-            clause = ["a.{field}=%({field})s".format(field=field)]
-            return concatv(clauses, clause)
-        return clauses
-
-    return fn
-
-
-def add_filter_value(filters, field):
-    def fn(values):
-        if filters.get(field):
-            value = {field: filters.get(field)}
-            return merge(values, value)
-        return values
-
-    return fn
-
-
-def make_filter_composer(filters, fields):
-    def fn(add_fn):
-        return compose(*map(lambda field: add_fn(filters, field), fields))
-
-    return fn
-
-
-def make_conditions(filters):
-    init_clauses, init_values = ["a.docstatus=1"], {}
-    filter_composer = make_filter_composer(filters, ["member", "subscription_item"])
-    make_clauses = filter_composer(add_filter_clause)
-    make_values = filter_composer(add_filter_value)
-    return (" AND ".join(make_clauses(init_clauses)), make_values(init_values))
-
-
 def get_data(filters):
-    clauses, values = make_conditions(filters)
-    return frappe.db.sql(
-        """
-            SELECT
-                a.member AS member,
-                a.member_name AS member_name,
-                a.subscription_item AS item,
-                a.subscription_name AS item_name,
-                a.from_date AS start_date,
-                a.to_date AS expiry_date,
-                a.is_lifetime,
-                a.status AS raw_status
-            FROM `tabGym Subscription` AS a
-            INNER JOIN (
-                SELECT
-                    member,
-                    subscription_item,
-                    MAX(from_date) AS from_date
-                FROM `tabGym Subscription`
-                WHERE docstatus = 1
-                GROUP BY member, subscription_item
-            ) AS b ON
-                a.member = b.member AND
-                a.subscription_item = b.subscription_item AND
-                a.from_date = b.from_date
-            WHERE {clauses}
-        """.format(
-            clauses=clauses
-        ),
-        values=values,
-        as_dict=1,
+    GymSubscription = frappe.qb.DocType("Gym Subscription")
+    latest_sub = (
+        frappe.qb.from_(GymSubscription)
+        .select(
+            GymSubscription.member,
+            GymSubscription.subscription_item,
+            Max(GymSubscription.from_date).as_("from_date"),
+        )
+        .where(GymSubscription.docstatus == 1)
+        .groupby(GymSubscription.member, GymSubscription.subscription_item)
+    ).as_("latest_sub")
+    q = (
+        frappe.qb.from_(GymSubscription)
+        .left_join(latest_sub)
+        .on(
+            (latest_sub.member == GymSubscription.member)
+            & (latest_sub.subscription_item == GymSubscription.subscription_item)
+            & (latest_sub.from_date == GymSubscription.from_date)
+        )
+        .select(
+            GymSubscription.member.as_("member"),
+            GymSubscription.member_name,
+            GymSubscription.subscription_item.as_("item"),
+            GymSubscription.subscription_name.as_("item_name"),
+            GymSubscription.from_date.as_("start_date"),
+            GymSubscription.to_date.as_("expiry_date"),
+            GymSubscription.is_lifetime,
+            GymSubscription.status.as_("raw_status"),
+        )
+        .where((GymSubscription.docstatus == 1))
     )
+
+    for field in ["member", "subscription_item"]:
+        value = filters.get(field)
+        if value:
+            q = q.where(GymSubscription[field] == value)
+
+    return q.run(as_dict=True)
 
 
 def make_row(row):

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.utils import getdate
+from frappe.query_builder import Order
 
 from psd_customization.fitness_world.api.salary_slip \
     import set_trainings_in_salary_slip
@@ -27,25 +28,22 @@ def on_submit(doc, method):
 
 def on_cancel(doc, method):
     if doc.salary_slip_based_on_training:
+        SalarySlipTraining = frappe.qb.Doctype("Salary Slip Training")
+        SalarySlip = frappe.qb.Doctype("Salary Slip")
         for training in doc.trainings:
-            last_salary_slip = frappe.db.sql(
-                """
-                    SELECT ss.end_date
-                    FROM `tabSalary Slip Training` AS sst
-                    LEFT JOIN `tabSalary Slip` AS ss
-                        ON ss.name = sst.parent
-                    WHERE
-                        ss.docstatus = 1 AND
-                        ss.name != %(name)s AND
-                        sst.training = %(training)s
-                    ORDER BY ss.end_date DESC
-                    LIMIT 1
-                """,
-                values={
-                    'name': doc.name,
-                    'training': training.training,
-                },
-            )
+            last_salary_slip = (
+                frappe.qb.from_(SalarySlipTraining)
+                .left_join(SalarySlip)
+                .on(SalarySlip.name == SalarySlipTraining.parent)
+                .select(SalarySlip.end_date)
+                .where(
+                    (SalarySlip.docstatus == 1)
+                    & (SalarySlip.name != doc.name)
+                    & (SalarySlipTraining.training == training.training)
+                )
+                .orderby(SalarySlip.end_date, order=Order.desc)
+                .limit(1)
+            ).run()
             allocation = frappe.get_doc(
                 'Trainer Allocation', training.training,
             )

@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.query_builder import Order
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.contacts.address_and_contact import (
@@ -13,7 +14,7 @@ from frappe.contacts.address_and_contact import (
 from erpnext.selling.doctype.customer.customer import make_contact, make_address
 import operator
 from functools import reduce, partial
-from toolz import count, pluck, compose, first, excepts, merge
+from toolz import count, pluck, compose, first, excepts
 
 from psd_customization.utils.fp import pick
 from psd_customization.fitness_world.api.gym_subscription import get_currents
@@ -99,23 +100,24 @@ class GymMember(Document):
         frappe.delete_doc("Customer", self.customer)
 
     def load_subscription_details(self):
-        all_subscriptions = frappe.db.sql(
-            """
-                SELECT
-                    si.outstanding_amount AS amount,
-                    si.status AS status,
-                    gs.to_date AS end_date
-                FROM `tabGym Subscription` AS gs, `tabSales Invoice` AS si
-                WHERE
-                    gs.docstatus = 1 AND
-                    gs.member = '{member}' AND
-                    gs.reference_invoice = si.name
-                ORDER BY gs.from_date DESC
-            """.format(
-                member=self.name
-            ),
-            as_dict=True,
-        )
+        GymSubscription = frappe.qb.DocType("Gym Subscription")
+        SalesInvoice = frappe.qb.DocType("Sales Invoice")
+
+        all_subscriptions = (
+            frappe.qb.from_(GymSubscription)
+            .left_join(SalesInvoice)
+            .on(SalesInvoice.name == GymSubscription.reference_invoice)
+            .select(
+                SalesInvoice.outstanding_amount.as_("amount"),
+                SalesInvoice.status,
+                GymSubscription.to_date.as_("end_date"),
+            )
+            .where(
+                (GymSubscription.docstatus == 1) & (GymSubscription.member == self.name)
+            )
+            .orderby(GymSubscription.from_date, order=Order.desc)
+        ).run(as_dict=True)
+
         unpaid_subscriptions = compose(list, filter)(
             lambda x: x.get("status") != "Paid", all_subscriptions
         )

@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.query_builder.functions import Max
 from frappe.utils import add_days, getdate, cint, today, date_diff
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from functools import partial
@@ -194,34 +195,33 @@ def _existing_subscription_by_item(
 
 
 def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0, status=[]):
-    filters = ["(to_date >= '{}' OR is_lifetime = 1)".format(from_date)]
-    if not lifetime and to_date:
-        filters.append("from_date <= '{}'".format(to_date))
-    return frappe.db.sql(
-        """
-            SELECT
-                name,
-                from_date,
-                to_date,
-                is_lifetime
-            FROM `tabGym Subscription`
-            WHERE
-                member = '{member}' AND
-                subscription_item = '{item}' AND
-                status IN %(status)s AND
-                docstatus = 1 AND
-                {filters}
-            ORDER BY from_date
-            {limit}
-        """.format(
-            member=member,
-            item=item,
-            filters=" AND ".join(filters),
-            limit="LIMIT 1" if limit else "",
-        ),
-        values={"status": status or ["Active"]},
-        as_dict=1,
+    GymSubscription = frappe.qb.DocType("Gym Subscription")
+    q = (
+        frappe.qb.from_(GymSubscription)
+        .select(
+            GymSubscription.name,
+            GymSubscription.from_date,
+            GymSubscription.to_date,
+            GymSubscription.is_lifetime,
+        )
+        .where(
+            (GymSubscription.member == member)
+            & (GymSubscription.subscription_item == item)
+            & (GymSubscription.status.isin(status or ["Active"]))
+            & (GymSubscription.docstatus == 1)
+            & (
+                (GymSubscription.to_date >= from_date)
+                | (GymSubscription.is_lifetime == 1)
+            )
+        )
+        .orderby(GymSubscription.from_date)
     )
+    if not lifetime and to_date:
+        q = q.where(GymSubscription.from_date <= to_date)
+    if limit:
+        q = q.limit(1)
+
+    return q.run(as_dict=1)
 
 
 def _get_existing_subscription(member, item, from_date, to_date, lifetime):
@@ -330,33 +330,36 @@ def validate_dependencies(member, items):
 
 @frappe.whitelist()
 def get_currents(member):
-    return frappe.db.sql(
-        """
-            SELECT
-                a.name,
-                a.status,
-                a.subscription_item AS item,
-                a.subscription_name AS item_name,
-                a.is_training,
-                a.is_lifetime,
-                a.from_date,
-                a.to_date
-            FROM `tabGym Subscription` AS a
-            INNER JOIN (
-                SELECT
-                    subscription_item,
-                    MAX(from_date) AS from_date
-                FROM `tabGym Subscription`
-                WHERE member=%(member)s AND docstatus=1
-                GROUP BY subscription_item
-            ) AS b ON
-                a.subscription_item = b.subscription_item AND
-                a.from_date = b.from_date
-            WHERE a.member=%(member)s AND a.docstatus=1
-        """,
-        values={"member": member},
-        as_dict=1,
-    )
+    GymSubscription = frappe.qb.DocType("Gym Subscription")
+    latest_sub = (
+        frappe.qb.from_(GymSubscription)
+        .select(
+            GymSubscription.subscription_item,
+            Max(GymSubscription.from_date).as_("from_date"),
+        )
+        .where((GymSubscription.member == member) & (GymSubscription.docstatus == 1))
+        .groupby(GymSubscription.subscription_item)
+    ).as_("latest_sub")
+
+    return (
+        frappe.qb.from_(GymSubscription)
+        .select(
+            GymSubscription.name,
+            GymSubscription.status,
+            GymSubscription.subscription_item.as_("item"),
+            GymSubscription.subscription_name.as_("item_name"),
+            GymSubscription.is_training,
+            GymSubscription.is_lifetime,
+            GymSubscription.from_date,
+            GymSubscription.to_date,
+        )
+        .inner_join(latest_sub)
+        .on(
+            (latest_sub.subscription_item == GymSubscription.subscription_item)
+            & (latest_sub.from_date == GymSubscription.from_date)
+        )
+        .where((GymSubscription.member == member) & (GymSubscription.docstatus == 1))
+    ).run(as_dict=1)
 
 
 @frappe.whitelist()

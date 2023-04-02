@@ -37,23 +37,15 @@ class TrainerAllocation(Document):
             frappe.throw("Payroll Date out of bounds of Trainer Allocation period.")
 
     def validate_existing(self):
-        existing = frappe.db.sql(
-            """
-                SELECT 1 FROM `tabTrainer Allocation`
-                WHERE
-                    name!=%(name)s AND
-                    gym_subscription=%(gym_subscription)s AND
-                    from_date<=%(to_date)s AND
-                    to_date>=%(from_date)s
-            """,
-            values={
-                "name": self.name,
+        if frappe.db.exists(
+            "Trainer Allocation",
+            {
+                "name": ("!=", self.name),
                 "gym_subscription": self.gym_subscription,
-                "from_date": self.from_date,
-                "to_date": self.to_date,
+                "from_date": ("<=", self.from_date),
+                "to_date": (">=", self.to_date),
             },
-        )
-        if existing:
+        ):
             frappe.throw("Another allocation already exists during this time frame.")
 
     def before_save(self):

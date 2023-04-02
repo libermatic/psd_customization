@@ -10,6 +10,7 @@ frappe.query_reports['Batch Item Expiry Valuation'] = {
       fieldtype: 'Date',
       width: '80',
       default: frappe.sys_defaults.year_start_date,
+      reqd: 1,
     },
     {
       fieldname: 'to_date',
@@ -17,6 +18,7 @@ frappe.query_reports['Batch Item Expiry Valuation'] = {
       fieldtype: 'Date',
       width: '80',
       default: frappe.datetime.get_today(),
+      reqd: 1,
     },
     {
       fieldname: 'warehouse',

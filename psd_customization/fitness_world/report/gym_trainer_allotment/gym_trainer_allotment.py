@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import getdate
 from functools import partial
-from toolz import compose, get, concatv, merge, pluck
+from toolz import compose, get, merge, pluck
 
 
 _columns = [
@@ -34,79 +34,45 @@ get_columns = compose(list, partial(pluck, "label"))
 get_keys = compose(list, partial(pluck, "key"))
 
 
-def add_filter_clause(filters, field):
-    def fn(clauses):
-        if filters.get(field):
-            if field == "from_date":
-                clause = ["ta.to_date >= %(from_date)s"]
-            elif field == "to_date":
-                clause = ["ta.from_date <= %(to_date)s"]
-            else:
-                clause = ["ta.{field} = %({field})s".format(field=field)]
-            return concatv(clauses, clause)
-        return clauses
-
-    return fn
-
-
-def add_filter_value(filters, field):
-    def fn(values):
-        if filters.get(field):
-            value = {field: filters.get(field)}
-            return merge(values, value)
-        return values
-
-    return fn
-
-
-def make_filter_composer(filters, fields):
-    def fn(add_fn):
-        return compose(*map(lambda field: add_fn(filters, field), fields))
-
-    return fn
-
-
-def make_conditions(filters):
-    init_clauses, init_values = [], {}
-    filter_composer = make_filter_composer(
-        filters, ["gym_trainer", "training_slot", "from_date", "to_date"]
-    )
-    make_clauses = filter_composer(add_filter_clause)
-    make_values = filter_composer(add_filter_value)
-    return (" AND ".join(make_clauses(init_clauses)), make_values(init_values))
-
-
 def get_data(filters):
-    clauses, values = make_conditions(filters)
-    allocations = frappe.db.sql(
-        """
-            SELECT
-                ta.gym_subscription AS subscription,
-                s.status AS subscription_status,
-                s.to_date AS subscription_end,
-                m.name AS member,
-                m.member_name AS member_name,
-                ta.gym_trainer AS trainer,
-                ta.gym_trainer_name AS trainer_name,
-                ta.from_date AS from_date,
-                ta.to_date AS to_date,
-                ta.training_slot AS slot,
-                ts.shift AS shift
-            FROM `tabTrainer Allocation` AS ta
-            LEFT JOIN `tabGym Member` AS m
-                ON ta.gym_member = m.name
-            LEFT JOIN `tabGym Subscription` AS s
-                ON ta.gym_subscription = s.name
-            LEFT JOIN `tabTraining Slot` AS ts
-                ON ta.training_slot = ts.name
-            {where}
-            ORDER BY ta.from_date
-        """.format(
-            where="WHERE {}".format(clauses) if clauses else ""
-        ),
-        values=values,
-        as_dict=1,
+    TrainerAllocation = frappe.qb.DocType("Trainer Allocation")
+    GymMember = frappe.qb.DocType("Gym Member")
+    GymSubscription = frappe.qb.DocType("Gym Subscription")
+    TrainingSlot = frappe.qb.DocType("Training Slot")
+    q = (
+        frappe.qb.from_(TrainerAllocation)
+        .left_join(GymMember)
+        .on(GymMember.name == TrainerAllocation.gym_member)
+        .left_join(GymSubscription)
+        .on(GymSubscription.name == TrainerAllocation.gym_subscription)
+        .left_join(TrainingSlot)
+        .on(TrainingSlot.name == TrainerAllocation.training_slot)
+        .select(
+            TrainerAllocation.gym_subscription.as_("subscription"),
+            GymSubscription.status.as_("subscription_status"),
+            GymSubscription.to_date.as_("subscription_end"),
+            GymMember.name.as_("member"),
+            GymMember.member_name,
+            TrainerAllocation.gym_trainer.as_("trainer"),
+            TrainerAllocation.gym_trainer_name.as_("trainer_name"),
+            TrainerAllocation.from_date,
+            TrainerAllocation.to_date,
+            TrainerAllocation.training_slot.as_("slot"),
+            TrainingSlot.shift,
+        )
     )
+
+    for field in ["gym_trainer", "training_slot", "from_date", "to_date"]:
+        value = filters.get(field)
+        if value:
+            if field == "from_date":
+                q = q.where(TrainerAllocation.to_date >= value)
+            elif field == "to_date":
+                q = q.where(TrainerAllocation.from_date <= value)
+            else:
+                q = q.where(GymSubscription[field] == value)
+
+    allocations = q.run(as_dict=True)
     make_row = compose(
         partial(get, get_keys(_columns)), _set_subscription_status(getdate())
     )

@@ -4,8 +4,8 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.query_builder import Order
 from frappe.utils import getdate, add_days, formatdate
-from toolz import first
 
 
 def _generate_intervals(start_date, end_date, allocations):
@@ -96,37 +96,43 @@ def remove(name):
 
 @frappe.whitelist()
 def get_last(member, item_code=None, subscription_item=None):
-    subquery = (
-        """
-        (
-            SELECT name FROM `tabGym Subscription Item`
-            WHERE item = %(item_code)s AND requires_trainer = 1
-        )
-        """
-        if item_code
-        else "%(subscription_item)s"
+    _subscription_item = subscription_item or frappe.db.get(
+        "Gym Subscription Item",
+        filters={"disabled": 0, "item": item_code, "requires_trainer": 1},
+        fieldname="name",
     )
-    allocations = frappe.db.sql(
-        """
-            SELECT gym_trainer, gym_trainer_name, training_slot
-            FROM `tabTrainer Allocation`
-            WHERE gym_subscription = (
-                SELECT name FROM `tabGym Subscription`
-                WHERE subscription_item = {} AND member = %(member)s
-                ORDER BY from_date DESC LIMIT 1
-            )
-            ORDER BY to_date DESC LIMIT 1
-        """.format(
-            subquery
-        ),
-        values={
-            "item_code": item_code,
-            "member": member,
-            "subscription_item": subscription_item,
-        },
-        as_dict=1,
-    )
-    try:
-        return first(allocations)
-    except StopIteration:
+
+    if not _subscription_item:
         return None
+
+    GymSubscription = frappe.qb.DocType("Gym Subscription")
+    subscription_sub = (
+        frappe.qb.from_(GymSubscription)
+        .select(
+            GymSubscription.name,
+        )
+        .where(
+            (GymSubscription.subscription_item == _subscription_item)
+            & (GymSubscription.member == member)
+            & (GymSubscription.docstatus == 1)
+        )
+        .orderby(GymSubscription.from_date, order=Order.desc)
+        .limit(1)
+    )
+    TrainerAllocation = frappe.qb.DocType("Trainer Allocation")
+    allocations = (
+        frappe.qb.from_(TrainerAllocation)
+        .select(
+            TrainerAllocation.gym_trainer,
+            TrainerAllocation.gym_trainer_name,
+            TrainerAllocation.training_slot,
+        )
+        .where(TrainerAllocation.gym_subscription == subscription_sub)
+        .orderby(TrainerAllocation.to_date, order=Order.desc)
+        .limit(1)
+    ).run(as_dict=1)
+
+    if allocations:
+        return allocations[0]
+
+    return None

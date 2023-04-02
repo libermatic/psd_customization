@@ -7,21 +7,21 @@ import frappe
 from functools import partial
 from erpnext.accounts.party import get_party_account
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
-from toolz import pluck, compose, first, drop, excepts, get
+from toolz import pluck, compose, first, drop
 
 
 def get_member_contacts(doctype, txt, searchfield, start, page_len, filters):
-    return frappe.db.sql(
-        """
-            SELECT `tabContact`.name
-            FROM `tabContact`, `tabDynamic Link`
-            WHERE
-                `tabContact`.name = `tabDynamic Link`.parent AND
-                `tabDynamic Link`.link_name = %(member)s AND
-                `tabDynamic Link`.link_doctype = 'Gym Member'
-        """,
-        {"member": filters.get("member")},
-    )
+    Contact = frappe.qb.DocType("Contact")
+    DynamicLink = frappe.qb.DocType("Dynamic Link")
+    return (
+        frappe.qb.from_(Contact)
+        .left_join(DynamicLink)
+        .on(DynamicLink.parent == Contact.name)
+        .where(
+            (DynamicLink.link_name == filters.get("member"))
+            & (DynamicLink.link_doctype == "Gym Member")
+        )
+    ).run()
 
 
 @frappe.whitelist()
@@ -42,19 +42,13 @@ def link_member_to_doctype(member, doctype, docname):
 
 @frappe.whitelist()
 def get_number_from_contact(contact):
-    get_number = compose(
-        lambda x: x.get("phone"),
-        excepts(StopIteration, first, lambda __: {}),
-        frappe.db.sql,
+    numbers = frappe.get_all(
+        "Contact Phone",
+        filters={"parent": contact, "is_primary_mobile_no": 1},
+        pluck="phone",
+        limit=1,
     )
-    return get_number(
-        """
-            SELECT phone FROM `tabContact Phone`
-            WHERE parent = %(parent)s AND is_primary_mobile_no = 1
-        """,
-        values={"parent": contact},
-        as_dict=1,
-    )
+    return numbers[0] if numbers else None
 
 
 def _make_new_pe(member):

@@ -4,6 +4,8 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.query_builder import Interval
+from frappe.query_builder.functions import IfNull
 from frappe.utils import getdate, add_days, cint, flt
 from builtins import str
 import json
@@ -58,37 +60,42 @@ def get_trainings_for_salary_slip(employee, end_date):
     trainer = frappe.db.exists("Gym Trainer", {"employee": employee})
     if not trainer:
         return []
-    trainings = frappe.db.sql(
-        """
-            SELECT
-                ta.name AS name,
-                s.member_name AS gym_member_name,
-                s.name AS gym_subscription,
-                ta.salary_till AS salary_till,
-                ta.from_date AS from_date,
-                ta.to_date AS to_date,
-                s.day_fraction AS day_fraction,
-                s.cost_multiplier AS cost_multiplier
-            FROM `tabTrainer Allocation` AS ta
-            LEFT JOIN `tabGym Subscription` AS s
-                ON s.name = ta.gym_subscription
-            WHERE
-                ta.gym_trainer = %(trainer)s AND
-                IFNULL(
-                    ta.salary_till,
-                    DATE_SUB(ta.from_date, INTERVAL 1 DAY)
-                ) < %(end_date)s AND
-                DATEDIFF(
-                    ta.to_date,
-                    IFNULL(
-                        ta.salary_till,
-                        DATE_SUB(ta.from_date, INTERVAL 1 DAY)
-                    )
-                ) > 0
-        """,
-        values={"trainer": trainer, "end_date": end_date},
-        as_dict=1,
-    )
+
+    TrainerAllocation = frappe.qb.DocType("Trainer Allocation")
+    GymSubscription = frappe.qb.DocType("Gym Subscription")
+    trainings = (
+        frappe.qb.from_(TrainerAllocation)
+        .left_join(GymSubscription)
+        .on(GymSubscription.name == TrainerAllocation.gym_subscription)
+        .select(
+            TrainerAllocation.name,
+            GymSubscription.member_name.as_("gym_member_name"),
+            GymSubscription.name.as_("gym_subscription"),
+            TrainerAllocation.salary_till,
+            TrainerAllocation.from_date,
+            TrainerAllocation.to_date,
+            GymSubscription.day_fraction,
+            GymSubscription.cost_multiplier,
+        )
+        .where(
+            (TrainerAllocation.gym_trainer == trainer)
+            & (
+                IfNull(
+                    TrainerAllocation.salary_till,
+                    TrainerAllocation.from_date - Interval(days=1),
+                )
+                < end_date
+            )
+            & (
+                TrainerAllocation.to_date
+                - IfNull(
+                    TrainerAllocation.salary_till,
+                    TrainerAllocation.from_date - Interval(days=1),
+                )
+                > 0
+            )
+        )
+    ).run(as_dict=1)
     return mapr(_set_days(end_date), trainings)
 
 
@@ -138,15 +145,19 @@ def training_query(doctype, txt, searchfield, start, page_len, filters):
     trainer = frappe.db.exists("Gym Trainer", {"employee": filters.get("employee")})
     if not trainer:
         return []
-    return frappe.db.sql(
-        """
-            SELECT name, gym_member_name
-            FROM `tabTrainer Allocation`
-            WHERE
-                gym_trainer = %(trainer)s AND
-                (salary_till IS NULL OR salary_till < to_date)
-            ORDER BY to_date
-            LIMIT %(start)s, %(page_len)s
-        """,
-        values={"trainer": trainer, "start": start, "page_len": page_len},
-    )
+
+    TrainerAllocation = frappe.qb.DocType("Trainer Allocation")
+    return (
+        frappe.qb.from_(TrainerAllocation)
+        .select(TrainerAllocation.name, TrainerAllocation.gym_member_name)
+        .where(
+            (TrainerAllocation.gym_trainer == trainer)
+            & (
+                TrainerAllocation.salary_till.isnull()
+                | (TrainerAllocation.salary_till < TrainerAllocation.to_date)
+            )
+        )
+        .orderby(TrainerAllocation.to_date)
+        .limit(page_len)
+        .offset(start)
+    ).run()

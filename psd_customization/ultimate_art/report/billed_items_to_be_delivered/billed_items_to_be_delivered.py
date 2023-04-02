@@ -4,17 +4,13 @@
 from __future__ import unicode_literals
 
 import frappe
-from functools import partial
-from toolz import compose, pluck
 
 from psd_customization.utils.report import make_column
 
 
 def execute(filters=None):
     columns = _get_columns(filters)
-    keys = compose(list, partial(pluck, "fieldname"))(columns)
-    clauses, values = _get_filters(filters)
-    data = _get_data(clauses, values, keys)
+    data = _get_data(filters)
     return columns, data
 
 
@@ -33,38 +29,35 @@ def _get_columns(filters):
     ]
 
 
-def _get_filters(filters):
-    clauses = [
-        "si.docstatus = 1",
-        "si.update_stock = 0",
-        "i.is_stock_item = 1",
-        "sii.delivered_qty < sii.stock_qty",
-    ]
-    return " AND ".join(clauses), filters
-
-
-def _get_data(clauses, keys, values):
-    items = frappe.db.sql(
-        """
-            SELECT
-                si.name AS sales_invoice,
-                si.posting_date AS posting_date,
-                si.customer AS customer,
-                si.customer_name AS customer_name,
-                sii.item_code AS item_code,
-                sii.item_name AS item_name,
-                sii.stock_qty AS qty,
-                sii.delivered_qty AS delivered_qty,
-                (sii.stock_qty - sii.delivered_qty) AS pending_qty,
-                sii.amount AS amount
-            FROM `tabSales Invoice Item` AS sii
-            LEFT JOIN `tabSales Invoice` AS si ON si.name = sii.parent
-            LEFT JOIN `tabItem` AS i ON i.name = sii.item_code
-            WHERE {clauses}
-            ORDER BY si.posting_date
-        """.format(
-            clauses=clauses
-        ),
-        as_dict=1,
-    )
-    return items
+def _get_data(filters):
+    SalesInvoiceItem = frappe.qb.DocType("Sales Invoice Item")
+    SalesInvoice = frappe.qb.DocType("Sales Invoice")
+    Item = frappe.qb.DocType("Item")
+    return (
+        frappe.qb.from_(SalesInvoiceItem)
+        .left_join(SalesInvoice)
+        .on(SalesInvoice.name == SalesInvoiceItem.parent)
+        .left_join(Item)
+        .on(Item.name == SalesInvoiceItem.item_code)
+        .select(
+            SalesInvoice.name.as_("sales_invoice"),
+            SalesInvoice.posting_date,
+            SalesInvoice.customer,
+            SalesInvoice.customer_name,
+            SalesInvoiceItem.item_code,
+            SalesInvoiceItem.item_name,
+            SalesInvoiceItem.stock_qty,
+            SalesInvoiceItem.delivered_qty,
+            (SalesInvoiceItem.stock_qty - SalesInvoiceItem.delivered_qty).as_(
+                "pending_qty"
+            ),
+            SalesInvoiceItem.amount,
+        )
+        .where(
+            (SalesInvoice.docstatus == 1)
+            & (SalesInvoice.update_stock == 0)
+            & (Item.is_stock_item == 1)
+            & (SalesInvoiceItem.delivered_qty < SalesInvoiceItem.stock_qty)
+        )
+        .orderby(SalesInvoice.posting_date)
+    ).run(as_dict=True)
