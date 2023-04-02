@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import frappe
 from frappe.utils import cint, flt, getdate
 from functools import partial

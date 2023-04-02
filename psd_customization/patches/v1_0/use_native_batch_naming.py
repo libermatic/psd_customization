@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import frappe
 from functools import partial
 from toolz import compose, pluck

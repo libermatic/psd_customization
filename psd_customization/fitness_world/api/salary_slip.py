@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019, Libermatic and contributors
 # For license information, please see license.txt
 
-from __future__ import unicode_literals
 import frappe
 from frappe.query_builder import Interval
 from frappe.query_builder.functions import IfNull

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from . import __version__
 
 app_name = "psd_customization"

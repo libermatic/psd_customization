@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import frappe
 from toolz import pluck
 from frappe.utils import date_diff, add_days, flt
