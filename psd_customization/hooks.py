@@ -146,6 +146,14 @@ app_include_js = ["psd_customization.bundle.js"]
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+# DocType Class
+# ---------------
+# Override standard doctype classes
+
+override_doctype_class = {
+    "Stock Entry": "psd_customization.overrides.stock_entry.StockEntry",
+}
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -160,9 +168,6 @@ doc_events = {
         "before_insert": "psd_customization.doc_events.salary_slip.before_insert",
         "on_submit": "psd_customization.doc_events.salary_slip.on_submit",
         "on_cancel": "psd_customization.doc_events.salary_slip.on_cancel",
-    },
-    "Stock Entry": {
-        "before_validate": "psd_customization.doc_events.stock_entry.before_validate"
     },
 }
 
