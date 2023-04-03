@@ -42,7 +42,8 @@ export function label_printer_item() {
       const { price_list } = frm.doc;
       if (item_code && price_list) {
         const { message: details } = await frappe.call({
-          method: 'psd_customization.ultimate_art.api.label_printer.get_item_details',
+          method:
+            'psd_customization.ultimate_art.api.label_printer.get_item_details',
           args: { item_code, batch_no, price_list },
           error_handlers: { DoesNotExistError: () => {} },
         });

@@ -16,7 +16,7 @@ export default {
     'onchange',
   ],
   computed: {
-    df: function() {
+    df: function () {
       const { fieldname, label, options, read_only, get_query } = this;
       const fieldtype = 'Link';
       return {
@@ -28,9 +28,9 @@ export default {
         get_query,
       };
     },
-    events: function() {
+    events: function () {
       return {
-        'awesomplete-selectcomplete': e => {
+        'awesomplete-selectcomplete': (e) => {
           this.onchange({ fieldname: this.fieldname, value: e.target.value });
         },
       };

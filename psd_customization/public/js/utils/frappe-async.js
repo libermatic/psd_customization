@@ -1,12 +1,12 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-const prompt = function(fields, title, primary_label) {
-  return new Promise(function(resolve, reject) {
+const prompt = function (fields, title, primary_label) {
+  return new Promise(function (resolve, reject) {
     try {
       return frappe.prompt(
         fields,
-        values => (values ? resolve(values) : reject()),
+        (values) => (values ? resolve(values) : reject()),
         title,
         primary_label
       );
@@ -16,10 +16,14 @@ const prompt = function(fields, title, primary_label) {
   });
 };
 
-const confirm = function(message) {
-  return new Promise(function(resolve, reject) {
+const confirm = function (message) {
+  return new Promise(function (resolve, reject) {
     try {
-      return frappe.confirm(message, () => resolve(true), () => resolve(false));
+      return frappe.confirm(
+        message,
+        () => resolve(true),
+        () => resolve(false)
+      );
     } catch (e) {
       reject(e);
     }

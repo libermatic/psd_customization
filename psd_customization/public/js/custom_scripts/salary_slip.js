@@ -19,7 +19,7 @@ function calculate_training_months(frm) {
 }
 
 const salary_slip_training = {
-  training: async function(frm, cdt, cdn) {
+  training: async function (frm, cdt, cdn) {
     const { training } = frappe.get_doc(cdt, cdn);
     if (training) {
       const no_of_occurences = frm.doc.trainings.filter(
@@ -29,27 +29,26 @@ const salary_slip_training = {
         frm.get_field('trainings').grid.grid_rows_by_docname[cdn].remove();
       } else {
         const { start_date, end_date } = frm.doc;
-        const {
-          message: { months, gym_subscription, cost_multiplier } = {},
-        } = await frappe.call({
-          method:
-            'psd_customization.fitness_world.api.salary_slip.get_training_data',
-          args: { training, start_date, end_date },
-        });
+        const { message: { months, gym_subscription, cost_multiplier } = {} } =
+          await frappe.call({
+            method:
+              'psd_customization.fitness_world.api.salary_slip.get_training_data',
+            args: { training, start_date, end_date },
+          });
         frappe.model.set_value(cdt, cdn, 'months', months);
         frappe.model.set_value(cdt, cdn, 'subscription', gym_subscription);
         frappe.model.set_value(cdt, cdn, 'cost_multiplier', cost_multiplier);
       }
     } else {
-      ['months', 'subscription'].forEach(field => {
+      ['months', 'subscription'].forEach((field) => {
         frappe.model.set_value(cdt, cdn, field, null);
       });
     }
   },
-  months: function(frm, cdt, cdn) {
+  months: function (frm, cdt, cdn) {
     calculate_training_months(frm);
   },
-  trainings_remove: function(frm, cdt, cdn) {
+  trainings_remove: function (frm, cdt, cdn) {
     calculate_training_months(frm);
   },
 };
@@ -68,13 +67,12 @@ async function calculate_training_earnings(frm) {
     total_training_months = 0,
     training_rate = 0,
   } = frm.doc;
-  const {
-    message: { training_salary_component } = {},
-  } = await frappe.db.get_value(
-    'Salary Structure',
-    salary_structure,
-    'training_salary_component'
-  );
+  const { message: { training_salary_component } = {} } =
+    await frappe.db.get_value(
+      'Salary Structure',
+      salary_structure,
+      'training_salary_component'
+    );
   const earning = frm.doc.earnings.find(
     ({ salary_component }) => salary_component === training_salary_component
   );
@@ -101,15 +99,15 @@ async function get_emp_and_leave_details(frm, dt, dn) {
 
 export default {
   salary_slip_training,
-  setup: function(frm) {
-    frm.fields_dict['trainings'].grid.get_field(
-      'training'
-    ).get_query = function() {
-      return {
-        query: 'psd_customization.fitness_world.api.salary_slip.training_query',
-        filters: { employee: frm.doc.employee },
+  setup: function (frm) {
+    frm.fields_dict['trainings'].grid.get_field('training').get_query =
+      function () {
+        return {
+          query:
+            'psd_customization.fitness_world.api.salary_slip.training_query',
+          filters: { employee: frm.doc.employee },
+        };
       };
-    };
     frm.events.get_emp_and_leave_details = get_emp_and_leave_details;
   },
   refresh: toggle_training_section,

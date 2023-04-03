@@ -33,6 +33,7 @@ def _get_price(item_code, batch_no, price_list):
     except IndexError:
         return None
 
+
 def _get_batch(batch_no):
     if not batch_no:
         return {}

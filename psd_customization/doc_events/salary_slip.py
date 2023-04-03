@@ -2,8 +2,7 @@ import frappe
 from frappe.utils import getdate
 from frappe.query_builder import Order
 
-from psd_customization.fitness_world.api.salary_slip \
-    import set_trainings_in_salary_slip
+from psd_customization.fitness_world.api.salary_slip import set_trainings_in_salary_slip
 
 
 def before_insert(doc, method):
@@ -15,12 +14,11 @@ def on_submit(doc, method):
     if doc.salary_slip_based_on_training:
         for training in doc.trainings:
             allocation = frappe.get_doc(
-                'Trainer Allocation', training.training,
+                "Trainer Allocation",
+                training.training,
             )
             allocation.flags.ignore_permissions = True
-            allocation.salary_till = min(
-                getdate(doc.end_date), allocation.to_date
-            )
+            allocation.salary_till = min(getdate(doc.end_date), allocation.to_date)
             allocation.save()
 
 
@@ -43,9 +41,11 @@ def on_cancel(doc, method):
                 .limit(1)
             ).run()
             allocation = frappe.get_doc(
-                'Trainer Allocation', training.training,
+                "Trainer Allocation",
+                training.training,
             )
             allocation.flags.ignore_permissions = True
-            allocation.salary_till = last_salary_slip[0][0] \
-                if last_salary_slip else None
+            allocation.salary_till = (
+                last_salary_slip[0][0] if last_salary_slip else None
+            )
             allocation.save()

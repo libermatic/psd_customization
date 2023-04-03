@@ -23,7 +23,7 @@ export default {
   ],
   components: { DashboardItem, CurrentSubscriptions },
   computed: {
-    outstanding_cpt: function() {
+    outstanding_cpt: function () {
       return {
         label: 'Current Outstanding',
         content: this.outstanding
@@ -35,15 +35,16 @@ export default {
         color: this.outstanding ? 'orange' : 'lightblue',
       };
     },
-    invoices: function() {
+    invoices: function () {
       return {
         label: 'Invoices: Unpaid / All',
-        content: `${this.unpaid_invoices || '-'} / ${this.total_invoices ||
-          '-'}`,
+        content: `${this.unpaid_invoices || '-'} / ${
+          this.total_invoices || '-'
+        }`,
         color: this.unpaid_invoices ? 'orange' : 'green',
       };
     },
-    trainer: function() {
+    trainer: function () {
       return {
         label: 'Last Trainer',
         content: this.last_trainer ? this.last_trainer.gym_trainer_name : '-',

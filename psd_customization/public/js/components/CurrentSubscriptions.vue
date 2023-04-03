@@ -6,9 +6,7 @@
         <current-subscription-item v-bind="subscription" />
       </div>
     </div>
-    <div v-else class="psd-no-data">
-      Currently none
-    </div>
+    <div v-else class="psd-no-data">Currently none</div>
   </div>
 </template>
 

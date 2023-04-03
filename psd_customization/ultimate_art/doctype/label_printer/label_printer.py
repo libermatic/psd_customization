@@ -7,6 +7,7 @@ from toolz.curried import merge, keyfilter
 
 from psd_customization.ultimate_art.api.label_printer import get_item_details
 
+
 class LabelPrinter(Document):
     @frappe.whitelist()
     def set_items_from_reference(self):

@@ -9,10 +9,10 @@ function toggle_training_fields(frm) {
 }
 
 export default {
-  refresh: function(frm) {
+  refresh: function (frm) {
     toggle_training_fields(frm);
   },
-  salary_slip_based_on_training: function(frm) {
+  salary_slip_based_on_training: function (frm) {
     toggle_training_fields(frm);
   },
 };

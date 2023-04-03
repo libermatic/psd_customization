@@ -1,6 +1,10 @@
 <template>
   <div class="root psd-dashboard-section">
-    <barcode-label v-bind="label" v-for="label in labels" :key="label.barcode" />
+    <barcode-label
+      v-bind="label"
+      v-for="label in labels"
+      :key="label.barcode"
+    />
   </div>
 </template>
 

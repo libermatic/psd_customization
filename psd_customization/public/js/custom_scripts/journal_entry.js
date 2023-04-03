@@ -8,14 +8,14 @@
 import { set_naming_series } from '../utils/helpers';
 
 export default {
-  refresh: function(frm) {
+  refresh: function (frm) {
     frm.trigger('set_queries');
   },
-  company: function(frm, dt) {
+  company: function (frm, dt) {
     set_naming_series(frm, dt);
     frm.trigger('set_queries');
   },
-  set_queries: function(frm) {
+  set_queries: function (frm) {
     const { company } = frm.doc;
     frm.toggle_display('branch', !!company);
     frm.set_query('branch', { filters: { company } });

@@ -13,7 +13,7 @@ const purchase_invoice_item = {
 
 export default {
   purchase_invoice_item,
-  setup: function(frm) {
+  setup: function (frm) {
     frm['parse_serial_dialog'] = make_parse_serial_dialog();
   },
 };

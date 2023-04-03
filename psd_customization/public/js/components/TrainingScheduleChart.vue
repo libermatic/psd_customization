@@ -13,7 +13,7 @@ class Chart extends PercentageChart {
 export default {
   props: ['schedules'],
   computed: {
-    chartData: function() {
+    chartData: function () {
       const labels = this.schedules.map(
         ({ trainer_name }) => trainer_name || 'Unallocated'
       );
@@ -26,7 +26,7 @@ export default {
       );
       return { labels, datasets: [{ values }] };
     },
-    chartColors: function() {
+    chartColors: function () {
       return this.schedules.map(({ trainer_name }) => colorHash(trainer_name));
     },
   },
@@ -38,7 +38,7 @@ export default {
       height: 80,
       depth: 1,
     });
-    this.$watch('schedules', function() {
+    this.$watch('schedules', function () {
       chart.colors = this.chartColors;
       chart.update(this.chartData);
     });

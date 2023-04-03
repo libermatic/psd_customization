@@ -12,7 +12,7 @@
 export default {
   props: ['label', 'content', 'color'],
   computed: {
-    indicator: function() {
+    indicator: function () {
       return `indicator ${this.color}`;
     },
   },

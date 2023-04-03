@@ -35,11 +35,7 @@ export default {
         return 'darkgrey';
       }
       const day_after = moment(to_date).add(1, 'd');
-      if (
-        moment()
-          .add(7, 'days')
-          .isBefore(day_after)
-      ) {
+      if (moment().add(7, 'days').isBefore(day_after)) {
         return 'green';
       }
       if (moment().isSameOrBefore(day_after)) {
@@ -49,13 +45,13 @@ export default {
     },
   },
   computed: {
-    docUrl: function() {
+    docUrl: function () {
       return `#Form/Gym Subscription/${this.name}`;
     },
-    colorClass: function() {
+    colorClass: function () {
       return `indicator ${this.get_color()}`;
     },
-    interval: function() {
+    interval: function () {
       const { from_date, to_date } = this;
       if (to_date) {
         return `${frappe.datetime.str_to_user(
@@ -64,7 +60,7 @@ export default {
       }
       return frappe.datetime.str_to_user(from_date);
     },
-    eta: function() {
+    eta: function () {
       const { from_date, to_date, is_lifetime } = this;
       if (is_lifetime && !to_date) {
         return null;

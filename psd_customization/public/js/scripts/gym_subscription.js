@@ -45,7 +45,7 @@ function add_actions(frm) {
     }
     const { label, method } = get_invoice_props();
     frm
-      .add_custom_button(label, function() {
+      .add_custom_button(label, function () {
         frappe.model.open_mapped_doc({ frm, method });
       })
       .addClass('btn-primary')
@@ -56,7 +56,7 @@ function add_actions(frm) {
     if (['Active', 'Stopped'].includes(status)) {
       frm.add_custom_button(
         status === 'Active' ? 'Stop' : 'Resume',
-        async function() {
+        async function () {
           await frappe.call({
             method:
               'psd_customization.fitness_world.api.gym_subscription.update_status',
@@ -71,7 +71,7 @@ function add_actions(frm) {
     }
 
     if (parseInt(is_training)) {
-      frm.add_custom_button('Training Schedule', function() {
+      frm.add_custom_button('Training Schedule', function () {
         frappe.set_route('training-schedule', { member, subscription });
       });
     }
@@ -84,14 +84,14 @@ function render_subscription_details(frm) {
     frm.dashboard.show();
     new Vue({
       el: node,
-      render: h => h(SubscriptionDashboard, { props: { invoice } }),
+      render: (h) => h(SubscriptionDashboard, { props: { invoice } }),
     });
   }
 }
 
 const listview_settings = {
   add_fields: ['status', 'is_lifetime', 'from_date', 'to_date'],
-  get_indicator: function({ status, is_lifetime, from_date, to_date }) {
+  get_indicator: function ({ status, is_lifetime, from_date, to_date }) {
     const expiry_in_days =
       to_date && !is_lifetime
         ? frappe.datetime.get_day_diff(to_date, frappe.datetime.get_today())
@@ -116,7 +116,7 @@ const listview_settings = {
 
 export default {
   listview_settings,
-  refresh: function(frm) {
+  refresh: function (frm) {
     if (frm.doc.__islocal && frm.doc['amended_from']) {
       frm.set_value('reference_invoice', null);
     }
@@ -126,7 +126,7 @@ export default {
     add_actions(frm);
     render_subscription_details(frm);
   },
-  subscription_item: function(frm) {
+  subscription_item: function (frm) {
     if (!frm.doc['subscription_item']) {
       frm.set_value('subscription_name', null);
     }

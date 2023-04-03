@@ -180,7 +180,7 @@ export default {
   },
   components: { FieldLink, TrainingScheduleChart },
   computed: {
-    subscription_query: function() {
+    subscription_query: function () {
       const { member } = this;
       if (member) {
         return {
@@ -191,13 +191,13 @@ export default {
     },
   },
   watch: {
-    subscription: function(value, prev_value) {
+    subscription: function (value, prev_value) {
       if (value && value !== prev_value) {
         this.set_details();
         this.set_schedules();
       }
     },
-    member: async function(value, prev_value) {
+    member: async function (value, prev_value) {
       if (value && value !== prev_value) {
         const { message: subscription = {} } = await frappe.call({
           method:
@@ -209,7 +209,7 @@ export default {
     },
   },
   methods: {
-    clear: function(e) {
+    clear: function (e) {
       this.member = null;
       this.member_name = null;
       this.subscription = null;
@@ -218,14 +218,14 @@ export default {
       this.end_date = null;
       this.schedules = [];
     },
-    handle_field: function({ fieldname, value }) {
+    handle_field: function ({ fieldname, value }) {
       if (fieldname === 'member') {
         this.member = value;
       } else if (fieldname === 'subscription') {
         this.subscription = value;
       }
     },
-    set_details: async function() {
+    set_details: async function () {
       const {
         message: { member_name, subscription_name, from_date, to_date } = {},
       } = await frappe.db.get_value('Gym Subscription', this.subscription, [
@@ -239,7 +239,7 @@ export default {
       this.start_date = frappe.datetime.str_to_user(from_date);
       this.end_date = frappe.datetime.str_to_user(to_date);
     },
-    set_schedules: async function() {
+    set_schedules: async function () {
       const { message: schedules = [] } = await frappe.call({
         method:
           'psd_customization.fitness_world.api.trainer_allocation.get_schedule',
@@ -264,14 +264,14 @@ export default {
         })
       );
     },
-    create: async function(from_date, to_date) {
+    create: async function (from_date, to_date) {
       const dialog = new frappe.ui.Dialog({
         title: 'Select Trainer',
         fields: make_dialog_field('trainer'),
       });
       dialog.set_primary_action(
         'OK',
-        async function() {
+        async function () {
           const { trainer, slot } = dialog.get_values();
           await frappe.call({
             method:
@@ -292,7 +292,7 @@ export default {
       dialog.show();
       dialog.onhide = () => dialog.$wrapper.remove();
     },
-    update: async function(name, key) {
+    update: async function (name, key) {
       const field = make_dialog_field(key);
       const { value } = await frappeAsync.prompt(
         field,
@@ -305,7 +305,7 @@ export default {
       });
       this.set_schedules();
     },
-    remove: async function(name) {
+    remove: async function (name) {
       const will_remove = await frappeAsync.confirm(
         'Trainer for this period will be unassigned'
       );

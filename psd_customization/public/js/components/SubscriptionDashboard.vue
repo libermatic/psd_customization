@@ -24,7 +24,7 @@ export default {
   props: ['invoice'],
   components: { DashboardItem },
   computed: {
-    invoice_cpt: function() {
+    invoice_cpt: function () {
       const { amount, status } = this.invoice || {};
       return {
         label: 'Invoice Amount',

@@ -47,7 +47,7 @@ psd = {
   make_training_schedule_page: (node, props) =>
     new Vue({
       el: node,
-      render: h => h(TrainingSchedule, { props }),
+      render: (h) => h(TrainingSchedule, { props }),
     }),
   scripts,
   utils,

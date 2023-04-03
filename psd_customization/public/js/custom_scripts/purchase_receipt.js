@@ -16,7 +16,7 @@ export function make_parse_serial_dialog() {
  */
 export function handle_parse_serial_dialog(frm, cdt, cdn) {
   const { parse_serial_dialog: dialog } = frm;
-  dialog.set_primary_action('Parse', function() {
+  dialog.set_primary_action('Parse', function () {
     const { serial_no: prev_serial_no = '' } = locals[cdt][cdn];
     try {
       const serials = dialog
@@ -47,7 +47,7 @@ const purchase_receipt_item = {
 
 export default {
   purchase_receipt_item,
-  setup: function(frm) {
+  setup: function (frm) {
     frm['parse_serial_dialog'] = make_parse_serial_dialog();
   },
 };

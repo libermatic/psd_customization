@@ -4,7 +4,7 @@
 import BarcodeLabelDashboard from '../components/BarcodeLabelDashboard.vue';
 
 export default {
-  refresh: function(frm) {
+  refresh: function (frm) {
     frm.trigger('add_menu_item');
     frm.trigger('render_barcode_details');
   },
@@ -12,7 +12,7 @@ export default {
   /**
    * Creates a EAN13 barcode by hashing item_code
    */
-  add_menu_item: function(frm) {
+  add_menu_item: function (frm) {
     if (!frm.doc.__islocal) {
       function hash(str) {
         const hashint =
@@ -32,7 +32,7 @@ export default {
           );
         return ((10 - mod) % 10).toString();
       }
-      frm.page.add_menu_item('Generate New Barcode', async function() {
+      frm.page.add_menu_item('Generate New Barcode', async function () {
         const code = hash(frm.doc['item_code']);
         const check = checkdigit(code);
         await frm.add_child('barcodes', {
@@ -46,7 +46,7 @@ export default {
   /**
    * Renders a barcode label in Dashboard with a button to Download as PNG
    */
-  render_barcode_details: async function(frm) {
+  render_barcode_details: async function (frm) {
     if (!frm.doc.__islocal) {
       const { message: labels = [] } = await frappe.call({
         method: 'psd_customization.ultimate_art.api.item.get_label_data',
@@ -57,7 +57,7 @@ export default {
         frm.barcode_labels_vue = new Vue({
           data: { labels },
           el: $wrapper.html('<div />').children()[0],
-          render: function(h) {
+          render: function (h) {
             return h(BarcodeLabelDashboard, { props: { labels: this.labels } });
           },
         });

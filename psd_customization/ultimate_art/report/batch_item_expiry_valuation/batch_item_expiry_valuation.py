@@ -108,7 +108,9 @@ def filter_data(filters):
     def filter_by_days(x):
         days_to_expiry = filters.get("days_to_expiry")
         if days_to_expiry:
-            return x.get("expiry_status") is not None and x.get("expiry_status") <= cint(days_to_expiry)
+            return x.get("expiry_status") is not None and x.get(
+                "expiry_status"
+            ) <= cint(days_to_expiry)
         return True
 
     return compose(

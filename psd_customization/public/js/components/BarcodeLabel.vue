@@ -34,7 +34,7 @@ export default {
     'item_name',
     'price_formatted',
   ],
-  data: function() {
+  data: function () {
     return { invalid: false };
   },
   mounted() {
@@ -54,7 +54,7 @@ export default {
     }
   },
   methods: {
-    download: async function() {
+    download: async function () {
       if (!this.invalid) {
         try {
           const dataUrl = await domtoimage.toPng(

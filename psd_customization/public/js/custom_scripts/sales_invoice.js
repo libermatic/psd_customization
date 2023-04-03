@@ -28,18 +28,14 @@ async function render_subscription_details(frm) {
       .children()[0];
     frm.subscription_details = new Vue({
       el: node,
-      render: h => h(CurrentSubscriptions, { props: { subscriptions } }),
+      render: (h) => h(CurrentSubscriptions, { props: { subscriptions } }),
     });
   }
 }
 
 async function set_qty(frm, cdt, cdn) {
-  const {
-    item_code,
-    gym_from_date,
-    gym_to_date,
-    gym_is_lifetime,
-  } = frappe.get_doc(cdt, cdn);
+  const { item_code, gym_from_date, gym_to_date, gym_is_lifetime } =
+    frappe.get_doc(cdt, cdn);
   if (gym_is_lifetime) {
     const { message: sub_item = {} } = await frappe.db.get_value(
       'Gym Subscription Item',
@@ -63,7 +59,7 @@ async function set_qty(frm, cdt, cdn) {
 }
 
 const sales_invoice_item = {
-  item_code: async function(frm, cdt, cdn) {
+  item_code: async function (frm, cdt, cdn) {
     if (has_gym_role()) {
       const { item_code } = frappe.get_doc(cdt, cdn);
       if (item_code) {
@@ -83,7 +79,7 @@ const sales_invoice_item = {
       }
     }
   },
-  is_gym_subscription: async function(frm, cdt, cdn) {
+  is_gym_subscription: async function (frm, cdt, cdn) {
     const { item_code, is_gym_subscription } = frappe.get_doc(cdt, cdn);
     const { gym_member: member } = frm.doc;
     if (is_gym_subscription && member) {
@@ -97,21 +93,19 @@ const sales_invoice_item = {
           frappe.datetime.add_days(frappe.datetime.add_months(today, 1), -1)
         ),
       ]);
-      const [
-        { message: subscription_item },
-        { message: training = {} },
-      ] = await Promise.all([
-        frappe.call({
-          method:
-            'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
-          args: { item_code },
-        }),
-        frappe.call({
-          method:
-            'psd_customization.fitness_world.api.trainer_allocation.get_last',
-          args: { item_code, member },
-        }),
-      ]);
+      const [{ message: subscription_item }, { message: training = {} }] =
+        await Promise.all([
+          frappe.call({
+            method:
+              'psd_customization.fitness_world.api.gym_subscription_item.get_subscription_item',
+            args: { item_code },
+          }),
+          frappe.call({
+            method:
+              'psd_customization.fitness_world.api.trainer_allocation.get_last',
+            args: { item_code, member },
+          }),
+        ]);
       if (subscription_item) {
         frm.subscription_selector.show({
           show_trainer: cint(subscription_item.requires_trainer),
@@ -120,14 +114,14 @@ const sales_invoice_item = {
         });
       }
     } else {
-      ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach(field =>
+      ['gym_from_date', 'gym_to_date', 'gym_is_lifetime'].forEach((field) =>
         frappe.model.set_value(cdt, cdn, field, null)
       );
     }
   },
   gym_from_date: set_qty,
   gym_to_date: set_qty,
-  gym_is_lifetime: async function(frm, cdt, cdn) {
+  gym_is_lifetime: async function (frm, cdt, cdn) {
     const { gym_is_lifetime } = frappe.get_doc(cdt, cdn);
     if (gym_is_lifetime) {
       await frappe.model.set_value(cdt, cdn, 'gym_to_date', null);
@@ -138,7 +132,7 @@ const sales_invoice_item = {
 
 export default {
   sales_invoice_item,
-  setup: function(frm) {
+  setup: function (frm) {
     if (has_gym_role()) {
       frm.get_field('items').grid.editable_fields = [
         { fieldname: 'item_code', columns: 3 },
@@ -151,7 +145,7 @@ export default {
       frm.subscription_selector = new SubscriptionSelector();
     }
   },
-  gym_member: async function(frm) {
+  gym_member: async function (frm) {
     render_subscription_details(frm);
     const { gym_member } = frm.doc;
     if (gym_member) {

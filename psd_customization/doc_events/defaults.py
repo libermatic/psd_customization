@@ -13,11 +13,11 @@ def _get_user_companies(user):
 
 def set_user_defaults(login_manager):
     if frappe.session.user:
-        company = frappe.defaults.get_user_default('company')
+        company = frappe.defaults.get_user_default("company")
         allowed_companies = _get_user_companies(frappe.session.user)
         if allowed_companies and company not in allowed_companies:
             frappe.defaults.add_user_default(
-                'company',
+                "company",
                 company,
-                parenttype='User Permission',
+                parenttype="User Permission",
             )

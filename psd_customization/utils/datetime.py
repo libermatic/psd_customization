@@ -55,7 +55,7 @@ def merge_intervals(intervals):
 
 def pretty_date(iso_datetime, ref_date=None):
     """
-        Extends frappe.utils.data.pretty_date
+    Extends frappe.utils.data.pretty_date
     """
     days = date_diff(iso_datetime, ref_date or datetime.date.today())
     if days < 0:

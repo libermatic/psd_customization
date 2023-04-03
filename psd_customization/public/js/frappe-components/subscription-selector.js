@@ -83,13 +83,8 @@ export default class SubscriptionSelector {
     }
     this.dialog.get_primary_btn().off('click');
     this.dialog.set_primary_action('OK', () => {
-      const {
-        frequency,
-        from_date,
-        to_date,
-        trainer,
-        slot,
-      } = this.dialog.get_values();
+      const { frequency, from_date, to_date, trainer, slot } =
+        this.dialog.get_values();
       frappe.model.set_value(
         cdt,
         cdn,
@@ -110,7 +105,7 @@ export default class SubscriptionSelector {
     return true;
   }
   show({ trainer, slot, show_trainer } = {}) {
-    ['trainer', 'slot'].forEach(field => {
+    ['trainer', 'slot'].forEach((field) => {
       this.dialog.fields_dict[field].toggle(show_trainer);
     });
     this.dialog.set_value('trainer', trainer);
