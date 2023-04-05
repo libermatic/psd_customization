@@ -46,7 +46,7 @@ export default {
   },
   computed: {
     docUrl: function () {
-      return `#Form/Gym Subscription/${this.name}`;
+      return `/app/gym-subscription/${encodeURIComponent(this.name)}`;
     },
     colorClass: function () {
       return `indicator ${this.get_color()}`;
