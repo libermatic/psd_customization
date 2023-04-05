@@ -4,11 +4,6 @@
 
 <script>
 import { colorHash } from '../utils/colors';
-import { PercentageChart } from 'frappe-charts';
-
-class Chart extends PercentageChart {
-  renderLegend() {}
-}
 
 export default {
   props: ['schedules'],
@@ -31,12 +26,12 @@ export default {
     },
   },
   mounted() {
-    const chart = new Chart(this.$el, {
+    const chart = new frappe.Chart(this.$el, {
       type: 'percentage',
       data: this.chartData,
       colors: this.chartColors,
-      height: 80,
-      depth: 1,
+      height: 120,
+      showLegend: false,
     });
     this.$watch('schedules', function () {
       chart.colors = this.chartColors;
