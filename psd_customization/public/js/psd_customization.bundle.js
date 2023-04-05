@@ -36,9 +36,8 @@ frappe.ui.form.on(
 
 frappe.ui.form.on('Salary Structure', custom_scripts.salary_structure);
 
-frappe.ui.form.GymMemberQuickEntryForm = frappe.ui.form.QuickEntryForm.extend(
-  scripts.gym_member.quick_entry
-);
+frappe.ui.form.GymMemberQuickEntryForm =
+  scripts.gym_member.GymMemberQuickEntryForm;
 
 frappe.provide('psd_customization');
 

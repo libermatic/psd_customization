@@ -107,19 +107,16 @@ function add_actions(frm) {
   }
 }
 
-const quick_entry = {
-  init: function (doctype, after_insert) {
-    this._super(doctype, after_insert);
-  },
-  render_dialog: function () {
+class GymMemberQuickEntryForm extends frappe.ui.form.QuickEntryForm {
+  render_dialog() {
     this.mandatory = this.mandatory.concat(this.get_variant_fields());
-    this._super();
-  },
-  update_doc: function () {
-    this._super();
+    super.render_dialog();
+  }
+  update_doc() {
+    super.update_doc();
     this.dialog.doc.enrollment_date = frappe.datetime.get_today();
-  },
-  get_variant_fields: function () {
+  }
+  get_variant_fields() {
     return [
       {
         fieldtype: 'Section Break',
@@ -180,11 +177,12 @@ const quick_entry = {
         default: frappe.defaults.get_default('country'),
       },
     ];
-  },
-};
+  }
+}
+
 
 export default {
-  quick_entry,
+  GymMemberQuickEntryForm,
   setup: function (frm) {
     set_queries(frm);
   },
