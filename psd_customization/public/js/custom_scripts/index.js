@@ -1,8 +1,8 @@
-export { default as journal_entry } from './journal_entry';
-export { default as payment_entry } from './payment_entry';
-export { default as sales_invoice } from './sales_invoice';
-export { default as item } from './item';
-export { default as purchase_receipt } from './purchase_receipt';
-export { default as purchase_invoice } from './purchase_invoice';
-export { default as salary_slip } from './salary_slip';
-export { default as salary_structure } from './salary_structure';
+export * from './journal_entry';
+export * from './payment_entry';
+export * from './sales_invoice';
+export * from './item';
+export * from './purchase_receipt';
+export * from './purchase_invoice';
+export * from './salary_slip';
+export * from './salary_structure';

@@ -97,7 +97,7 @@ async function get_emp_and_leave_details(frm, dt, dn) {
   frm.refresh();
 }
 
-export default {
+export const salary_slip = {
   salary_slip_training,
   setup: function (frm) {
     frm.fields_dict['trainings'].grid.get_field('training').get_query =

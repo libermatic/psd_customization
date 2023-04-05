@@ -3,7 +3,7 @@
 
 import BarcodeLabelDashboard from '../components/BarcodeLabelDashboard.vue';
 
-export default {
+export const item = {
   refresh: function (frm) {
     frm.trigger('add_menu_item');
     frm.trigger('render_barcode_details');

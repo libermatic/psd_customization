@@ -7,11 +7,11 @@ import {
   handle_parse_serial_dialog,
 } from './purchase_receipt';
 
-const purchase_invoice_item = {
+export const purchase_invoice_item = {
   parse_serial: handle_parse_serial_dialog,
 };
 
-export default {
+export const purchase_invoice = {
   purchase_invoice_item,
   setup: function (frm) {
     frm['parse_serial_dialog'] = make_parse_serial_dialog();

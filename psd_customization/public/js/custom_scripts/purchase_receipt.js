@@ -41,12 +41,11 @@ export function handle_parse_serial_dialog(frm, cdt, cdn) {
  * Parses serial numbers read by a qr code scanner and adds to serial_no field
  */
 
-const purchase_receipt_item = {
+export const purchase_receipt_item = {
   parse_serial: handle_parse_serial_dialog,
 };
 
-export default {
-  purchase_receipt_item,
+export const purchase_receipt = {
   setup: function (frm) {
     frm['parse_serial_dialog'] = make_parse_serial_dialog();
   },

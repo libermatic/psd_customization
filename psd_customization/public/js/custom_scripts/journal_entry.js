@@ -7,7 +7,7 @@
 
 import { set_naming_series } from '../utils/helpers';
 
-export default {
+export const journal_entry = {
   refresh: function (frm) {
     frm.trigger('set_queries');
   },

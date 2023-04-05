@@ -89,7 +89,7 @@ function render_subscription_details(frm) {
   }
 }
 
-const listview_settings = {
+export const gym_subscription_listview_settings = {
   add_fields: ['status', 'is_lifetime', 'from_date', 'to_date'],
   get_indicator: function ({ status, is_lifetime, from_date, to_date }) {
     const expiry_in_days =
@@ -114,8 +114,7 @@ const listview_settings = {
   },
 };
 
-export default {
-  listview_settings,
+export const gym_subscription = {
   refresh: function (frm) {
     if (frm.doc.__islocal && frm.doc['amended_from']) {
       frm.set_value('reference_invoice', null);

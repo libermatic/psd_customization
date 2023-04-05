@@ -1,40 +1,9 @@
 import * as utils from './utils';
 import * as scripts from './scripts';
-import * as custom_scripts from './custom_scripts';
+import * as quick_entry from './quick_entry';
+import * as cscripts from './custom_scripts';
 import TrainingSchedule from './components/TrainingSchedule.vue';
 import { __version__ } from './version';
-
-frappe.ui.form.on('Sales Invoice', custom_scripts.sales_invoice);
-frappe.ui.form.on(
-  'Sales Invoice Item',
-  custom_scripts.sales_invoice.sales_invoice_item
-);
-
-frappe.ui.form.on('Payment Entry', custom_scripts.payment_entry);
-
-frappe.ui.form.on('Journal Entry', custom_scripts.journal_entry);
-
-frappe.ui.form.on('Item', custom_scripts.item);
-
-frappe.ui.form.on('Purchase Receipt', custom_scripts.purchase_receipt);
-frappe.ui.form.on(
-  'Purchase Receipt Item',
-  custom_scripts.purchase_receipt.purchase_receipt_item
-);
-
-frappe.ui.form.on('Purchase Invoice', custom_scripts.purchase_invoice);
-frappe.ui.form.on(
-  'Purchase Invoice Item',
-  custom_scripts.purchase_invoice.purchase_invoice_item
-);
-
-frappe.ui.form.on('Salary Slip', custom_scripts.salary_slip);
-frappe.ui.form.on(
-  'Salary Slip Training',
-  custom_scripts.salary_slip.salary_slip_training
-);
-
-frappe.ui.form.on('Salary Structure', custom_scripts.salary_structure);
 
 frappe.ui.form.GymMemberQuickEntryForm =
   scripts.gym_member.GymMemberQuickEntryForm;
@@ -52,3 +21,20 @@ psd = {
   utils,
   __version__,
 };
+
+Object.keys(quick_entry).forEach((import_name) => {
+  const handler = quick_entry[import_name];
+  frappe.ui.form[import_name] = handler;
+});
+
+function get_doctype(import_name) {
+  return import_name
+    .split('_')
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+Object.keys(cscripts).forEach((import_name) => {
+  const handler = cscripts[import_name];
+  frappe.ui.form.on(get_doctype(import_name), handler);
+});

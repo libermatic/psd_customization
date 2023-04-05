@@ -1,2 +1,2 @@
-export { default as gym_member } from './gym_member';
-export { default as gym_subscription } from './gym_subscription';
+export * from './gym_member';
+export * from './gym_subscription';

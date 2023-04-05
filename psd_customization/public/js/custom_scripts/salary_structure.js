@@ -8,7 +8,7 @@ function toggle_training_fields(frm) {
   );
 }
 
-export default {
+export const salary_structure = {
   refresh: function (frm) {
     toggle_training_fields(frm);
   },

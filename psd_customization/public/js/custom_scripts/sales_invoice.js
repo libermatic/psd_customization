@@ -58,7 +58,7 @@ async function set_qty(frm, cdt, cdn) {
   }
 }
 
-const sales_invoice_item = {
+export const sales_invoice_item = {
   item_code: async function (frm, cdt, cdn) {
     if (has_gym_role()) {
       const { item_code } = frappe.get_doc(cdt, cdn);
@@ -130,8 +130,7 @@ const sales_invoice_item = {
   },
 };
 
-export default {
-  sales_invoice_item,
+export const sales_invoice = {
   setup: function (frm) {
     if (has_gym_role()) {
       frm.get_field('items').grid.editable_fields = [
