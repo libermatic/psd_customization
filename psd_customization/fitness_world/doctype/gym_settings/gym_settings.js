@@ -5,16 +5,6 @@ frappe.ui.form.on('Gym Settings', {
   setup: function (frm) {
     frm.trigger('set_queries');
   },
-  set_queries: async function (frm) {
-    [
-      'sms_before_expiry',
-      'sms_on_expiry',
-      'sms_invoiced',
-      'sms_receipt',
-    ].forEach((field) => {
-      frm.set_query(field, { filters: { type: 'Transactional' } });
-    });
-  },
   refresh: async function (frm) {
     const { message: options } = await frappe.call({
       method: 'erpnext.accounts.doctype.pos_profile.pos_profile.get_series',

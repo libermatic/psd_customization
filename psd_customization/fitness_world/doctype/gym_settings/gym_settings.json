@@ -15,14 +15,7 @@
   "default_payment_template",
   "column_break_7",
   "naming_series",
-  "submit_auto_renew",
-  "sms_section",
-  "sms_before_expiry",
-  "days_before_expiry",
-  "sms_on_expiry",
-  "column_break_6",
-  "sms_invoiced",
-  "sms_receipt"
+  "submit_auto_renew"
  ],
  "fields": [
   {
@@ -80,59 +73,15 @@
    "fieldname": "submit_auto_renew",
    "fieldtype": "Check",
    "label": "Submit Auto-Renew Subscription"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "sms_section",
-   "fieldtype": "Section Break",
-   "label": "SMS Alerts"
-  },
-  {
-   "description": "Sent when a Subscription Item is nearing expiry",
-   "fieldname": "sms_before_expiry",
-   "fieldtype": "Link",
-   "label": "Before Expiry",
-   "options": "SMS Template"
-  },
-  {
-   "depends_on": "eval:doc.sms_before_expiry",
-   "description": "As integers separated by newlines",
-   "fieldname": "days_before_expiry",
-   "fieldtype": "Code",
-   "label": "Days Before Expiry"
-  },
-  {
-   "description": "Sent when a Subscription Item has expired",
-   "fieldname": "sms_on_expiry",
-   "fieldtype": "Link",
-   "label": "On Expiry",
-   "options": "SMS Template"
-  },
-  {
-   "fieldname": "column_break_6",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "Sent when a new Subscription is generated. Applicable to auto renewing Members",
-   "fieldname": "sms_invoiced",
-   "fieldtype": "Link",
-   "label": "Invoiced",
-   "options": "SMS Template"
-  },
-  {
-   "description": "Sent when the status of a Subscription changes to 'Paid'",
-   "fieldname": "sms_receipt",
-   "fieldtype": "Link",
-   "label": "Receipt",
-   "options": "SMS Template"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2021-09-06 11:14:11.674539",
+ "modified": "2023-09-04 11:27:32.386289",
  "modified_by": "Administrator",
  "module": "Fitness World",
  "name": "Gym Settings",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -149,5 +98,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

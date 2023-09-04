@@ -3,14 +3,11 @@
 
 import frappe
 from frappe.query_builder.functions import Max
-from frappe.utils import add_days, getdate, cint, today, date_diff
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from functools import partial
-from toolz import compose, merge, concat, pluck, first
+from toolz import compose, concat, pluck, first
 
-from psd_customization.utils.datetime import merge_intervals, pretty_date, month_diff
-from psd_customization.utils.fp import compact
-from sms_extras.api.sms import get_sms_text, request_sms
+from psd_customization.utils.datetime import merge_intervals, month_diff
 
 
 @frappe.whitelist()
@@ -64,94 +61,6 @@ def make_sales_invoice(source_name):
     si.run_method("set_taxes")
     si.run_method("calculate_taxes_and_totals")
     return si
-
-
-def dispatch_sms(subscription, template_field):
-    doc = frappe.get_doc("Gym Subscription", subscription)
-    template = frappe.db.get_value("Gym Settings", None, template_field)
-    mobile_no = frappe.db.get_value("Gym Member", doc.member, "notification_number")
-    if template and mobile_no:
-        content = get_sms_text(template, doc)
-        if content:
-            request_sms(
-                mobile_no,
-                content,
-                communication={
-                    "subject": "SMS: {} for {}".format(template, doc.member),
-                    "reference_doctype": "Gym Subscription",
-                    "reference_name": doc.name,
-                    "timeline_doctype": "Gym Member",
-                    "timeline_name": doc.member,
-                },
-            )
-
-
-def send_reminders(posting_date=today()):
-    settings = frappe.get_single("Gym Settings")
-    if not settings.sms_before_expiry and not settings.sms_on_expiry:
-        return None
-    days_before_expiry = compose(
-        tuple, partial(map, lambda x: add_days(posting_date, cint(x))), compact
-    )(settings.days_before_expiry.split("\n"))
-    subscriptions = frappe.db.sql(
-        """
-            SELECT
-                s.name AS name,
-                m.name AS member,
-                m.member_name AS member_name,
-                s.posting_date AS posting_date,
-                s.from_date AS from_date,
-                s.to_date AS to_date,
-                m.notification_number AS mobile_no
-            FROM
-                `tabGym Subscription` AS s,
-                `tabGym Member` AS m
-            WHERE
-                s.docstatus = 1 AND
-                s.status = 'Paid' AND
-                s.member = m.name AND
-                IFNULL(m.notification_number, '') != '' AND (
-                    s.to_date < %(posting_date)s OR
-                    s.to_date IN %(days_before_expiry)s
-                )
-        """,
-        values={"posting_date": posting_date, "days_before_expiry": days_before_expiry},
-        as_dict=1,
-    )
-    for sub in subscriptions:
-        template = (
-            settings.sms_on_expiry
-            if date_diff(sub.get("to_date"), posting_date) < 0
-            else settings.sms_before_expiry
-        )
-        try:
-            content = get_sms_text(
-                template,
-                merge(
-                    sub,
-                    {
-                        "eta": pretty_date(
-                            getdate(sub.get("to_date")), ref_date=getdate(posting_date)
-                        )
-                    },
-                ),
-            )
-            subject = "SMS: {} for {}".format(template, sub.get("member"))
-            if content:
-                request_sms(
-                    sub.get("mobile_no"),
-                    content,
-                    communication={
-                        "subject": subject,
-                        "reference_doctype": "Gym Subscription",
-                        "reference_name": sub.get("name"),
-                        "timeline_doctype": "Gym Member",
-                        "timeline_name": sub.get("member"),
-                    },
-                )
-        except TypeError:
-            pass
-    return None
 
 
 def _existing_subscription_by_item(
@@ -364,7 +273,7 @@ def get_currents(member):
 def get_current_trainable(member):
     try:
         return compose(
-            first, partial(filter, lambda x: cint(x.is_training)), get_currents
+            first, partial(filter, lambda x: frappe.utils.cint(x.is_training)), get_currents
         )(member)
     except StopIteration:
         return None
