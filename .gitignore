@@ -10,3 +10,4 @@ psd_customization/docs/current
 # Bench runtime
 node_modules/
 psd_customization/public/node_modules
+psd_customization/public/dist
