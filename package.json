@@ -1,6 +1,6 @@
 {
   "name": "psd_customization",
-  "version": "14.0.3",
+  "version": "14.1.0",
   "description": "Customizations for PSD SELF",
   "entry": "src/index.js",
   "scripts": {
