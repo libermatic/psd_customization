@@ -2,6 +2,7 @@
  "charts": [],
  "content": "[{\"id\":\"VuNbGJ-Rw4\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Fitness World</span>\",\"col\":12}},{\"id\":\"rPmQu5WRYq\",\"type\":\"card\",\"data\":{\"card_name\":\"Transacations\",\"col\":4}},{\"id\":\"9S-xRGhH-c\",\"type\":\"card\",\"data\":{\"card_name\":\"Documents\",\"col\":4}},{\"id\":\"M2Ko2BEqJt\",\"type\":\"card\",\"data\":{\"card_name\":\"Tools\",\"col\":4}},{\"id\":\"OwWao8MS3i\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"R4iCVHI6GK\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2023-04-05 21:12:28.286302",
+ "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
  "for_user": "",
@@ -133,7 +134,7 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "label": "Subscription Status",
    "link_count": 0,
    "link_to": "Gym Subscription Status",
@@ -143,7 +144,7 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "label": "Trainer Allotment",
    "link_count": 0,
    "link_to": "Gym Trainer Allotment",
@@ -152,7 +153,7 @@
    "type": "Link"
   }
  ],
- "modified": "2023-04-05 21:17:54.947414",
+ "modified": "2023-10-09 20:11:31.813490",
  "modified_by": "Administrator",
  "module": "Fitness World",
  "name": "Fitness World",
