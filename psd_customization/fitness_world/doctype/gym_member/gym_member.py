@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.query_builder import Order
+from frappe.query_builder.functions import Sum, Count
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.contacts.address_and_contact import (
@@ -11,8 +12,8 @@ from frappe.contacts.address_and_contact import (
 )
 from erpnext.selling.doctype.customer.customer import make_contact, make_address
 import operator
-from functools import reduce, partial
-from toolz import count, pluck, compose, first, excepts
+from functools import partial
+from toolz import compose, first, excepts
 
 from psd_customization.utils.fp import pick
 from psd_customization.fitness_world.api.gym_subscription import get_currents
