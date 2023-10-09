@@ -94,10 +94,14 @@ def remove(name):
 
 @frappe.whitelist()
 def get_last(member, item_code=None, subscription_item=None):
-    _subscription_item = subscription_item or frappe.db.get(
-        "Gym Subscription Item",
-        filters={"disabled": 0, "item": item_code, "requires_trainer": 1},
-    )
+    _subscription_item = subscription_item
+    if not _subscription_item:
+        doc = frappe.db.get(
+            "Gym Subscription Item",
+            filters={"disabled": 0, "item": item_code, "requires_trainer": 1},
+        )
+        if doc:
+            _subscription_item = doc.name
 
     if not _subscription_item:
         return None
@@ -109,7 +113,7 @@ def get_last(member, item_code=None, subscription_item=None):
             GymSubscription.name,
         )
         .where(
-            (GymSubscription.subscription_item == _subscription_item.name)
+            (GymSubscription.subscription_item == _subscription_item)
             & (GymSubscription.member == member)
             & (GymSubscription.docstatus == 1)
         )
