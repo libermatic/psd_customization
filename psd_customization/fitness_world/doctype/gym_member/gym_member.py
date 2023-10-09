@@ -101,32 +101,34 @@ class GymMember(Document):
         GymSubscription = frappe.qb.DocType("Gym Subscription")
         SalesInvoice = frappe.qb.DocType("Sales Invoice")
 
-        all_subscriptions = (
-            frappe.qb.from_(GymSubscription)
-            .left_join(SalesInvoice)
-            .on(SalesInvoice.name == GymSubscription.reference_invoice)
-            .select(
-                SalesInvoice.outstanding_amount.as_("amount"),
-                SalesInvoice.status,
-                GymSubscription.to_date.as_("end_date"),
-            )
+        q = (
+            frappe.qb.from_(SalesInvoice)
+            .left_join(GymSubscription)
+            .on(GymSubscription.reference_invoice == SalesInvoice.name)
             .where(
                 (GymSubscription.docstatus == 1) & (GymSubscription.member == self.name)
             )
-            .orderby(GymSubscription.from_date, order=Order.desc)
-        ).run(as_dict=True)
-
-        unpaid_subscriptions = compose(list, filter)(
-            lambda x: x.get("status") != "Paid", all_subscriptions
         )
-        outstanding = reduce(operator.add, pluck("amount", unpaid_subscriptions), 0)
+
+        all_subscriptions = (
+            q.select(
+                Count(SalesInvoice.name).as_("count"),
+            )
+        ).run(as_dict=True)[0]
+        unpaid_subscriptions = (
+            q.select(
+                Count(SalesInvoice.name).as_("count"),
+                Sum(SalesInvoice.outstanding_amount).as_("outstanding"),
+            )
+            .where(SalesInvoice.status != "Paid")
+        ).run(as_dict=True)[0]
 
         self.set_onload(
             "subscription_details",
             {
-                "total_invoices": count(all_subscriptions),
-                "unpaid_invoices": count(unpaid_subscriptions),
-                "outstanding": outstanding,
+                "total_invoices": all_subscriptions.count,
+                "unpaid_invoices": unpaid_subscriptions.count,
+                "outstanding": unpaid_subscriptions.outstanding,
             },
         )
         subscriptions = get_currents(self.name)
