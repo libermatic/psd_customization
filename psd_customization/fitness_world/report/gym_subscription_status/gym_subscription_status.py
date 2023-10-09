@@ -8,7 +8,7 @@ from functools import partial
 from toolz import compose, assoc, get
 
 
-def execute(filters=None):
+def execute(filters={}):
     return (
         get_columns(),
         compose(list, partial(filter, status_filter(filters)), partial(map, make_row))(
@@ -19,12 +19,12 @@ def execute(filters=None):
 
 def get_columns():
     columns = [
-        _("Member ID") + ":Link/Gym Member:120",
+        _("Member ID") + ":Link/Gym Member:90",
         _("Member Name") + "::180",
         _("Subscription Item") + "::90",
-        _("Item Name") + "::150",
-        _("Stated On") + ":Date:90",
-        _("Expires On") + ":Date:90",
+        _("Item Name") + "::180",
+        _("Started On") + ":Date:120",
+        _("Expires On") + ":Date:120",
         _("Expiry (In Days)") + ":Int:60",
         _("Lifetime") + "::60",
         _("Status") + "::90",
@@ -70,6 +70,12 @@ def get_data(filters):
         if value:
             q = q.where(GymSubscription[field] == value)
 
+    if filters.get("between_dates"):
+        after_start, before_end = filters.between_dates
+        q = q.where(
+            (GymSubscription.from_date >= after_start)
+            & (GymSubscription.to_date <= before_end)
+        )
     return q.run(as_dict=True)
 
 

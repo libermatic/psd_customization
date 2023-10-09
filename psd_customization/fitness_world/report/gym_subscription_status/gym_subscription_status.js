@@ -17,6 +17,15 @@ frappe.query_reports['Gym Subscription Status'] = {
       options: 'Gym Subscription Item',
     },
     {
+      fieldname: 'between_dates',
+      label: 'Between Dates',
+      fieldtype: 'DateRange',
+      default: [
+        frappe.datetime.add_months(frappe.datetime.month_start(), -1),
+        frappe.datetime.month_end(),
+      ],
+    },
+    {
       fieldname: 'status',
       label: 'Status',
       fieldtype: 'Select',
