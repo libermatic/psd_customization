@@ -20,7 +20,7 @@ frappe.query_reports['Gym Subscription Status'] = {
       fieldname: 'status',
       label: 'Status',
       fieldtype: 'Select',
-      options: 'Active\nStopped\nExpired',
+      options: '\nActive\nStopped\nExpired',
     },
   ],
 };

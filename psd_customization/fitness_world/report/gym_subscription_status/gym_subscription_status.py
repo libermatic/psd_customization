@@ -65,7 +65,7 @@ def get_data(filters):
         .where((GymSubscription.docstatus == 1))
     )
 
-    for field in ["member", "subscription_item"]:
+    for field in ["member", "subscription_item", "status"]:
         value = filters.get(field)
         if value:
             q = q.where(GymSubscription[field] == value)
