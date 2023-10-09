@@ -46,7 +46,7 @@ def get_data(filters):
     ).as_("latest_sub")
     q = (
         frappe.qb.from_(GymSubscription)
-        .left_join(latest_sub)
+        .right_join(latest_sub)
         .on(
             (latest_sub.member == GymSubscription.member)
             & (latest_sub.subscription_item == GymSubscription.subscription_item)
