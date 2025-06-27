@@ -63,44 +63,6 @@ def make_sales_invoice(source_name):
     return si
 
 
-def _existing_subscription_by_item(
-    member, item_code, start_date, end_date, lifetime, limit=0
-):
-    filters = ["(s.to_date >= '{}' OR s.is_lifetime = 1)".format(start_date)]
-    if not lifetime and end_date:
-        filters.append("s.from_date <= '{}'".format(end_date))
-    return frappe.db.sql(
-        """
-            SELECT
-                s.name AS subscription,
-                s.is_lifetime AS is_lifetime,
-                s.from_date AS from_date,
-                s.to_date AS to_date
-            FROM
-                `tabGym Subscription Item` AS si,
-                `tabGym Subscription` AS s
-            WHERE
-                si.item_code = %(item_code)s AND
-                si.parentfield = 'service_items' AND
-                si.parent = s.name AND
-                s.docstatus = 1 AND
-                s.member = %(member)s AND
-                {filters}
-            ORDER BY s.from_date
-            {limit}
-        """.format(
-            filters=" AND ".join(filters), limit="LIMIT 1" if limit else ""
-        ),
-        values={
-            "member": member,
-            "item_code": item_code,
-            "start_date": start_date,
-            "end_date": end_date,
-        },
-        as_dict=True,
-    )
-
-
 def _get_subscriptions(member, item, from_date, to_date, lifetime, limit=0, status=[]):
     GymSubscription = frappe.qb.DocType("Gym Subscription")
     q = (
