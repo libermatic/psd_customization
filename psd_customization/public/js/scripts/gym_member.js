@@ -1,3 +1,5 @@
+import { createApp } from 'vue';
+
 import MemberDashboard from '../components/MemberDashboard.vue';
 
 function set_queries(frm) {
@@ -64,19 +66,13 @@ function render_subscription_details(frm) {
     const { total_invoices, unpaid_invoices, outstanding } =
       frm.doc.__onload['subscription_details'] || {};
     const node = frm.dashboard.add_section('<div />').children()[0];
-    new Vue({
-      el: node,
-      render: (h) =>
-        h(MemberDashboard, {
-          props: {
-            total_invoices,
-            unpaid_invoices,
-            outstanding,
-            subscriptions,
-            last_trainer,
-          },
-        }),
-    });
+    createApp(MemberDashboard, {
+      total_invoices,
+      unpaid_invoices,
+      outstanding,
+      subscriptions,
+      last_trainer,
+    }).mount(node);
   }
 }
 

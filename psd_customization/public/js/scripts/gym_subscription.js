@@ -1,6 +1,8 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+import { createApp } from 'vue';
+
 import SubscriptionDashboard from '../components/SubscriptionDashboard.vue';
 
 function set_dates(frm) {
@@ -80,12 +82,9 @@ function add_actions(frm) {
 function render_subscription_details(frm) {
   if (frm.doc.__onload) {
     const { invoice } = frm.doc.__onload;
-    const node = frm.dashboard.add_section('<div />').children()[0];
+    const node = frm.dashboard.add_section('<div />', 'Sales').children()[0];
     frm.dashboard.show();
-    new Vue({
-      el: node,
-      render: (h) => h(SubscriptionDashboard, { props: { invoice } }),
-    });
+    createApp(SubscriptionDashboard, { invoice }).mount(node);
   }
 }
 

@@ -1,7 +1,6 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
-import CurrentSubscriptions from '../components/CurrentSubscriptions.vue';
 import { month_diff_dec } from '../utils/datetime';
 
 function get_to_date(date, freq) {

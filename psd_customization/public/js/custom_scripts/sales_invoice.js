@@ -1,6 +1,8 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+import { createApp } from 'vue';
+
 import CurrentSubscriptions from '../components/CurrentSubscriptions.vue';
 import SubscriptionSelector from '../frappe-components/subscription-selector';
 import { month_diff_dec } from '../utils/datetime';
@@ -13,9 +15,6 @@ function has_gym_role() {
 }
 
 async function render_subscription_details(frm) {
-  if (frm.subscription_details) {
-    frm.subscription_details.$destroy();
-  }
   frm.fields_dict['gym_subscription_details_html'].$wrapper.empty();
   if (frm.doc['gym_member'] && frm.doc.__islocal) {
     const { message: subscriptions = [] } = await frappe.call({
@@ -26,10 +25,7 @@ async function render_subscription_details(frm) {
     const node = frm.fields_dict['gym_subscription_details_html'].$wrapper
       .append('<div />')
       .children()[0];
-    frm.subscription_details = new Vue({
-      el: node,
-      render: (h) => h(CurrentSubscriptions, { props: { subscriptions } }),
-    });
+    createApp(CurrentSubscriptions, { subscriptions }).mount(node);
   }
 }
 

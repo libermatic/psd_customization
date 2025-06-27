@@ -1,6 +1,8 @@
 // Copyright (c) 2018, Libermatic and contributors
 // For license information, please see license.txt
 
+import { createApp } from 'vue';
+
 import BarcodeLabelDashboard from '../components/BarcodeLabelDashboard.vue';
 
 export const item = {
@@ -53,14 +55,9 @@ export const item = {
         args: { item_code: frm.doc['item_code'] },
       });
       if (labels.length > 0) {
-        const $wrapper = frm.dashboard.add_section('<div />');
-        frm.barcode_labels_vue = new Vue({
-          data: { labels },
-          el: $wrapper.html('<div />').children()[0],
-          render: function (h) {
-            return h(BarcodeLabelDashboard, { props: { labels: this.labels } });
-          },
-        });
+        createApp(BarcodeLabelDashboard, { labels }).mount(
+          frm.dashboard.add_section('<div />', 'Barcode Label').children()[0]
+        );
       }
     }
   },
