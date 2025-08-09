@@ -24,8 +24,8 @@ def on_submit(doc, method):
 
 def on_cancel(doc, method):
     if doc.salary_slip_based_on_training:
-        SalarySlipTraining = frappe.qb.Doctype("Salary Slip Training")
-        SalarySlip = frappe.qb.Doctype("Salary Slip")
+        SalarySlipTraining = frappe.qb.DocType("Salary Slip Training")
+        SalarySlip = frappe.qb.DocType("Salary Slip")
         for training in doc.trainings:
             last_salary_slip = (
                 frappe.qb.from_(SalarySlipTraining)
