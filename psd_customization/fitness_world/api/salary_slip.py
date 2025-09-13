@@ -19,10 +19,7 @@ def set_trainings_in_salary_slip(doc_json, set_in_response=0):
         frappe.get_doc(json.loads(doc_json)) if isinstance(doc_json, str) else doc_json
     )
     if not doc.salary_structure:
-        joining_date, relieving_date = frappe.db.get_value(
-            "Employee", doc.employee, ["date_of_joining", "relieving_date"]
-        )
-        doc.salary_structure = doc.check_sal_struct(joining_date, relieving_date)
+        doc.salary_structure = doc.check_sal_struct()
     structure = frappe.get_doc("Salary Structure", doc.salary_structure)
     doc.salary_slip_based_on_training = structure.salary_slip_based_on_training
     doc.set("trainings", [])
